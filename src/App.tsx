@@ -4,7 +4,10 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { AuthProvider } from "@/components/AuthProvider";
+import ProtectedRoute from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
+import Auth from "./pages/Auth";
 import IncomeEntry from "./pages/IncomeEntry";
 import ExpenseEntry from "./pages/ExpenseEntry";
 import Budgeting from "./pages/Budgeting";
@@ -21,27 +24,30 @@ const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/wallets" element={<Wallets />} />
-          <Route path="/income" element={<IncomeEntry />} />
-          <Route path="/expense" element={<ExpenseEntry />} />
-          <Route path="/budgets" element={<Budgeting />} />
-          <Route path="/transactions" element={<Transactions />} />
-          <Route path="/recent-transactions" element={<RecentTransactions />} />
-          <Route path="/reports" element={<Reports />} />
-          <Route path="/payments" element={<Payments />} /> {/* Added Payments route */}
-          <Route path="/financial-goals" element={<FinancialGoals />} />
-          <Route path="/settings" element={<Settings />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
+    <AuthProvider>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Routes>
+            <Route path="/auth" element={<Auth />} />
+            <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+            <Route path="/wallets" element={<ProtectedRoute><Wallets /></ProtectedRoute>} />
+            <Route path="/income" element={<ProtectedRoute><IncomeEntry /></ProtectedRoute>} />
+            <Route path="/expense" element={<ProtectedRoute><ExpenseEntry /></ProtectedRoute>} />
+            <Route path="/budgets" element={<ProtectedRoute><Budgeting /></ProtectedRoute>} />
+            <Route path="/transactions" element={<ProtectedRoute><Transactions /></ProtectedRoute>} />
+            <Route path="/recent-transactions" element={<ProtectedRoute><RecentTransactions /></ProtectedRoute>} />
+            <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
+            <Route path="/payments" element={<ProtectedRoute><Payments /></ProtectedRoute>} />
+            <Route path="/financial-goals" element={<ProtectedRoute><FinancialGoals /></ProtectedRoute>} />
+            <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </TooltipProvider>
+    </AuthProvider>
   </QueryClientProvider>
 );
 
