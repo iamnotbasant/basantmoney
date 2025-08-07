@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instanciate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "12.2.12 (cd3cf9e)"
+    PostgrestVersion: "13.0.4"
   }
   public: {
     Tables: {
@@ -38,9 +38,79 @@ export type Database = {
         }
         Relationships: []
       }
+      user_bank_accounts: {
+        Row: {
+          account_type: string
+          balance: number | null
+          bank_name: string
+          created_at: string
+          id: string
+          is_primary: boolean | null
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          account_type?: string
+          balance?: number | null
+          bank_name: string
+          created_at?: string
+          id?: string
+          is_primary?: boolean | null
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          account_type?: string
+          balance?: number | null
+          bank_name?: string
+          created_at?: string
+          id?: string
+          is_primary?: boolean | null
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_bank_transfers: {
+        Row: {
+          amount: number
+          created_at: string
+          description: string | null
+          from_account_id: string
+          id: string
+          to_account_id: string
+          transfer_date: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          description?: string | null
+          from_account_id: string
+          id?: string
+          to_account_id: string
+          transfer_date?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          description?: string | null
+          from_account_id?: string
+          id?: string
+          to_account_id?: string
+          transfer_date?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_expenses: {
         Row: {
           amount: number
+          bank_account_id: string | null
           category: string
           created_at: string | null
           date: string
@@ -52,6 +122,7 @@ export type Database = {
         }
         Insert: {
           amount: number
+          bank_account_id?: string | null
           category: string
           created_at?: string | null
           date: string
@@ -63,6 +134,7 @@ export type Database = {
         }
         Update: {
           amount?: number
+          bank_account_id?: string | null
           category?: string
           created_at?: string | null
           date?: string
@@ -76,6 +148,7 @@ export type Database = {
       }
       user_financial_goals: {
         Row: {
+          bank_account_id: string | null
           created_at: string | null
           description: string | null
           id: string
@@ -89,6 +162,7 @@ export type Database = {
           wallet_type: string
         }
         Insert: {
+          bank_account_id?: string | null
           created_at?: string | null
           description?: string | null
           id?: string
@@ -102,6 +176,7 @@ export type Database = {
           wallet_type: string
         }
         Update: {
+          bank_account_id?: string | null
           created_at?: string | null
           description?: string | null
           id?: string
@@ -119,6 +194,7 @@ export type Database = {
       user_income: {
         Row: {
           amount: number
+          bank_account_id: string | null
           category: string
           created_at: string | null
           date: string
@@ -129,6 +205,7 @@ export type Database = {
         }
         Insert: {
           amount: number
+          bank_account_id?: string | null
           category: string
           created_at?: string | null
           date: string
@@ -139,6 +216,7 @@ export type Database = {
         }
         Update: {
           amount?: number
+          bank_account_id?: string | null
           category?: string
           created_at?: string | null
           date?: string
@@ -200,6 +278,7 @@ export type Database = {
         Row: {
           allocation_percentage: number
           balance: number | null
+          bank_account_id: string | null
           color: string
           created_at: string | null
           goal_enabled: boolean | null
@@ -215,6 +294,7 @@ export type Database = {
         Insert: {
           allocation_percentage: number
           balance?: number | null
+          bank_account_id?: string | null
           color: string
           created_at?: string | null
           goal_enabled?: boolean | null
@@ -230,6 +310,7 @@ export type Database = {
         Update: {
           allocation_percentage?: number
           balance?: number | null
+          bank_account_id?: string | null
           color?: string
           created_at?: string | null
           goal_enabled?: boolean | null
@@ -306,6 +387,7 @@ export type Database = {
       user_wallets: {
         Row: {
           balance: number | null
+          bank_account_id: string | null
           color: string
           created_at: string | null
           id: number
@@ -316,6 +398,7 @@ export type Database = {
         }
         Insert: {
           balance?: number | null
+          bank_account_id?: string | null
           color: string
           created_at?: string | null
           id?: number
@@ -326,6 +409,7 @@ export type Database = {
         }
         Update: {
           balance?: number | null
+          bank_account_id?: string | null
           color?: string
           created_at?: string | null
           id?: number
