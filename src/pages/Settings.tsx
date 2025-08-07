@@ -28,6 +28,7 @@ import { useToast } from '@/hooks/use-toast';
 import CategoryManager from '@/components/CategoryManager';
 import PaymentMethodManager from '@/components/PaymentMethodManager';
 import FileManagement from '@/components/FileManagement';
+import BankAccountManager from '@/components/BankAccountManager';
 import { Wallet, IncomeData, ExpenseData } from '@/types/finance';
 
 interface UserSettings {
@@ -287,6 +288,11 @@ const Settings = () => {
               Save Distribution
             </Button>
           </div>
+        </section>
+
+        {/* Bank Account Management Section */}
+        <section className="bg-card rounded-lg border p-6">
+          <BankAccountManager />
         </section>
 
         {/* Category Management Section */}

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Check, Plus, ChevronsUpDown, Landmark } from 'lucide-react';
+import { Check, ChevronsUpDown, Landmark } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -15,14 +15,12 @@ interface BankAccountSwitcherProps {
   bankAccounts: BankAccount[];
   currentAccount: BankAccount | null;
   onAccountSelect: (account: BankAccount) => void;
-  onAddAccount: () => void;
 }
 
 const BankAccountSwitcher = ({
   bankAccounts,
   currentAccount,
   onAccountSelect,
-  onAddAccount,
 }: BankAccountSwitcherProps) => {
   return (
     <DropdownMenu>
@@ -73,11 +71,6 @@ const BankAccountSwitcher = ({
             />
           </DropdownMenuItem>
         ))}
-        <DropdownMenuSeparator />
-        <DropdownMenuItem onSelect={onAddAccount} className="flex items-center gap-2 p-3 cursor-pointer hover:bg-accent/50">
-          <Plus className="h-4 w-4" />
-          <span>Add Bank Account</span>
-        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );
