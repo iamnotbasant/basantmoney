@@ -1,9 +1,13 @@
 import React, { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Wallet, Settings, Menu, X, LogOut, User } from "lucide-react";
+import { Wallet, Settings, Menu, X, LogOut, User, ArrowUpDown } from "lucide-react";
 import { useAuth } from "@/components/AuthProvider";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { useBankAccounts } from '@/hooks/useBankAccounts';
+import BankAccountSwitcher from '@/components/BankAccountSwitcher';
+import AddBankAccountDialog from '@/components/AddBankAccountDialog';
+import BankTransferDialog from '@/components/BankTransferDialog';
 
 const Header = () => {
   const navigate = useNavigate();
@@ -11,6 +15,16 @@ const Header = () => {
   const { user, signOut } = useAuth();
   const { toast } = useToast();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const {
+    bankAccounts,
+    currentAccount,
+    setCurrentAccount,
+    createBankAccount,
+    transferFunds,
+  } = useBankAccounts();
+
+  const [showAddAccountDialog, setShowAddAccountDialog] = useState(false);
+  const [showTransferDialog, setShowTransferDialog] = useState(false);
 
   const handleMobileNav = (path: string) => {
     navigate(path);
@@ -104,8 +118,33 @@ const Header = () => {
 
           {/* Right Side Actions - Responsive */}
           <div className="flex items-center space-x-1 xs:space-x-2">
+            {/* Bank Account Switcher */}
+            {user && (
+              <div className="hidden md:block">
+                <BankAccountSwitcher
+                  bankAccounts={bankAccounts}
+                  currentAccount={currentAccount}
+                  onAccountSelect={setCurrentAccount}
+                  onAddAccount={() => setShowAddAccountDialog(true)}
+                />
+              </div>
+            )}
+            
+            {/* Transfer Funds Button */}
+            {user && bankAccounts.length > 1 && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowTransferDialog(true)}
+                className="hidden sm:flex items-center gap-1 px-2 py-1 text-xs"
+              >
+                <ArrowUpDown className="h-3 w-3" />
+                <span className="hidden lg:inline">Transfer</span>
+              </Button>
+            )}
+
             {/* User indicator (desktop) */}
-            <div className="hidden md:flex items-center space-x-2">
+            <div className="hidden lg:flex items-center space-x-2">
               <div className="flex items-center space-x-1 px-2 py-1 bg-gray-50 rounded-md">
                 <User className="h-3 w-3 text-gray-500" />
                 <span className="text-xs text-gray-600 max-w-20 truncate">
@@ -193,6 +232,20 @@ const Header = () => {
           </nav>
         </div>
       )}
+
+      {/* Dialogs */}
+      <AddBankAccountDialog
+        open={showAddAccountDialog}
+        onOpenChange={setShowAddAccountDialog}
+        onSubmit={createBankAccount}
+      />
+
+      <BankTransferDialog
+        open={showTransferDialog}
+        onOpenChange={setShowTransferDialog}
+        bankAccounts={bankAccounts}
+        onTransfer={transferFunds}
+      />
     </header>
   );
 };
