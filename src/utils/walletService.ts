@@ -2,6 +2,25 @@
 import { Wallet, SubWallet, IncomeData, ExpenseData, DEFAULT_WALLET_DISTRIBUTION, DEFAULT_SUBWALLET_STRUCTURE } from '@/types/finance';
 
 export class WalletService {
+  // Current bank helpers
+  static getCurrentBankId(): string | null {
+    return localStorage.getItem('currentBankAccountId');
+  }
+
+  static storageKey(base: string): string {
+    const bankId = this.getCurrentBankId();
+    return bankId ? `${base}:${bankId}` : base;
+  }
+  
+  static ensureInitialized(): void {
+    const walletsKey = this.storageKey('wallets');
+    const subWalletsKey = this.storageKey('subWallets');
+    if (!localStorage.getItem(walletsKey) || !localStorage.getItem(subWalletsKey)) {
+      const { wallets, subWallets } = this.initializeWalletSystem();
+      localStorage.setItem(walletsKey, JSON.stringify(wallets));
+      localStorage.setItem(subWalletsKey, JSON.stringify(subWallets));
+    }
+  }
   
   // Get current distribution settings from localStorage or use defaults
   static getCurrentDistribution() {
@@ -76,7 +95,7 @@ export class WalletService {
     const subWalletUpdates: { id: number, amount: number }[] = [];
 
     // Get current sub-wallets from storage
-    const currentSubWallets = JSON.parse(localStorage.getItem('subWallets') || '[]');
+    const currentSubWallets = JSON.parse(localStorage.getItem(this.storageKey('subWallets')) || '[]');
 
     // Distribute to saving sub-wallets
     DEFAULT_SUBWALLET_STRUCTURE.saving.forEach((swConfig) => {
@@ -106,9 +125,9 @@ export class WalletService {
   // Calculate dynamic wallet balance based on income, expenses, and sub-wallets
   static calculateWalletBalance(walletType: 'saving' | 'needs' | 'wants'): number {
     try {
-      const incomeData = JSON.parse(localStorage.getItem('incomeData') || '[]') as IncomeData[];
-      const expenseData = JSON.parse(localStorage.getItem('expenseData') || '[]') as ExpenseData[];
-      const currentSubWallets = JSON.parse(localStorage.getItem('subWallets') || '[]') as SubWallet[];
+      const incomeData = JSON.parse(localStorage.getItem(this.storageKey('incomeData')) || '[]') as IncomeData[];
+      const expenseData = JSON.parse(localStorage.getItem(this.storageKey('expenseData')) || '[]') as ExpenseData[];
+      const currentSubWallets = JSON.parse(localStorage.getItem(this.storageKey('subWallets')) || '[]') as SubWallet[];
       const distribution = this.getCurrentDistribution();
       
       // Calculate total income allocated to this wallet type
@@ -125,7 +144,7 @@ export class WalletService {
         .reduce((sum: number, sw: SubWallet) => sum + sw.balance, 0);
 
       // Calculate direct expenses from this wallet type
-      const currentWallets = JSON.parse(localStorage.getItem('wallets') || '[]') as Wallet[];
+      const currentWallets = JSON.parse(localStorage.getItem(this.storageKey('wallets')) || '[]') as Wallet[];
       const targetWallet = currentWallets.find(w => w.type === walletType);
       
       const directWalletExpenses = expenseData.reduce((sum, expense) => {
@@ -174,8 +193,8 @@ export class WalletService {
     remainingExpense: number,
     success: boolean
   } {
-    const currentSubWallets = JSON.parse(localStorage.getItem('subWallets') || '[]');
-    const currentWallets = JSON.parse(localStorage.getItem('wallets') || '[]');
+    const currentSubWallets = JSON.parse(localStorage.getItem(this.storageKey('subWallets')) || '[]');
+    const currentWallets = JSON.parse(localStorage.getItem(this.storageKey('wallets')) || '[]');
     
     let remainingExpense = expenseAmount;
     const deductions: { type: 'subwallet' | 'wallet', id: number, amount: number, name: string }[] = [];
@@ -231,7 +250,7 @@ export class WalletService {
 
   // Apply expense deductions to actual balances
   static applyExpenseDeductions(deductions: { type: 'subwallet' | 'wallet', id: number, amount: number }[]): void {
-    const currentSubWallets = JSON.parse(localStorage.getItem('subWallets') || '[]');
+    const currentSubWallets = JSON.parse(localStorage.getItem(this.storageKey('subWallets')) || '[]');
     
     // Update sub-wallet balances
     const updatedSubWallets = currentSubWallets.map((sw: SubWallet) => {
@@ -242,12 +261,12 @@ export class WalletService {
       return sw;
     });
 
-    localStorage.setItem('subWallets', JSON.stringify(updatedSubWallets));
+    localStorage.setItem(this.storageKey('subWallets'), JSON.stringify(updatedSubWallets));
   }
 
   // Apply income updates to balances
   static applyIncomeUpdates(subWalletUpdates: { id: number, amount: number }[]): void {
-    const currentSubWallets = JSON.parse(localStorage.getItem('subWallets') || '[]');
+    const currentSubWallets = JSON.parse(localStorage.getItem(this.storageKey('subWallets')) || '[]');
     
     const updatedSubWallets = currentSubWallets.map((sw: SubWallet) => {
       const update = subWalletUpdates.find(u => u.id === sw.id);
@@ -257,13 +276,15 @@ export class WalletService {
       return sw;
     });
 
-    localStorage.setItem('subWallets', JSON.stringify(updatedSubWallets));
+    localStorage.setItem(this.storageKey('subWallets'), JSON.stringify(updatedSubWallets));
+    // Trigger wallet data refresh across the app
+    window.dispatchEvent(new CustomEvent('walletDataChanged'));
   }
 
   // Transfer funds between wallets and sub-wallets
   static transferFunds(fromId: number, fromType: 'wallet' | 'subwallet', toId: number, toType: 'wallet' | 'subwallet', amount: number): boolean {
     try {
-      const currentSubWallets = JSON.parse(localStorage.getItem('subWallets') || '[]');
+      const currentSubWallets = JSON.parse(localStorage.getItem(this.storageKey('subWallets')) || '[]');
       
       // Update sub-wallets
       const updatedSubWallets = currentSubWallets.map((sw: SubWallet) => {
@@ -276,7 +297,7 @@ export class WalletService {
         return sw;
       });
 
-      localStorage.setItem('subWallets', JSON.stringify(updatedSubWallets));
+      localStorage.setItem(this.storageKey('subWallets'), JSON.stringify(updatedSubWallets));
       
       // Trigger wallet data refresh
       window.dispatchEvent(new Event('walletDataChanged'));

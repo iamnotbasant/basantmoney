@@ -38,11 +38,12 @@ const Index = () => {
   // Initialize wallet system and load data
   useEffect(() => {
     console.log('Initializing wallet system...');
+    WalletService.ensureInitialized();
     
-    const storedWallets = localStorage.getItem('wallets');
-    const storedSubWallets = localStorage.getItem('subWallets');
-    const storedIncome = localStorage.getItem('incomeData');
-    const storedExpenses = localStorage.getItem('expenseData');
+    const storedWallets = localStorage.getItem(WalletService.storageKey('wallets'));
+    const storedSubWallets = localStorage.getItem(WalletService.storageKey('subWallets'));
+    const storedIncome = localStorage.getItem(WalletService.storageKey('incomeData'));
+    const storedExpenses = localStorage.getItem(WalletService.storageKey('expenseData'));
 
     // Initialize wallet system if not present
     if (!storedWallets || !storedSubWallets) {
@@ -67,7 +68,7 @@ const Index = () => {
       setIncomeData(loadedIncome);
     } else {
       setIncomeData([]);
-      localStorage.setItem('incomeData', JSON.stringify([]));
+      localStorage.setItem(WalletService.storageKey('incomeData'), JSON.stringify([]));
     }
 
     if (storedExpenses) {
@@ -75,13 +76,13 @@ const Index = () => {
       setExpenseData(loadedExpenses);
     } else {
       setExpenseData([]);
-      localStorage.setItem('expenseData', JSON.stringify([]));
+      localStorage.setItem(WalletService.storageKey('expenseData'), JSON.stringify([]));
     }
 
     // Add event listener for wallet data changes
     const handleWalletDataChange = () => {
-      console.log('Wallet data changed, refreshing balances...');
-      const storedWallets = localStorage.getItem('wallets');
+      console.log('Wallet/bank data changed, refreshing...');
+      const storedWallets = localStorage.getItem(WalletService.storageKey('wallets'));
       if (storedWallets) {
         const walletData = JSON.parse(storedWallets);
         const dynamicWallets = walletData.map((wallet: Wallet) => ({
@@ -90,12 +91,18 @@ const Index = () => {
         }));
         setWallets(dynamicWallets);
       }
+      const storedIncome = localStorage.getItem(WalletService.storageKey('incomeData'));
+      const storedExpenses = localStorage.getItem(WalletService.storageKey('expenseData'));
+      setIncomeData(storedIncome ? JSON.parse(storedIncome) : []);
+      setExpenseData(storedExpenses ? JSON.parse(storedExpenses) : []);
     };
 
     window.addEventListener('walletDataChanged', handleWalletDataChange);
+    window.addEventListener('bankAccountChanged', handleWalletDataChange);
 
     return () => {
       window.removeEventListener('walletDataChanged', handleWalletDataChange);
+      window.removeEventListener('bankAccountChanged', handleWalletDataChange);
     };
   }, []);
 

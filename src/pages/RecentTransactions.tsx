@@ -32,8 +32,8 @@ const RecentTransactions = () => {
   }, [transactions, filterType]);
 
   const loadTransactions = () => {
-    const incomeData: IncomeData[] = JSON.parse(localStorage.getItem('incomeData') || '[]');
-    const expenseData: ExpenseData[] = JSON.parse(localStorage.getItem('expenseData') || '[]');
+    const incomeData: IncomeData[] = JSON.parse(localStorage.getItem(WalletService.storageKey('incomeData')) || '[]');
+    const expenseData: ExpenseData[] = JSON.parse(localStorage.getItem(WalletService.storageKey('expenseData')) || '[]');
 
     const allTransactions: Transaction[] = [
       ...incomeData.map(income => ({

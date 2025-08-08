@@ -38,7 +38,7 @@ const ExpenseEntry = () => {
   }, []);
 
   const loadData = () => {
-    const storedWallets = localStorage.getItem('wallets');
+    const storedWallets = localStorage.getItem(WalletService.storageKey('wallets'));
     if (storedWallets) {
       const walletData = JSON.parse(storedWallets);
       const dynamicWallets = walletData.map((wallet: Wallet) => ({
@@ -48,12 +48,12 @@ const ExpenseEntry = () => {
       setWallets(dynamicWallets);
     }
 
-    const storedSubWallets = localStorage.getItem('subWallets');
+    const storedSubWallets = localStorage.getItem(WalletService.storageKey('subWallets'));
     if (storedSubWallets) {
       setSubWallets(JSON.parse(storedSubWallets));
     }
 
-    const storedExpenses = localStorage.getItem('expenseData');
+    const storedExpenses = localStorage.getItem(WalletService.storageKey('expenseData'));
     if (storedExpenses) {
       setExpenseHistory(JSON.parse(storedExpenses));
     }
@@ -273,10 +273,10 @@ const ExpenseEntry = () => {
       deductions: deductions.map(({ name, ...rest }) => rest) // Remove name for storage
     };
 
-    const storedExpenses = localStorage.getItem('expenseData');
+    const storedExpenses = localStorage.getItem(WalletService.storageKey('expenseData'));
     const expenseHistory = storedExpenses ? JSON.parse(storedExpenses) : [];
     const updatedExpenses = [...expenseHistory, newExpense];
-    localStorage.setItem('expenseData', JSON.stringify(updatedExpenses));
+    localStorage.setItem(WalletService.storageKey('expenseData'), JSON.stringify(updatedExpenses));
 
     console.log('Final deductions applied:', deductions);
 

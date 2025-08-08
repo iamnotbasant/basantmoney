@@ -37,6 +37,7 @@ import {
   SelectContent,
   SelectItem,
 } from '@/components/ui/select';
+import { WalletService } from '@/utils/walletService';
 
 interface PaymentMethod {
   id: string;
@@ -102,8 +103,8 @@ const Transactions = () => {
   const loadTransactions = () => {
     console.log('Loading transactions from localStorage...');
     
-    const incomeData: IncomeData[] = JSON.parse(localStorage.getItem('incomeData') || '[]');
-    const expenseData: ExpenseData[] = JSON.parse(localStorage.getItem('expenseData') || '[]');
+    const incomeData: IncomeData[] = JSON.parse(localStorage.getItem(WalletService.storageKey('incomeData')) || '[]');
+    const expenseData: ExpenseData[] = JSON.parse(localStorage.getItem(WalletService.storageKey('expenseData')) || '[]');
 
     console.log('Raw income data:', incomeData);
     console.log('Raw expense data:', expenseData);

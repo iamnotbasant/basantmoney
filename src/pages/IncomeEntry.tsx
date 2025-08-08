@@ -90,10 +90,10 @@ const IncomeEntry = () => {
       setPaymentMethods(JSON.parse(storedMethods));
     }
 
-    // Load income history from localStorage
-    const savedIncomeHistory = localStorage.getItem('incomeHistory');
-    if (savedIncomeHistory) {
-      setIncomeHistory(JSON.parse(savedIncomeHistory));
+    // Load income history from bank-specific storage
+    const savedIncome = localStorage.getItem(WalletService.storageKey('incomeData'));
+    if (savedIncome) {
+      setIncomeHistory(JSON.parse(savedIncome));
     }
 
     // Load user settings
@@ -176,8 +176,8 @@ const IncomeEntry = () => {
       attachment: attachment?.name || undefined
     };
 
-    // Update income data
-    const currentIncomeData = JSON.parse(localStorage.getItem('incomeData') || '[]');
+    // Update income data (bank-scoped)
+    const currentIncomeData = JSON.parse(localStorage.getItem(WalletService.storageKey('incomeData')) || '[]');
     const updatedIncomeData = [...currentIncomeData, {
       id: newIncomeEntry.id,
       source: newIncomeEntry.source,
@@ -193,11 +193,11 @@ const IncomeEntry = () => {
     WalletService.applyIncomeUpdates(subWalletUpdates);
 
     // Save to localStorage
-    localStorage.setItem('incomeData', JSON.stringify(updatedIncomeData));
+    localStorage.setItem(WalletService.storageKey('incomeData'), JSON.stringify(updatedIncomeData));
     
     const updatedHistory = [...incomeHistory, newIncomeEntry];
     setIncomeHistory(updatedHistory);
-    localStorage.setItem('incomeHistory', JSON.stringify(updatedHistory));
+    localStorage.setItem(WalletService.storageKey('incomeData'), JSON.stringify(updatedIncomeData));
 
     // Show detailed breakdown
     const breakdown = walletUpdates.map(update => {

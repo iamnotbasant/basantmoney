@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ArrowRight, TrendingUp, TrendingDown } from 'lucide-react';
 import { IncomeData, ExpenseData } from '@/types/finance';
+import { WalletService } from '@/utils/walletService';
 
 interface Transaction {
   id: number;
@@ -25,8 +26,8 @@ const RecentTransactions = () => {
   }, []);
 
   const loadRecentTransactions = () => {
-    const incomeData: IncomeData[] = JSON.parse(localStorage.getItem('incomeData') || '[]');
-    const expenseData: ExpenseData[] = JSON.parse(localStorage.getItem('expenseData') || '[]');
+    const incomeData: IncomeData[] = JSON.parse(localStorage.getItem(WalletService.storageKey('incomeData')) || '[]');
+    const expenseData: ExpenseData[] = JSON.parse(localStorage.getItem(WalletService.storageKey('expenseData')) || '[]');
 
     const incomeTransactions: Transaction[] = incomeData.map(item => ({
       id: item.id,

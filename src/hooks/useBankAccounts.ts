@@ -31,6 +31,9 @@ export const useBankAccounts = () => {
       const primaryAccount = data?.find(acc => acc.is_primary) || data?.[0];
       if (primaryAccount && !currentAccount) {
         setCurrentAccount(primaryAccount);
+        localStorage.setItem('currentBankAccountId', primaryAccount.id);
+        window.dispatchEvent(new Event('bankAccountChanged'));
+
       }
     } catch (error) {
       console.error('Error fetching bank accounts:', error);
@@ -66,6 +69,11 @@ export const useBankAccounts = () => {
       if (error) throw error;
 
       setBankAccounts(prev => [...prev, data]);
+      if (data.is_primary) {
+        setCurrentAccount(data);
+        localStorage.setItem('currentBankAccountId', data.id);
+        window.dispatchEvent(new Event('bankAccountChanged'));
+      }
       toast({
         title: "Success",
         description: "Bank account created successfully",
@@ -133,7 +141,12 @@ export const useBankAccounts = () => {
       if (setErr) throw setErr;
 
       await fetchBankAccounts();
-      if (updated) setCurrentAccount(updated);
+      if (updated) {
+        setCurrentAccount(updated);
+        localStorage.setItem('currentBankAccountId', updated.id);
+        window.dispatchEvent(new Event('bankAccountChanged'));
+      }
+
 
       toast({ title: 'Switched', description: 'Current bank account changed' });
     } catch (error) {
@@ -201,7 +214,14 @@ export const useBankAccounts = () => {
       if (currentAccount?.id === accountId) {
         const next = bankAccounts.find((acc) => acc.is_primary) || bankAccounts.find((acc) => acc.id !== accountId) || null;
         setCurrentAccount(next);
+        if (next) {
+          localStorage.setItem('currentBankAccountId', next.id);
+        } else {
+          localStorage.removeItem('currentBankAccountId');
+        }
+        window.dispatchEvent(new Event('bankAccountChanged'));
       }
+
 
       toast({ title: 'Deleted', description: 'Bank account and related data removed' });
     } catch (error) {
