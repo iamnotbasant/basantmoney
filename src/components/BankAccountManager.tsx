@@ -41,11 +41,14 @@ import {
 import { useBankAccounts } from '@/hooks/useBankAccounts';
 import { BankAccount } from '@/types/bank';
 import { useToast } from '@/hooks/use-toast';
+import EditBankAccountDialog from '@/components/EditBankAccountDialog';
 
 const BankAccountManager = () => {
   const { 
     bankAccounts, 
     createBankAccount, 
+    updateBankAccount,
+    setPrimaryAccount,
     deleteBankAccount, 
     transferFunds 
   } = useBankAccounts();
@@ -251,10 +254,26 @@ const BankAccountManager = () => {
                       {account.balance.toLocaleString()}
                     </div>
                   </div>
-                  <div className="flex gap-1">
-                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                  <div className="flex gap-2 items-center">
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="h-8 w-8 p-0"
+                      onClick={() => { setEditingAccount(account); setShowEditDialog(true); }}
+                    >
                       <Edit2 className="h-3 w-3" />
                     </Button>
+                    {!account.is_primary && (
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="h-8 px-2"
+                        onClick={() => setPrimaryAccount(account.id)}
+                        title="Set as current account"
+                      >
+                        Make Primary
+                      </Button>
+                    )}
                     {!account.is_primary && (
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
@@ -408,6 +427,19 @@ const BankAccountManager = () => {
           </CardContent>
         </Card>
       )}
+      <EditBankAccountDialog
+        open={showEditDialog}
+        onOpenChange={(open) => {
+          setShowEditDialog(open);
+          if (!open) setEditingAccount(null);
+        }}
+        account={editingAccount}
+        onSubmit={async (updates) => {
+          if (!editingAccount) return;
+          await updateBankAccount(editingAccount.id, updates);
+          setEditingAccount(null);
+        }}
+      />
     </div>
   );
 };

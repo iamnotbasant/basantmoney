@@ -81,34 +81,132 @@ export const useBankAccounts = () => {
     }
   };
 
-  const deleteBankAccount = async (accountId: string) => {
+  const updateBankAccount = async (
+    accountId: string,
+    updates: {
+      name?: string;
+      bank_name?: string;
+      account_type?: string;
+    }
+  ) => {
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('user_bank_accounts')
-        .delete()
-        .eq('id', accountId);
+        .update({ ...updates, updated_at: new Date().toISOString() })
+        .eq('id', accountId)
+        .select()
+        .single();
 
       if (error) throw error;
 
-      setBankAccounts(prev => prev.filter(acc => acc.id !== accountId));
-      
-      // If deleted account was current, switch to another
+      setBankAccounts((prev) => prev.map((acc) => (acc.id === accountId ? { ...acc, ...data } : acc)));
+      setCurrentAccount((prev) => (prev && prev.id === accountId ? { ...prev, ...data } : prev));
+
+      toast({ title: 'Updated', description: 'Bank account updated successfully' });
+    } catch (error) {
+      console.error('Error updating bank account:', error);
+      toast({ title: 'Error', description: 'Failed to update bank account', variant: 'destructive' });
+      throw error;
+    }
+  };
+
+  const setPrimaryAccount = async (accountId: string) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
+      // Clear primary
+      const { error: clearErr } = await supabase
+        .from('user_bank_accounts')
+        .update({ is_primary: false })
+        .eq('user_id', user.id);
+      if (clearErr) throw clearErr;
+
+      // Set selected as primary
+      const { data: updated, error: setErr } = await supabase
+        .from('user_bank_accounts')
+        .update({ is_primary: true })
+        .eq('id', accountId)
+        .eq('user_id', user.id)
+        .select()
+        .single();
+      if (setErr) throw setErr;
+
+      await fetchBankAccounts();
+      if (updated) setCurrentAccount(updated);
+
+      toast({ title: 'Switched', description: 'Current bank account changed' });
+    } catch (error) {
+      console.error('Error setting primary account:', error);
+      toast({ title: 'Error', description: 'Failed to switch account', variant: 'destructive' });
+      throw error;
+    }
+  };
+
+  const deleteBankAccount = async (accountId: string) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
+      // Delete related records first
+      await supabase
+        .from('user_bank_transfers')
+        .delete()
+        .or(`from_account_id.eq.${accountId},to_account_id.eq.${accountId}`)
+        .eq('user_id', user.id);
+
+      await supabase
+        .from('user_income')
+        .delete()
+        .eq('bank_account_id', accountId)
+        .eq('user_id', user.id);
+
+      await supabase
+        .from('user_expenses')
+        .delete()
+        .eq('bank_account_id', accountId)
+        .eq('user_id', user.id);
+
+      await supabase
+        .from('user_financial_goals')
+        .delete()
+        .eq('bank_account_id', accountId)
+        .eq('user_id', user.id);
+
+      await supabase
+        .from('user_subwallets')
+        .delete()
+        .eq('bank_account_id', accountId)
+        .eq('user_id', user.id);
+
+      await supabase
+        .from('user_wallets')
+        .delete()
+        .eq('bank_account_id', accountId)
+        .eq('user_id', user.id);
+
+      // Finally, delete the bank account
+      const { error } = await supabase
+        .from('user_bank_accounts')
+        .delete()
+        .eq('id', accountId)
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      // Refresh list
+      await fetchBankAccounts();
+
+      // Adjust current account if needed
       if (currentAccount?.id === accountId) {
-        const remaining = bankAccounts.filter(acc => acc.id !== accountId);
-        setCurrentAccount(remaining[0] || null);
+        const next = bankAccounts.find((acc) => acc.is_primary) || bankAccounts.find((acc) => acc.id !== accountId) || null;
+        setCurrentAccount(next);
       }
 
-      toast({
-        title: "Success",
-        description: "Bank account deleted successfully",
-      });
+      toast({ title: 'Deleted', description: 'Bank account and related data removed' });
     } catch (error) {
       console.error('Error deleting bank account:', error);
-      toast({
-        title: "Error",
-        description: "Failed to delete bank account",
-        variant: "destructive",
-      });
+      toast({ title: 'Error', description: 'Failed to delete bank account', variant: 'destructive' });
       throw error;
     }
   };
@@ -161,6 +259,8 @@ export const useBankAccounts = () => {
     loading,
     fetchBankAccounts,
     createBankAccount,
+    updateBankAccount,
+    setPrimaryAccount,
     deleteBankAccount,
     transferFunds,
   };

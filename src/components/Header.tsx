@@ -3,8 +3,6 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { Wallet, Settings, Menu, X, LogOut, User } from "lucide-react";
 import { useAuth } from "@/components/AuthProvider";
 import { useToast } from "@/hooks/use-toast";
-import { useBankAccounts } from '@/hooks/useBankAccounts';
-import BankAccountSwitcher from '@/components/BankAccountSwitcher';
 
 const Header = () => {
   const navigate = useNavigate();
@@ -12,11 +10,6 @@ const Header = () => {
   const { user, signOut } = useAuth();
   const { toast } = useToast();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const {
-    bankAccounts,
-    currentAccount,
-    setCurrentAccount,
-  } = useBankAccounts();
 
   const handleMobileNav = (path: string) => {
     navigate(path);
@@ -110,17 +103,6 @@ const Header = () => {
 
           {/* Right Side Actions - Responsive */}
           <div className="flex items-center space-x-1 xs:space-x-2">
-            {/* Bank Account Switcher */}
-            {user && (
-              <div className="hidden md:block">
-                <BankAccountSwitcher
-                  bankAccounts={bankAccounts}
-                  currentAccount={currentAccount}
-                  onAccountSelect={setCurrentAccount}
-                />
-              </div>
-            )}
-
             {/* User indicator (desktop) */}
             <div className="hidden lg:flex items-center space-x-2">
               <div className="flex items-center space-x-1 px-2 py-1 bg-gray-50 rounded-md">
