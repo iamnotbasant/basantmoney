@@ -10,6 +10,7 @@ import SubWalletCard from './SubWalletCard';
 import SubWalletGoalDialog from './SubWalletGoalDialog';
 import { useToast } from '@/hooks/use-toast';
 import { getAvailableColor, getAllUsedColors } from '@/utils/colorGenerator';
+import { WalletService } from '@/utils/walletService';
 
 interface SubWalletManagerProps {
   wallets: Wallet[];
@@ -40,19 +41,33 @@ const SubWalletManager: React.FC<SubWalletManagerProps> = ({ wallets, onUpdate }
 
   useEffect(() => {
     loadSubWallets();
+
+    // Listen for bank account changes
+    const handleBankAccountChanged = () => {
+      loadSubWallets();
+    };
+
+    window.addEventListener('bankAccountChanged', handleBankAccountChanged);
+    return () => {
+      window.removeEventListener('bankAccountChanged', handleBankAccountChanged);
+    };
   }, []);
 
   const loadSubWallets = () => {
-    const stored = localStorage.getItem('subWallets');
+    WalletService.ensureInitialized();
+    const stored = localStorage.getItem(WalletService.storageKey('subWallets'));
     if (stored) {
       setSubWallets(JSON.parse(stored));
     }
   };
 
   const saveSubWallets = (newSubWallets: SubWallet[]) => {
-    localStorage.setItem('subWallets', JSON.stringify(newSubWallets));
+    localStorage.setItem(WalletService.storageKey('subWallets'), JSON.stringify(newSubWallets));
     setSubWallets(newSubWallets);
     onUpdate();
+    
+    // Dispatch event for wallet data changes
+    window.dispatchEvent(new CustomEvent('walletDataChanged'));
   };
 
   const getWalletByType = (type: 'saving' | 'needs' | 'wants') => {
@@ -251,7 +266,7 @@ const SubWalletManager: React.FC<SubWalletManagerProps> = ({ wallets, onUpdate }
     
     if (JSON.stringify(updatedSubWallets) !== JSON.stringify(subWallets)) {
       setSubWallets(updatedSubWallets);
-      localStorage.setItem('subWallets', JSON.stringify(updatedSubWallets));
+      localStorage.setItem(WalletService.storageKey('subWallets'), JSON.stringify(updatedSubWallets));
     }
   }, [wallets]);
 
