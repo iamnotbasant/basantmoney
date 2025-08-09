@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -7,6 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, ArrowUpRight, ArrowDownRight, Calendar, Filter } from 'lucide-react';
 import { IncomeData, ExpenseData } from '@/types/finance';
+import { WalletService } from '@/utils/walletService';
 
 interface Transaction {
   id: number;
