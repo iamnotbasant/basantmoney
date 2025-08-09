@@ -60,11 +60,11 @@ const Header = () => {
   };
 
   return (
-    <div className="bg-white border-b border-gray-200">
+    <div className="bg-white relative">
       {/* Desktop Navigation - Integrated Tab Style */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center py-4">
-          {/* Main Navigation Tabs */}
+        <div className="flex items-center justify-center py-4 relative">
+          {/* Main Navigation Tabs - Centered */}
           <div className="flex items-center gap-1 overflow-x-auto">
             {navItems.map((item) => {
               const IconComponent = item.icon;
@@ -81,8 +81,8 @@ const Header = () => {
             })}
           </div>
 
-          {/* Right Side Actions */}
-          <div className="flex items-center gap-2">
+          {/* Right Side Actions - Positioned Absolute */}
+          <div className="absolute right-0 flex items-center gap-2">
             {/* User indicator (desktop) */}
             <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 bg-gray-50 rounded-lg">
               <User className="h-3 w-3 text-gray-500" />
