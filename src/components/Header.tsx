@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Wallet, Settings, Menu, X, LogOut, User } from "lucide-react";
+import { Wallet, CreditCard, PiggyBank, Target, BarChart3, Settings, Menu, X, LogOut, User, TrendingUp } from "lucide-react";
 import { useAuth } from "@/components/AuthProvider";
 import { useToast } from "@/hooks/use-toast";
 
@@ -34,84 +34,77 @@ const Header = () => {
   };
 
   const navItems = [
-    { path: "/", label: "Vault" },
-    { path: "/transactions", label: "Transactions" },
-    { path: "/budgets", label: "Budget" },
-    { path: "/reports", label: "Analytics" },
+    { path: "/", label: "Vault", icon: Wallet },
+    { path: "/transactions", label: "Transactions", icon: CreditCard },
+    { path: "/budgets", label: "Budget", icon: PiggyBank },
+    { path: "/reports", label: "Analytics", icon: BarChart3 },
+    { path: "/wallets", label: "Wallets", icon: Wallet },
+    { path: "/financial-goals", label: "Goals", icon: Target },
+    { path: "/payments", label: "Payments", icon: TrendingUp },
   ];
 
   const getNavLinkClass = (path: string, isMobile = false) => {
     const isActive = location.pathname === path;
-    let classes =
-      "px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 select-none";
+    let classes = "inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 select-none";
+    
     if (isMobile) {
-      classes += " w-full text-left block min-h-[40px] flex items-center";
+      classes += " w-full justify-start min-h-[44px]";
     }
+    
     if (isActive) {
-      classes += " bg-gray-900 text-white shadow-sm";
+      classes += " bg-black text-white shadow-sm";
     } else {
-      classes += " text-gray-600 hover:text-gray-900 hover:bg-gray-100";
+      classes += " bg-gray-100 text-gray-600 hover:text-gray-900 hover:bg-gray-200";
     }
     return classes;
   };
 
   return (
-    <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50 safe-top">
-      <div className="max-w-7xl mx-auto px-2 xs:px-3 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-10 md:h-12">
-          {/* Minimal Logo */}
-          <div
-            className="flex items-center cursor-pointer group"
-            onClick={() => navigate("/")}
-          >
-            <div className="p-2 bg-gray-900 rounded-lg group-hover:bg-gray-800 transition-colors">
-              <Wallet className="h-5 w-5 text-white" />
-            </div>
-          </div>
-
-          {/* Desktop Navigation */}
-          <nav className="hidden lg:flex items-center">
-            <div className="flex items-center space-x-2">
-              {navItems.map((item) => (
+    <div className="bg-white border-b border-gray-200">
+      {/* Desktop Navigation - Integrated Tab Style */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between items-center py-4">
+          {/* Main Navigation Tabs */}
+          <div className="flex items-center gap-1 overflow-x-auto">
+            {navItems.map((item) => {
+              const IconComponent = item.icon;
+              return (
                 <button
                   key={item.path}
                   onClick={() => navigate(item.path)}
                   className={getNavLinkClass(item.path)}
                 >
-                  {item.label}
+                  <IconComponent className="h-4 w-4" />
+                  <span className="hidden sm:inline">{item.label}</span>
                 </button>
-              ))}
-            </div>
-          </nav>
+              );
+            })}
+          </div>
 
-          {/* Right Side Actions - Responsive */}
-          <div className="flex items-center space-x-1 xs:space-x-2">
+          {/* Right Side Actions */}
+          <div className="flex items-center gap-2">
             {/* User indicator (desktop) */}
-            <div className="hidden lg:flex items-center space-x-2">
-              <div className="flex items-center space-x-1 px-2 py-1 bg-gray-50 rounded-md">
-                <User className="h-3 w-3 text-gray-500" />
-                <span className="text-xs text-gray-600 max-w-20 truncate">
-                  {user?.email?.split('@')[0]}
-                </span>
-              </div>
+            <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 bg-gray-50 rounded-lg">
+              <User className="h-3 w-3 text-gray-500" />
+              <span className="text-xs text-gray-600 max-w-20 truncate">
+                {user?.email?.split('@')[0]}
+              </span>
             </div>
 
-            {/* Settings (desktop + tablet) */}
+            {/* Settings */}
             <button
               onClick={() => navigate("/settings")}
-              className="hidden xs:flex p-1 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-md transition-colors mobile-button"
+              className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
               title="Settings"
-              style={{ minHeight: '28px' }}
             >
-              <Settings className="h-4 w-4 xs:h-4 xs:w-4 sm:h-[18px] sm:w-[18px]" />
+              <Settings className="h-4 w-4" />
             </button>
 
-            {/* Logout (desktop) */}
+            {/* Logout */}
             <button
               onClick={handleSignOut}
-              className="hidden md:flex p-1 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors mobile-button"
+              className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
               title="Sign Out"
-              style={{ minHeight: '28px' }}
             >
               <LogOut className="h-4 w-4" />
             </button>
@@ -119,14 +112,13 @@ const Header = () => {
             {/* Mobile menu button */}
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="lg:hidden p-1 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-md transition-colors mobile-button"
+              className="sm:hidden p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
               aria-label="Toggle menu"
-              style={{ minHeight: '28px' }}
             >
               {isMobileMenuOpen ? (
-                <X className="h-4 w-4 xs:h-4 xs:w-4 sm:h-[18px] sm:w-[18px]" />
+                <X className="h-4 w-4" />
               ) : (
-                <Menu className="h-4 w-4 xs:h-4 xs:w-4 sm:h-[18px] sm:w-[18px]" />
+                <Menu className="h-4 w-4" />
               )}
             </button>
           </div>
@@ -135,45 +127,48 @@ const Header = () => {
 
       {/* Mobile Menu */}
       {isMobileMenuOpen && (
-        <div className="lg:hidden bg-white border-t border-gray-200 shadow-lg safe-bottom">
-          <nav className="px-2 xs:px-3 pt-1 pb-3 space-y-0.5 max-h-[calc(100vh-3rem)] overflow-y-auto">
-            {navItems.map((item) => (
-              <button
-                key={item.path}
-                onClick={() => handleMobileNav(item.path)}
-                className={getNavLinkClass(item.path, true)}
-              >
-                {item.label}
-              </button>
-            ))}
-            <div className="pt-1 mt-1 border-t border-gray-200 space-y-0.5">
+        <div className="sm:hidden bg-white border-t border-gray-200 shadow-lg">
+          <nav className="px-4 py-3 space-y-1 max-h-96 overflow-y-auto">
+            {navItems.map((item) => {
+              const IconComponent = item.icon;
+              return (
+                <button
+                  key={item.path}
+                  onClick={() => handleMobileNav(item.path)}
+                  className={getNavLinkClass(item.path, true)}
+                >
+                  <IconComponent className="h-4 w-4" />
+                  <span>{item.label}</span>
+                </button>
+              );
+            })}
+            <div className="pt-2 mt-2 border-t border-gray-200 space-y-1">
               {/* User info (mobile) */}
-              <div className="flex items-center gap-2 px-2 py-1 text-xs text-gray-600">
-                <User className="h-3 w-3" />
+              <div className="flex items-center gap-2 px-4 py-2 text-xs text-gray-600">
+                <User className="h-4 w-4" />
                 <span className="truncate">{user?.email}</span>
               </div>
               
               <button
                 onClick={() => handleMobileNav("/settings")}
-                className={`${getNavLinkClass("/settings", true)} flex items-center gap-2`}
+                className={`${getNavLinkClass("/settings", true)}`}
               >
-                <Settings className="h-3 w-3" />
+                <Settings className="h-4 w-4" />
                 <span>Settings</span>
               </button>
               
               <button
                 onClick={handleSignOut}
-                className="w-full text-left block min-h-[40px] flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 text-red-600 hover:text-red-700 hover:bg-red-50 gap-2"
+                className="w-full flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 text-red-600 hover:text-red-700 hover:bg-red-50"
               >
-                <LogOut className="h-3 w-3" />
+                <LogOut className="h-4 w-4" />
                 <span>Sign Out</span>
               </button>
             </div>
           </nav>
         </div>
       )}
-
-    </header>
+    </div>
   );
 };
 
