@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Wallet, CreditCard, PiggyBank, Target, BarChart3, Settings, Menu, X, LogOut, User, TrendingUp } from "lucide-react";
+import { Wallet, CreditCard, PiggyBank, BarChart3, Settings, Menu, X, LogOut, User } from "lucide-react";
 import { useAuth } from "@/components/AuthProvider";
 import { useToast } from "@/hooks/use-toast";
 
@@ -38,61 +38,60 @@ const Header = () => {
     { path: "/transactions", label: "Transactions", icon: CreditCard },
     { path: "/budgets", label: "Budget", icon: PiggyBank },
     { path: "/reports", label: "Analytics", icon: BarChart3 },
-    { path: "/wallets", label: "Wallets", icon: Wallet },
-    { path: "/financial-goals", label: "Goals", icon: Target },
-    { path: "/payments", label: "Payments", icon: TrendingUp },
   ];
 
   const getNavLinkClass = (path: string, isMobile = false) => {
     const isActive = location.pathname === path;
-    let classes = "inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium transition-all duration-200 select-none relative";
-    
+    const base = "inline-flex items-center gap-2 px-4 py-2 text-sm font-medium transition-all duration-200 hover-scale select-none relative focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-full";
+
     if (isMobile) {
-      classes += " w-full justify-start min-h-[44px] rounded-lg";
-      if (isActive) {
-        classes += " bg-black text-white shadow-sm";
-      } else {
-        classes += " bg-gray-100 text-gray-600 hover:text-gray-900 hover:bg-gray-200";
-      }
-    } else {
-      // Desktop styling with bottom border for active state
-      if (isActive) {
-        classes += " text-black border-b-2 border-black";
-      } else {
-        classes += " text-gray-600 hover:text-gray-900 border-b-2 border-transparent hover:border-gray-300";
-      }
+      return [
+        base,
+        "w-full justify-start min-h-[44px]",
+        isActive
+          ? "bg-foreground text-background shadow-sm animate-fade-in"
+          : "text-muted-foreground hover:text-foreground hover:bg-accent"
+      ].join(" ");
     }
-    return classes;
+
+    return [
+      base,
+      isActive
+        ? "bg-foreground text-background shadow-sm animate-fade-in"
+        : "text-muted-foreground hover:text-foreground hover:bg-accent"
+    ].join(" ");
   };
 
   return (
-    <div className="bg-white">
+    <div className="bg-background">
       {/* Desktop Navigation - Tab Style */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-center py-6 relative">
           {/* Main Navigation Tabs - Centered */}
-          <div className="flex items-center gap-8 overflow-x-auto">
+          <nav aria-label="Primary" className="inline-flex items-center gap-1 rounded-full border border-border bg-background/80 backdrop-blur px-1 py-1 shadow-sm">
             {navItems.map((item) => {
               const IconComponent = item.icon;
               return (
                 <button
                   key={item.path}
                   onClick={() => navigate(item.path)}
+                  aria-current={location.pathname === item.path ? "page" : undefined}
                   className={getNavLinkClass(item.path)}
+                  type="button"
                 >
                   <IconComponent className="h-4 w-4" />
                   <span className="hidden sm:inline">{item.label}</span>
                 </button>
               );
             })}
-          </div>
+          </nav>
 
           {/* Right Side Actions - Positioned Absolute */}
           <div className="absolute right-0 flex items-center gap-2">
             {/* User indicator (desktop) */}
-            <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 bg-gray-50 rounded-lg">
-              <User className="h-3 w-3 text-gray-500" />
-              <span className="text-xs text-gray-600 max-w-20 truncate">
+            <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 bg-muted rounded-lg">
+              <User className="h-3 w-3 text-muted-foreground" />
+              <span className="text-xs text-muted-foreground max-w-20 truncate">
                 {user?.email?.split('@')[0]}
               </span>
             </div>
@@ -100,7 +99,7 @@ const Header = () => {
             {/* Settings */}
             <button
               onClick={() => navigate("/settings")}
-              className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+              className="p-2 text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-colors"
               title="Settings"
             >
               <Settings className="h-4 w-4" />
@@ -109,7 +108,7 @@ const Header = () => {
             {/* Logout */}
             <button
               onClick={handleSignOut}
-              className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+              className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg transition-colors"
               title="Sign Out"
             >
               <LogOut className="h-4 w-4" />
@@ -118,7 +117,7 @@ const Header = () => {
             {/* Mobile menu button */}
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="sm:hidden p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+              className="sm:hidden p-2 text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-colors"
               aria-label="Toggle menu"
             >
               {isMobileMenuOpen ? (
@@ -133,7 +132,7 @@ const Header = () => {
 
       {/* Mobile Menu */}
       {isMobileMenuOpen && (
-        <div className="sm:hidden bg-white border-t border-gray-200 shadow-lg">
+        <div className="sm:hidden bg-background border-t border-border shadow-lg">
           <nav className="px-4 py-3 space-y-1 max-h-96 overflow-y-auto">
             {navItems.map((item) => {
               const IconComponent = item.icon;
@@ -148,9 +147,9 @@ const Header = () => {
                 </button>
               );
             })}
-            <div className="pt-2 mt-2 border-t border-gray-200 space-y-1">
+            <div className="pt-2 mt-2 border-t border-border space-y-1">
               {/* User info (mobile) */}
-              <div className="flex items-center gap-2 px-4 py-2 text-xs text-gray-600">
+              <div className="flex items-center gap-2 px-4 py-2 text-xs text-muted-foreground">
                 <User className="h-4 w-4" />
                 <span className="truncate">{user?.email}</span>
               </div>
@@ -165,7 +164,7 @@ const Header = () => {
               
               <button
                 onClick={handleSignOut}
-                className="w-full flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 text-red-600 hover:text-red-700 hover:bg-red-50"
+                className="w-full flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 text-destructive hover:text-destructive/90 hover:bg-destructive/10"
               >
                 <LogOut className="h-4 w-4" />
                 <span>Sign Out</span>
