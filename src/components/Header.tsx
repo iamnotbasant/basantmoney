@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Wallet, CreditCard, PiggyBank, BarChart3, Settings, Menu, X, LogOut, User } from "lucide-react";
+import { Wallet, CreditCard, PiggyBank, Target, BarChart3, Settings, Menu, X, LogOut, User, TrendingUp } from "lucide-react";
 import { useAuth } from "@/components/AuthProvider";
 import { useToast } from "@/hooks/use-toast";
 
@@ -38,11 +38,14 @@ const Header = () => {
     { path: "/transactions", label: "Transactions", icon: CreditCard },
     { path: "/budgets", label: "Budget", icon: PiggyBank },
     { path: "/reports", label: "Analytics", icon: BarChart3 },
+    { path: "/wallets", label: "Wallets", icon: Wallet },
+    { path: "/financial-goals", label: "Goals", icon: Target },
+    { path: "/payments", label: "Payments", icon: TrendingUp },
   ];
 
   const getNavLinkClass = (path: string, isMobile = false) => {
     const isActive = location.pathname === path;
-    const base = "inline-flex items-center gap-2 px-4 py-2 text-sm font-medium transition-all duration-200 hover-scale select-none relative focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-full";
+    const base = "inline-flex items-center gap-2 px-4 py-2 text-sm font-medium transition-all duration-200 hover-scale select-none relative focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-md";
 
     if (isMobile) {
       return [
@@ -68,7 +71,7 @@ const Header = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-center py-6 relative">
           {/* Main Navigation Tabs - Centered */}
-          <nav aria-label="Primary" className="inline-flex items-center gap-1 rounded-full border border-border bg-background/80 backdrop-blur px-1 py-1 shadow-sm">
+          <nav aria-label="Primary" className="inline-flex items-center gap-1 rounded-lg border border-border bg-background/80 backdrop-blur px-1 py-1 shadow-sm">
             {navItems.map((item) => {
               const IconComponent = item.icon;
               return (
