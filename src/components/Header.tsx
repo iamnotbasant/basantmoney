@@ -45,27 +45,33 @@ const Header = () => {
 
   const getNavLinkClass = (path: string, isMobile = false) => {
     const isActive = location.pathname === path;
-    let classes = "inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 select-none";
+    let classes = "inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium transition-all duration-200 select-none relative";
     
     if (isMobile) {
-      classes += " w-full justify-start min-h-[44px]";
-    }
-    
-    if (isActive) {
-      classes += " bg-black text-white shadow-sm";
+      classes += " w-full justify-start min-h-[44px] rounded-lg";
+      if (isActive) {
+        classes += " bg-black text-white shadow-sm";
+      } else {
+        classes += " bg-gray-100 text-gray-600 hover:text-gray-900 hover:bg-gray-200";
+      }
     } else {
-      classes += " bg-gray-100 text-gray-600 hover:text-gray-900 hover:bg-gray-200";
+      // Desktop styling with bottom border for active state
+      if (isActive) {
+        classes += " text-black border-b-2 border-black";
+      } else {
+        classes += " text-gray-600 hover:text-gray-900 border-b-2 border-transparent hover:border-gray-300";
+      }
     }
     return classes;
   };
 
   return (
-    <div className="bg-white relative">
-      {/* Desktop Navigation - Integrated Tab Style */}
+    <div className="bg-white">
+      {/* Desktop Navigation - Tab Style */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-center py-4 relative">
+        <div className="flex items-center justify-center py-6 relative">
           {/* Main Navigation Tabs - Centered */}
-          <div className="flex items-center gap-1 overflow-x-auto">
+          <div className="flex items-center gap-8 overflow-x-auto">
             {navItems.map((item) => {
               const IconComponent = item.icon;
               return (
