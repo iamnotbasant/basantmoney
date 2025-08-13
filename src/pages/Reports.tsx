@@ -63,11 +63,11 @@ const Reports = () => {
     // Load data from localStorage with correct storage keys used by WalletService
     const loadData = () => {
       try {
-        const storageKeyPrefix = localStorage.getItem('currentBankAccountId') || '';
-        const incomeKey = storageKeyPrefix ? `incomeData_${storageKeyPrefix}` : 'incomeData';
-        const expenseKey = storageKeyPrefix ? `expenseData_${storageKeyPrefix}` : 'expenseData';
+        const bankId = localStorage.getItem('currentBankAccountId') || '';
+        const incomeKey = bankId ? `incomeData:${bankId}` : 'incomeData';
+        const expenseKey = bankId ? `expenseData:${bankId}` : 'expenseData';
         
-        // Try the prefixed keys first, then fallback to simple keys
+        // Try the correctly formatted keys first, then fallback to simple keys
         const storedIncome = localStorage.getItem(incomeKey) || localStorage.getItem('incomeData');
         const storedExpenses = localStorage.getItem(expenseKey) || localStorage.getItem('expenseData');
         
@@ -80,6 +80,8 @@ const Reports = () => {
         setFilteredExpenseData(expenses);
         
         console.log('Reports data loaded successfully:', { 
+          incomeKey,
+          expenseKey,
           income: income.length, 
           expenses: expenses.length,
           incomeTotal: income.reduce((s: number, i: any) => s + i.amount, 0),
@@ -499,46 +501,48 @@ const Reports = () => {
             </CardHeader>
             <CardContent>
               <ChartContainer config={{Income: {color: COLORS[0]}, Expense: {color: COLORS[1]}}}>
-                <ResponsiveContainer width="100%" height={350}>
-                  <LineChart data={trendData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                    <XAxis 
-                      dataKey="date" 
-                      className="text-xs text-muted-foreground"
-                      tick={{ fontSize: 12 }}
-                    />
-                    <YAxis 
-                      className="text-xs text-muted-foreground"
-                      tick={{ fontSize: 12 }}
-                    />
-                    <Tooltip 
-                      contentStyle={{
-                        backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                        border: '1px solid #d1d5db',
-                        borderRadius: '8px',
-                        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-                        fontSize: '14px'
-                      }}
-                    />
-                    <Legend />
-                    <Line 
-                      type="monotone" 
-                      dataKey="Income" 
-                      stroke={COLORS[0]} 
-                      strokeWidth={3} 
-                      dot={{ fill: COLORS[0], strokeWidth: 2, r: 4 }}
-                      activeDot={{ r: 6, stroke: COLORS[0], strokeWidth: 2 }}
-                    />
-                    <Line 
-                      type="monotone" 
-                      dataKey="Expense" 
-                      stroke={COLORS[1]} 
-                      strokeWidth={3} 
-                      dot={{ fill: COLORS[1], strokeWidth: 2, r: 4 }}
-                      activeDot={{ r: 6, stroke: COLORS[1], strokeWidth: 2 }}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
+                <div className="h-[350px]">
+                  <ResponsiveContainer>
+                    <LineChart data={trendData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                      <XAxis 
+                        dataKey="date" 
+                        className="text-xs text-muted-foreground"
+                        tick={{ fontSize: 12 }}
+                      />
+                      <YAxis 
+                        className="text-xs text-muted-foreground"
+                        tick={{ fontSize: 12 }}
+                      />
+                      <Tooltip 
+                        contentStyle={{
+                          backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                          border: '1px solid #d1d5db',
+                          borderRadius: '8px',
+                          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+                          fontSize: '14px'
+                        }}
+                      />
+                      <Legend />
+                      <Line 
+                        type="monotone" 
+                        dataKey="Income" 
+                        stroke={COLORS[0]} 
+                        strokeWidth={3} 
+                        dot={{ fill: COLORS[0], strokeWidth: 2, r: 4 }}
+                        activeDot={{ r: 6, stroke: COLORS[0], strokeWidth: 2 }}
+                      />
+                      <Line 
+                        type="monotone" 
+                        dataKey="Expense" 
+                        stroke={COLORS[1]} 
+                        strokeWidth={3} 
+                        dot={{ fill: COLORS[1], strokeWidth: 2, r: 4 }}
+                        activeDot={{ r: 6, stroke: COLORS[1], strokeWidth: 2 }}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
               </ChartContainer>
             </CardContent>
           </Card>
