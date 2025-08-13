@@ -60,11 +60,16 @@ const Reports = () => {
   const [amountRange, setAmountRange] = useState<string>('all');
 
   useEffect(() => {
-    // Load data from localStorage with fallback to empty arrays
+    // Load data from localStorage with correct storage keys used by WalletService
     const loadData = () => {
       try {
-        const storedIncome = localStorage.getItem('incomeData');
-        const storedExpenses = localStorage.getItem('expenseData');
+        const storageKeyPrefix = localStorage.getItem('currentBankAccountId') || '';
+        const incomeKey = storageKeyPrefix ? `incomeData_${storageKeyPrefix}` : 'incomeData';
+        const expenseKey = storageKeyPrefix ? `expenseData_${storageKeyPrefix}` : 'expenseData';
+        
+        // Try the prefixed keys first, then fallback to simple keys
+        const storedIncome = localStorage.getItem(incomeKey) || localStorage.getItem('incomeData');
+        const storedExpenses = localStorage.getItem(expenseKey) || localStorage.getItem('expenseData');
         
         const income = storedIncome ? JSON.parse(storedIncome) : [];
         const expenses = storedExpenses ? JSON.parse(storedExpenses) : [];
@@ -74,9 +79,14 @@ const Reports = () => {
         setExpenseData(expenses);
         setFilteredExpenseData(expenses);
         
-        console.log('Reports data loaded:', { income: income.length, expenses: expenses.length });
+        console.log('Reports data loaded successfully:', { 
+          income: income.length, 
+          expenses: expenses.length,
+          incomeTotal: income.reduce((s: number, i: any) => s + i.amount, 0),
+          expenseTotal: expenses.reduce((s: number, e: any) => s + e.amount, 0)
+        });
       } catch (error) {
-        console.error('Error loading data:', error);
+        console.error('Error loading financial data for reports:', error);
         setIncomeData([]);
         setFilteredIncomeData([]);
         setExpenseData([]);
@@ -86,15 +96,31 @@ const Reports = () => {
 
     loadData();
     
-    // Add event listener for storage changes to update data in real-time
+    // Add event listeners for data changes to update reports in real-time
+    const handleDataChange = (e: Event) => {
+      console.log('Financial data changed, reloading reports...');
+      loadData();
+    };
+
+    // Listen for custom events that indicate data changes
+    window.addEventListener('walletDataChanged', handleDataChange);
+    window.addEventListener('bankAccountChanged', handleDataChange);
+    
+    // Add storage event listener for changes from other tabs
     const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'incomeData' || e.key === 'expenseData') {
+      if (e.key?.includes('incomeData') || e.key?.includes('expenseData')) {
+        console.log('Storage changed for financial data, reloading...');
         loadData();
       }
     };
 
     window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
+
+    return () => {
+      window.removeEventListener('walletDataChanged', handleDataChange);
+      window.removeEventListener('bankAccountChanged', handleDataChange);
+      window.removeEventListener('storage', handleStorageChange);
+    };
   }, []);
 
   // Apply filters

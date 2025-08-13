@@ -137,54 +137,8 @@ const Index = () => {
       <Header />
       
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Month Filter Section - Now Collapsible */}
-        <section className="mb-8">
-          <div className="flex items-center gap-4 mb-4">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowMonthFilter(!showMonthFilter)}
-              className="flex items-center gap-2"
-            >
-              {showMonthFilter ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              {showMonthFilter ? 'Hide' : 'Show'} Month Filter
-              {showMonthFilter ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-            </Button>
-          </div>
-          
-          {showMonthFilter && (
-            <Card className="animate-fade-in">
-              <CardContent className="pt-6">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <Calendar className="h-5 w-5 text-primary" />
-                    <div>
-                      <h3 className="font-semibold">View Month</h3>
-                      <p className="text-sm text-muted-foreground">Select month to view monthly income/expense summary</p>
-                    </div>
-                  </div>
-                  <Select value={selectedMonth.toString()} onValueChange={(value) => {
-                    setSelectedMonth(parseInt(value));
-                  }}>
-                    <SelectTrigger className="w-48">
-                      <SelectValue placeholder="Select month" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {months.map((month, index) => (
-                        <SelectItem key={index} value={index.toString()}>
-                          {month} {selectedYear}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-        </section>
-
         {/* Net Balance Display Section */}
-        <section className="mb-8">
+        <section className="mb-8 animate-fade-in">
           <NetBalanceDisplay netBalance={netBalance} />
         </section>
 
@@ -200,9 +154,9 @@ const Index = () => {
 
         {/* Wallet Overview Section */}
         <section className="mb-8">
-          <div className="flex items-center mb-6">
-            <h2 className="text-2xl font-semibold text-foreground flex items-center gap-2">
-              <WalletIcon className="h-6 w-6 text-primary" />
+          <div className="flex items-center mb-6 animate-fade-in" style={{ animationDelay: '0.2s' }}>
+            <h2 className="text-2xl font-semibold text-foreground flex items-center gap-3">
+              <WalletIcon className="h-6 w-6 text-primary transition-colors duration-300 hover:text-primary/80" />
               Smart Wallet System
             </h2>
           </div>
@@ -210,8 +164,8 @@ const Index = () => {
             {dynamicWallets.map((wallet, index) => (
               <div 
                 key={wallet.id} 
-                className="animate-fade-in hover-scale"
-                style={{ animationDelay: `${(index * 0.1) + 0.2}s` }}
+                className="animate-fade-in transition-all duration-300 hover:scale-105 hover:shadow-lg"
+                style={{ animationDelay: `${(index * 0.1) + 0.3}s` }}
               >
                 <WalletCard wallet={wallet} />
               </div>
@@ -221,21 +175,67 @@ const Index = () => {
 
         {/* Recent Transactions Section */}
         <section className="mb-8">
-          <div className="animate-fade-in" style={{ animationDelay: '0.5s' }}>
+          <div className="animate-fade-in" style={{ animationDelay: '0.6s' }}>
             <RecentTransactions />
           </div>
         </section>
+
+        {/* Month Filter Section - Moved to Bottom */}
+        <section className="mb-8">
+          <div className="flex items-center gap-4 mb-4 animate-fade-in" style={{ animationDelay: '0.7s' }}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowMonthFilter(!showMonthFilter)}
+              className="flex items-center gap-2 transition-all duration-300 hover:scale-105 hover:shadow-md"
+            >
+              {showMonthFilter ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              {showMonthFilter ? 'Hide' : 'Show'} Month Filter
+              {showMonthFilter ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+            </Button>
+          </div>
+          
+          {showMonthFilter && (
+            <Card className="animate-fade-in border-2 border-dashed border-muted">
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <Calendar className="h-5 w-5 text-primary transition-colors duration-300 hover:text-primary/80" />
+                    <div>
+                      <h3 className="font-semibold text-foreground">View Month</h3>
+                      <p className="text-sm text-muted-foreground">Select month to view monthly income/expense summary</p>
+                    </div>
+                  </div>
+                  <Select value={selectedMonth.toString()} onValueChange={(value) => {
+                    setSelectedMonth(parseInt(value));
+                  }}>
+                    <SelectTrigger className="w-48 transition-all duration-300 hover:shadow-md">
+                      <SelectValue placeholder="Select month" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {months.map((month, index) => (
+                        <SelectItem key={index} value={index.toString()}>
+                          {month} {selectedYear}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </section>
       </main>
 
-      {/* Floating Action Button - Improved Design */}
-      <div className="fixed bottom-6 right-6 z-50">
+      {/* Floating Action Button - Enhanced Design */}
+      <div className="fixed bottom-6 right-6 z-50 animate-fade-in" style={{ animationDelay: '0.8s' }}>
         <Sheet>
           <SheetTrigger asChild>
             <Button 
               size="lg"
-              className="h-16 w-16 rounded-full shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-110 group bg-gradient-to-r from-primary to-primary/80"
+              className="h-16 w-16 rounded-full shadow-xl hover:shadow-2xl transition-all duration-500 hover:scale-110 group bg-gradient-to-br from-primary via-primary/90 to-primary/80 hover:from-primary/90 hover:to-primary animate-pulse hover:animate-none"
             >
-              <Plus className="h-7 w-7 transition-transform duration-300 group-hover:rotate-180" />
+              <Plus className="h-7 w-7 transition-all duration-300 group-hover:rotate-180 group-hover:scale-110" />
             </Button>
           </SheetTrigger>
           <SheetContent side="bottom" className="h-auto">
