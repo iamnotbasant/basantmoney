@@ -47,21 +47,6 @@ const TransactionsFilterBar: React.FC<TransactionsFilterBarProps> = ({
         </SelectContent>
       </Select>
 
-      {/* Month label and dropdown */}
-      <span className="text-base text-muted-foreground font-medium">Month</span>
-      <Select value={filterMonth} onValueChange={setFilterMonth}>
-        <SelectTrigger className="w-48 h-11 text-base font-normal rounded-md border">
-          <SelectValue placeholder="All Months" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="all">All Months</SelectItem>
-          {getUniqueMonths().map(month => (
-            <SelectItem key={month} value={month}>
-              {formatMonthForDisplay(month)}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
 
       {/* Category dropdown */}
       <Select value={filterCategory} onValueChange={setFilterCategory}>
@@ -79,6 +64,24 @@ const TransactionsFilterBar: React.FC<TransactionsFilterBarProps> = ({
           ))}
         </SelectContent>
       </Select>
+
+      {/* Month filter moved to end */}
+      <div className="flex items-center gap-2">
+        <span className="text-base text-muted-foreground font-medium">Month:</span>
+        <Select value={filterMonth} onValueChange={setFilterMonth}>
+          <SelectTrigger className="w-48 h-11 text-base font-normal rounded-md border">
+            <SelectValue placeholder="All Months" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Months</SelectItem>
+            {getUniqueMonths().map(month => (
+              <SelectItem key={month} value={month}>
+                {formatMonthForDisplay(month)}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
     </div>
   );
 };

@@ -10,7 +10,6 @@ import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import IncomeEntry from "./pages/IncomeEntry";
 import ExpenseEntry from "./pages/ExpenseEntry";
-import Budgeting from "./pages/Budgeting";
 import RecentTransactions from "./pages/RecentTransactions";
 import Transactions from "./pages/Transactions";
 import Reports from "./pages/Reports";
@@ -35,7 +34,7 @@ const App = () => (
             <Route path="/wallets" element={<ProtectedRoute><Wallets /></ProtectedRoute>} />
             <Route path="/income" element={<ProtectedRoute><IncomeEntry /></ProtectedRoute>} />
             <Route path="/expense" element={<ProtectedRoute><ExpenseEntry /></ProtectedRoute>} />
-            <Route path="/budgets" element={<ProtectedRoute><Budgeting /></ProtectedRoute>} />
+            
             <Route path="/transactions" element={<ProtectedRoute><Transactions /></ProtectedRoute>} />
             <Route path="/recent-transactions" element={<ProtectedRoute><RecentTransactions /></ProtectedRoute>} />
             <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />

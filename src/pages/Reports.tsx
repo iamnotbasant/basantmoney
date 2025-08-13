@@ -60,18 +60,41 @@ const Reports = () => {
   const [amountRange, setAmountRange] = useState<string>('all');
 
   useEffect(() => {
-    const storedIncome = localStorage.getItem('incomeData');
-    if (storedIncome) {
-      const income = JSON.parse(storedIncome);
-      setIncomeData(income);
-      setFilteredIncomeData(income);
-    }
-    const storedExpenses = localStorage.getItem('expenseData');
-    if (storedExpenses) {
-      const expenses = JSON.parse(storedExpenses);
-      setExpenseData(expenses);
-      setFilteredExpenseData(expenses);
-    }
+    // Load data from localStorage with fallback to empty arrays
+    const loadData = () => {
+      try {
+        const storedIncome = localStorage.getItem('incomeData');
+        const storedExpenses = localStorage.getItem('expenseData');
+        
+        const income = storedIncome ? JSON.parse(storedIncome) : [];
+        const expenses = storedExpenses ? JSON.parse(storedExpenses) : [];
+        
+        setIncomeData(income);
+        setFilteredIncomeData(income);
+        setExpenseData(expenses);
+        setFilteredExpenseData(expenses);
+        
+        console.log('Reports data loaded:', { income: income.length, expenses: expenses.length });
+      } catch (error) {
+        console.error('Error loading data:', error);
+        setIncomeData([]);
+        setFilteredIncomeData([]);
+        setExpenseData([]);
+        setFilteredExpenseData([]);
+      }
+    };
+
+    loadData();
+    
+    // Add event listener for storage changes to update data in real-time
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'incomeData' || e.key === 'expenseData') {
+        loadData();
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
   // Apply filters
@@ -384,27 +407,33 @@ const Reports = () => {
             </CardContent>
           </Card>
 
-          {/* Summary Cards - Improved responsive layout */}
+          {/* Summary Cards - Improved responsive layout with better animations */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-            <Card className="transition-all duration-200 hover:shadow-md">
+            <Card className="transition-all duration-300 hover:shadow-lg hover:scale-105 animate-fade-in">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-xs sm:text-sm font-medium">Total Income</CardTitle>
                 <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4 text-green-600" />
               </CardHeader>
               <CardContent>
                 <div className="text-lg sm:text-2xl font-bold text-green-600">₹{totalIncome.toLocaleString()}</div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {filteredIncomeData.length} transactions
+                </p>
               </CardContent>
             </Card>
-            <Card className="transition-all duration-200 hover:shadow-md">
+            <Card className="transition-all duration-300 hover:shadow-lg hover:scale-105 animate-fade-in" style={{ animationDelay: '100ms' }}>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-xs sm:text-sm font-medium">Total Expenses</CardTitle>
                 <TrendingDown className="h-3 w-3 sm:h-4 sm:w-4 text-red-500" />
               </CardHeader>
               <CardContent>
                 <div className="text-lg sm:text-2xl font-bold text-red-500">₹{totalExpense.toLocaleString()}</div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {filteredExpenseData.length} transactions
+                </p>
               </CardContent>
             </Card>
-            <Card className="transition-all duration-200 hover:shadow-md">
+            <Card className="transition-all duration-300 hover:shadow-lg hover:scale-105 animate-fade-in" style={{ animationDelay: '200ms' }}>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-xs sm:text-sm font-medium">Net Savings</CardTitle>
                 <Scale className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
@@ -413,9 +442,12 @@ const Reports = () => {
                 <div className={`text-lg sm:text-2xl font-bold ${netSavings >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                   ₹{netSavings.toLocaleString()}
                 </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {netSavings >= 0 ? 'Surplus' : 'Deficit'}
+                </p>
               </CardContent>
             </Card>
-            <Card className="transition-all duration-200 hover:shadow-md">
+            <Card className="transition-all duration-300 hover:shadow-lg hover:scale-105 animate-fade-in" style={{ animationDelay: '300ms' }}>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-xs sm:text-sm font-medium">Savings Rate</CardTitle>
                 <PieChart className="h-3 w-3 sm:h-4 sm:w-4 text-blue-600" />
@@ -424,6 +456,9 @@ const Reports = () => {
                 <div className={`text-lg sm:text-2xl font-bold ${savingsRate >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
                   {savingsRate.toFixed(1)}%
                 </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {savingsRate >= 0 ? 'Healthy' : 'Needs improvement'}
+                </p>
               </CardContent>
             </Card>
           </div>

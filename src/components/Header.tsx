@@ -36,7 +36,6 @@ const Header = () => {
   const navItems = [
     { path: "/", label: "Vault", icon: Wallet },
     { path: "/transactions", label: "Transactions", icon: CreditCard },
-    { path: "/budgets", label: "Budget", icon: PiggyBank },
     { path: "/reports", label: "Analytics", icon: BarChart3 },
     { path: "/wallets", label: "Wallets", icon: Wallet },
     { path: "/financial-goals", label: "Goals", icon: Target },
@@ -45,7 +44,7 @@ const Header = () => {
 
   const getNavLinkClass = (path: string, isMobile = false) => {
     const isActive = location.pathname === path;
-    const base = "inline-flex items-center gap-2 px-4 py-2 text-sm font-medium transition-all duration-200 hover-scale select-none relative focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-md";
+    const base = "inline-flex items-center gap-2 px-4 py-2 text-sm font-medium transition-all duration-300 hover:scale-105 hover:bg-accent/80 select-none relative focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-md";
 
     if (isMobile) {
       return [
