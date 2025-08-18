@@ -15,10 +15,20 @@ export class WalletService {
   static ensureInitialized(): void {
     const walletsKey = this.storageKey('wallets');
     const subWalletsKey = this.storageKey('subWallets');
-    if (!localStorage.getItem(walletsKey) || !localStorage.getItem(subWalletsKey)) {
-      const { wallets, subWallets } = this.initializeWalletSystem();
+    
+    // Only initialize wallets if they don't exist
+    if (!localStorage.getItem(walletsKey)) {
+      const wallets: Wallet[] = [
+        { id: 1, name: 'Saving Wallet', balance: 0, type: 'saving', color: 'green' },
+        { id: 2, name: 'Needs Wallet', balance: 0, type: 'needs', color: 'blue' },
+        { id: 3, name: 'Wants Wallet', balance: 0, type: 'wants', color: 'purple' }
+      ];
       localStorage.setItem(walletsKey, JSON.stringify(wallets));
-      localStorage.setItem(subWalletsKey, JSON.stringify(subWallets));
+    }
+    
+    // Only initialize empty subwallets array if it doesn't exist - NO AUTO-GENERATION
+    if (!localStorage.getItem(subWalletsKey)) {
+      localStorage.setItem(subWalletsKey, JSON.stringify([]));
     }
   }
   
@@ -32,47 +42,7 @@ export class WalletService {
     return DEFAULT_WALLET_DISTRIBUTION;
   }
 
-  // Initialize default wallet and sub-wallet structure
-  static initializeWalletSystem(): { wallets: Wallet[], subWallets: SubWallet[] } {
-    const wallets: Wallet[] = [
-      { id: 1, name: 'Saving Wallet', balance: 0, type: 'saving', color: 'green' },
-      { id: 2, name: 'Needs Wallet', balance: 0, type: 'needs', color: 'blue' },
-      { id: 3, name: 'Wants Wallet', balance: 0, type: 'wants', color: 'purple' }
-    ];
-
-    const subWallets: SubWallet[] = [];
-    let subWalletId = 1;
-
-    // Create saving sub-wallets
-    DEFAULT_SUBWALLET_STRUCTURE.saving.forEach((sw, index) => {
-      subWallets.push({
-        id: subWalletId++,
-        name: sw.name,
-        balance: 0,
-        parentWalletId: 1,
-        parentWalletType: 'saving',
-        allocationPercentage: sw.percentage,
-        color: sw.color,
-        order: index
-      });
-    });
-
-    // Create needs sub-wallets
-    DEFAULT_SUBWALLET_STRUCTURE.needs.forEach((sw, index) => {
-      subWallets.push({
-        id: subWalletId++,
-        name: sw.name,
-        balance: 0,
-        parentWalletId: 2,
-        parentWalletType: 'needs',
-        allocationPercentage: sw.percentage,
-        color: sw.color,
-        order: index
-      });
-    });
-
-    return { wallets, subWallets };
-  }
+  // REMOVED: No longer auto-generates subwallets - only user-created ones persist
 
   // Process income and distribute across wallets and sub-wallets
   static processIncome(incomeAmount: number): {
@@ -97,24 +67,16 @@ export class WalletService {
     // Get current sub-wallets from storage
     const currentSubWallets = JSON.parse(localStorage.getItem(this.storageKey('subWallets')) || '[]');
 
-    // Distribute to saving sub-wallets
-    DEFAULT_SUBWALLET_STRUCTURE.saving.forEach((swConfig) => {
-      const subWallet = currentSubWallets.find((sw: SubWallet) => 
-        sw.parentWalletType === 'saving' && sw.name === swConfig.name
-      );
-      if (subWallet) {
-        const subWalletAmount = (savingAmount * swConfig.percentage) / 100;
+    // Distribute to user-created sub-wallets based on their allocation percentages
+    currentSubWallets.forEach((subWallet: SubWallet) => {
+      if (subWallet.parentWalletType === 'saving') {
+        const subWalletAmount = (savingAmount * subWallet.allocationPercentage) / 100;
         subWalletUpdates.push({ id: subWallet.id, amount: subWalletAmount });
-      }
-    });
-
-    // Distribute to needs sub-wallets
-    DEFAULT_SUBWALLET_STRUCTURE.needs.forEach((swConfig) => {
-      const subWallet = currentSubWallets.find((sw: SubWallet) => 
-        sw.parentWalletType === 'needs' && sw.name === swConfig.name
-      );
-      if (subWallet) {
-        const subWalletAmount = (needsAmount * swConfig.percentage) / 100;
+      } else if (subWallet.parentWalletType === 'needs') {
+        const subWalletAmount = (needsAmount * subWallet.allocationPercentage) / 100;
+        subWalletUpdates.push({ id: subWallet.id, amount: subWalletAmount });
+      } else if (subWallet.parentWalletType === 'wants') {
+        const subWalletAmount = (wantsAmount * subWallet.allocationPercentage) / 100;
         subWalletUpdates.push({ id: subWallet.id, amount: subWalletAmount });
       }
     });
@@ -154,13 +116,12 @@ export class WalletService {
         return sum + mainWalletDeductions;
       }, 0);
 
-      // Calculate unallocated percentage (money that stays in main wallet)
-      let unallocatedPercentage = 100;
-      if (walletType === 'saving') {
-        unallocatedPercentage = 100 - DEFAULT_SUBWALLET_STRUCTURE.saving.reduce((sum, sw) => sum + sw.percentage, 0);
-      } else if (walletType === 'needs') {
-        unallocatedPercentage = 100 - DEFAULT_SUBWALLET_STRUCTURE.needs.reduce((sum, sw) => sum + sw.percentage, 0);
-      }
+      // Calculate unallocated percentage based on user-created subwallets
+      const allocatedPercentage = currentSubWallets
+        .filter((sw: SubWallet) => sw.parentWalletType === walletType)
+        .reduce((sum: number, sw: SubWallet) => sum + sw.allocationPercentage, 0);
+      
+      const unallocatedPercentage = 100 - allocatedPercentage;
 
       // Calculate unallocated balance (portion that stays in main wallet)
       const unallocatedBalance = (totalIncomeAllocation * unallocatedPercentage) / 100;

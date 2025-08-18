@@ -57,7 +57,12 @@ const SubWalletManager: React.FC<SubWalletManagerProps> = ({ wallets, onUpdate }
     WalletService.ensureInitialized();
     const stored = localStorage.getItem(WalletService.storageKey('subWallets'));
     if (stored) {
-      setSubWallets(JSON.parse(stored));
+      const parsedSubWallets = JSON.parse(stored);
+      console.log('Loading user-created subwallets:', parsedSubWallets);
+      setSubWallets(parsedSubWallets);
+    } else {
+      console.log('No subwallets found - starting with empty array');
+      setSubWallets([]);
     }
   };
 

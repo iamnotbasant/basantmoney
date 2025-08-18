@@ -45,14 +45,10 @@ const Index = () => {
     const storedIncome = localStorage.getItem(WalletService.storageKey('incomeData'));
     const storedExpenses = localStorage.getItem(WalletService.storageKey('expenseData'));
 
-    // Initialize wallet system if not present
-    if (!storedWallets || !storedSubWallets) {
-      console.log('Setting up default wallet structure...');
-      const { wallets: defaultWallets, subWallets: defaultSubWallets } = WalletService.initializeWalletSystem();
-      localStorage.setItem('wallets', JSON.stringify(defaultWallets));
-      localStorage.setItem('subWallets', JSON.stringify(defaultSubWallets));
-      setWallets(defaultWallets);
-    } else {
+    // Ensure wallet system is initialized (only creates empty structure if missing)
+    WalletService.ensureInitialized();
+    
+    if (storedWallets) {
       // Load wallets with calculated balances
       const walletData = JSON.parse(storedWallets);
       const dynamicWallets = walletData.map((wallet: Wallet) => ({

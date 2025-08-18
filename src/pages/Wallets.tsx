@@ -50,9 +50,9 @@ const Wallets = () => {
       }
     } catch (error) {
       console.error('Error loading wallets:', error);
-      // Initialize wallet system if there's an error
-      const { wallets: defaultWallets } = WalletService.initializeWalletSystem();
-      setWallets(defaultWallets);
+      // Ensure wallet system is initialized
+      WalletService.ensureInitialized();
+      setWallets([]);
     }
   };
 
