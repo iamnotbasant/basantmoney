@@ -199,7 +199,15 @@
   animation: none !important;
 }
 
-/* Ensure Plus icon doesn't blink */
+/* Ensure Plus icon and other lucide icons don't blink/animate */
+svg[data-lucide*="plus"],
+svg[data-lucide="plus"],
+.lucide-plus {
+  animation: none !important;
+  transition: transform 0.2s ease;
+}
+
+/* Global SVG animation prevention for stability */
 svg {
   animation: none !important;
 }
