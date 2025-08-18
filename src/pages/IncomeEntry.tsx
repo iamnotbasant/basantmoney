@@ -82,12 +82,38 @@ const IncomeEntry = () => {
       const allCategories = JSON.parse(storedCategories);
       const incomeCategories = allCategories.filter((cat: Category) => cat.type === 'income');
       setCategories(incomeCategories);
+    } else {
+      // Initialize default categories if none exist
+      const defaultCategories = [
+        { id: '1', name: 'Salary', type: 'income' as const, color: '#10B981' },
+        { id: '2', name: 'Freelance', type: 'income' as const, color: '#3B82F6' },
+        { id: '3', name: 'Investment', type: 'income' as const, color: '#8B5CF6' },
+        { id: '4', name: 'Food', type: 'expense' as const, color: '#EF4444' },
+        { id: '5', name: 'Transport', type: 'expense' as const, color: '#F59E0B' },
+        { id: '6', name: 'Entertainment', type: 'expense' as const, color: '#EC4899' },
+        { id: '7', name: 'Bills', type: 'expense' as const, color: '#06B6D4' },
+      ];
+      localStorage.setItem('categories', JSON.stringify(defaultCategories));
+      const incomeCategories = defaultCategories.filter(cat => cat.type === 'income');
+      setCategories(incomeCategories);
     }
 
     // Load payment methods from localStorage
     const storedMethods = localStorage.getItem('paymentMethods');
     if (storedMethods) {
       setPaymentMethods(JSON.parse(storedMethods));
+    } else {
+      // Initialize default payment methods if none exist
+      const defaultMethods = [
+        { id: '1', name: 'Cash', color: '#10B981' },
+        { id: '2', name: 'UPI', color: '#3B82F6' },
+        { id: '3', name: 'Bank Transfer', color: '#8B5CF6' },
+        { id: '4', name: 'Credit Card', color: '#EF4444' },
+        { id: '5', name: 'Wallet', color: '#F59E0B' },
+        { id: '6', name: 'Cheque', color: '#EC4899' },
+      ];
+      localStorage.setItem('paymentMethods', JSON.stringify(defaultMethods));
+      setPaymentMethods(defaultMethods);
     }
 
     // Load income history from bank-specific storage
@@ -256,7 +282,7 @@ const IncomeEntry = () => {
           <Card className="animate-fade-in">
             <CardHeader>
               <CardTitle className="flex items-center">
-                <Plus className="h-5 w-5 mr-2 text-primary" />
+                 <Plus className="h-5 w-5 mr-2 text-primary" />
                 Income Details
               </CardTitle>
             </CardHeader>

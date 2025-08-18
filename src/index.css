@@ -194,6 +194,16 @@
   opacity: 0;
 }
 
+/* Prevent icon blinking/pulsing */
+.no-animate {
+  animation: none !important;
+}
+
+/* Ensure Plus icon doesn't blink */
+svg {
+  animation: none !important;
+}
+
 /* Mobile-specific improvements */
 @media (max-width: 640px) {
   /* Improve mobile scroll behavior */
