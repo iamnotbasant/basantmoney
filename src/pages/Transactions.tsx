@@ -170,7 +170,7 @@ const Transactions = () => {
     if (!editingTransaction) return;
 
     // Update the transaction data
-    const storageKey = editingTransaction.type === 'income' ? 'incomeData' : 'expenseData';
+    const storageKey = editingTransaction.type === 'income' ? WalletService.storageKey('incomeData') : WalletService.storageKey('expenseData');
     const currentData = JSON.parse(localStorage.getItem(storageKey) || '[]');
     
     const updatedData = currentData.map((item: any) => {
@@ -203,7 +203,7 @@ const Transactions = () => {
 
     // --- Revert Balances ---
     if (editingTransaction.type === 'expense') {
-        const expenses: ExpenseData[] = JSON.parse(localStorage.getItem('expenseData') || '[]');
+        const expenses: ExpenseData[] = JSON.parse(localStorage.getItem(WalletService.storageKey('expenseData')) || '[]');
         const expenseToDelete = expenses.find((e) => e.id === editingTransaction.id);
 
         if (expenseToDelete && expenseToDelete.deductions) {
@@ -221,7 +221,7 @@ const Transactions = () => {
             localStorage.setItem('subWallets', JSON.stringify(subWallets));
         }
     } else if (editingTransaction.type === 'income') {
-        const incomes: IncomeData[] = JSON.parse(localStorage.getItem('incomeData') || '[]');
+        const incomes: IncomeData[] = JSON.parse(localStorage.getItem(WalletService.storageKey('incomeData')) || '[]');
         const incomeToDelete = incomes.find((i) => i.id === editingTransaction.id);
 
         if (incomeToDelete) {
@@ -253,7 +253,7 @@ const Transactions = () => {
     }
 
     // --- Delete Transaction Record ---
-    const storageKey = editingTransaction.type === 'income' ? 'incomeData' : 'expenseData';
+    const storageKey = editingTransaction.type === 'income' ? WalletService.storageKey('incomeData') : WalletService.storageKey('expenseData');
     const currentData = JSON.parse(localStorage.getItem(storageKey) || '[]');
     
     const updatedData = currentData.filter((item: any) => item.id !== editingTransaction.id);
