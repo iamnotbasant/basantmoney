@@ -109,25 +109,37 @@ const Transactions = () => {
     console.log('Raw income data:', incomeData);
     console.log('Raw expense data:', expenseData);
 
-    const incomeTransactions: Transaction[] = incomeData.map(item => ({
-      id: item.id,
-      type: 'income' as const,
-      description: item.source,
-      amount: item.amount,
-      date: item.date,
-      category: item.category,
-      paymentMethod: (item as any).paymentMethod || 'Not specified'
-    }));
+    const incomeTransactions: Transaction[] = incomeData.map(item => {
+      // Combine source + notes for description
+      const notes = (item as any).notes;
+      const description = notes ? `${item.source} – ${notes}` : item.source;
+      
+      return {
+        id: item.id,
+        type: 'income' as const,
+        description,
+        amount: item.amount,
+        date: item.date,
+        category: item.category,
+        paymentMethod: (item as any).paymentMethod || 'Not specified'
+      };
+    });
 
-    const expenseTransactions: Transaction[] = expenseData.map(item => ({
-      id: item.id,
-      type: 'expense' as const,
-      description: item.description,
-      amount: item.amount,
-      date: item.date,
-      category: item.category,
-      paymentMethod: (item as any).paymentMethod || 'Not specified'
-    }));
+    const expenseTransactions: Transaction[] = expenseData.map(item => {
+      // Combine description + notes for description
+      const notes = (item as any).notes;
+      const description = notes ? `${item.description} – ${notes}` : item.description;
+      
+      return {
+        id: item.id,
+        type: 'expense' as const,
+        description,
+        amount: item.amount,
+        date: item.date,
+        category: item.category,
+        paymentMethod: (item as any).paymentMethod || 'Not specified'
+      };
+    });
 
     const allTransactions = [...incomeTransactions, ...expenseTransactions]
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());

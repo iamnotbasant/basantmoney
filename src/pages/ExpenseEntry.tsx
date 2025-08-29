@@ -225,10 +225,10 @@ const ExpenseEntry = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!amount || !title || !category || !paymentMethod || !date || selectedQueue.length === 0) {
+    if (!amount || !title || !category || !paymentMethod || !date || !notes.trim() || selectedQueue.length === 0) {
       toast({
         title: "Validation Error",
-        description: "Please fill all required fields and select at least one wallet or sub-wallet.",
+        description: "Please fill all required fields including description and select at least one wallet or sub-wallet.",
         variant: "destructive",
       });
       return;
@@ -270,6 +270,7 @@ const ExpenseEntry = () => {
       amount: expenseAmount,
       date: format(date, 'yyyy-MM-dd'),
       category: category.toLowerCase(),
+      notes: notes.trim(),
       deductions: deductions.map(({ name, ...rest }) => rest) // Remove name for storage
     };
 
@@ -448,20 +449,22 @@ const ExpenseEntry = () => {
                   </div>
                 </div>
 
+                <div>
+                  <Label htmlFor="notes">Description *</Label>
+                  <Textarea
+                    id="notes"
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    placeholder="e.g., Thumbnail, Rent, Editing, etc."
+                    className="mt-1"
+                    rows={3}
+                    required
+                  />
+                </div>
+
                 {/* Collapsible More Options */}
                 <CollapsibleSection title="More Options" defaultOpen={false}>
                   <div className="space-y-4">
-                    <div>
-                      <Label htmlFor="notes">Notes (Optional)</Label>
-                      <Textarea
-                        id="notes"
-                        value={notes}
-                        onChange={(e) => setNotes(e.target.value)}
-                        placeholder="Add any additional notes about this expense..."
-                        className="mt-1"
-                        rows={3}
-                      />
-                    </div>
 
                     <div>
                       <Label htmlFor="attachment">Attachment (Optional)</Label>

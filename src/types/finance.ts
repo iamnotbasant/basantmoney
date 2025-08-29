@@ -27,6 +27,7 @@ export interface IncomeData {
   amount: number;
   date: string;
   category: string;
+  notes?: string;
 }
 
 export interface ExpenseData {
@@ -35,6 +36,7 @@ export interface ExpenseData {
   amount: number;
   date: string;
   category: string;
+  notes?: string;
   // walletType has been removed as it's not accurate for multi-source deductions
   deductions: {
     type: 'subwallet' | 'wallet';

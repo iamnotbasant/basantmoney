@@ -171,8 +171,8 @@ const IncomeEntry = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!source.trim() || !amount || !date || !selectedCategory || !selectedPaymentMethod) {
-      toast.error('Please fill in all required fields');
+    if (!source.trim() || !amount || !date || !selectedCategory || !selectedPaymentMethod || !notes.trim()) {
+      toast.error('Please fill in all required fields including description');
       return;
     }
 
@@ -403,18 +403,20 @@ const IncomeEntry = () => {
                   </Select>
                 </div>
 
+                <div className="space-y-2">
+                  <Label htmlFor="notes">Description *</Label>
+                  <Textarea
+                    id="notes"
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    placeholder="e.g., Thumbnail, Rent, Editing, etc."
+                    className="min-h-[80px]"
+                    required
+                  />
+                </div>
+
                 <CollapsibleSection title="▶ More Options">
                   <div className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="notes">Notes (Optional)</Label>
-                      <Textarea
-                        id="notes"
-                        value={notes}
-                        onChange={(e) => setNotes(e.target.value)}
-                        placeholder="Add any additional notes..."
-                        className="min-h-[80px]"
-                      />
-                    </div>
 
                     <div className="space-y-2">
                       <Label htmlFor="attachment">Attachment (Optional)</Label>

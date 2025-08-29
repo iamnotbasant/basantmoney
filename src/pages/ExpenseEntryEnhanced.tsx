@@ -70,8 +70,8 @@ const ExpenseEntryEnhanced = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!title.trim() || !amount || !date || !selectedCategory || !selectedPaymentMethod) {
-      toast.error('Please fill in all required fields');
+    if (!title.trim() || !amount || !date || !selectedCategory || !selectedPaymentMethod || !notes.trim()) {
+      toast.error('Please fill in all required fields including description');
       return;
     }
 
@@ -89,7 +89,7 @@ const ExpenseEntryEnhanced = () => {
       date: date.toISOString().split('T')[0],
       category: selectedCategory,
       paymentMethod: selectedPaymentMethod,
-      notes: notes.trim() || undefined,
+      notes: notes.trim(),
       attachment: attachment?.name || undefined,
       deductions: [] // This would be handled by expense processing logic
     };
@@ -261,18 +261,20 @@ const ExpenseEntryEnhanced = () => {
                 </Select>
               </div>
 
+              <div className="space-y-2">
+                <Label htmlFor="notes">Description *</Label>
+                <Textarea
+                  id="notes"
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  placeholder="e.g., Thumbnail, Rent, Editing, etc."
+                  className="min-h-[80px]"
+                  required
+                />
+              </div>
+
               <CollapsibleSection title="▶ More Options">
                 <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="notes">Notes (Optional)</Label>
-                    <Textarea
-                      id="notes"
-                      value={notes}
-                      onChange={(e) => setNotes(e.target.value)}
-                      placeholder="Add any additional notes..."
-                      className="min-h-[80px]"
-                    />
-                  </div>
 
                   <div className="space-y-2">
                     <Label htmlFor="attachment">Attachment (Optional)</Label>
