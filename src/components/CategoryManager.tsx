@@ -23,7 +23,10 @@ const CategoryManager = () => {
   const [newCategoryColor, setNewCategoryColor] = useState('#3B82F6');
 
   const colorOptions = [
-    '#3B82F6', '#EF4444', '#10B981', '#F59E0B', '#8B5CF6', '#EC4899', '#06B6D4', '#84CC16'
+    '#3B82F6', '#EF4444', '#10B981', '#F59E0B', '#8B5CF6', '#EC4899', '#06B6D4', '#84CC16',
+    '#F97316', '#EAB308', '#22C55E', '#14B8A6', '#0EA5E9', '#6366F1', '#A855F7', '#D946EF',
+    '#F43F5E', '#64748B', '#78716C', '#6B7280', '#374151', '#1F2937', '#DC2626', '#B91C1C',
+    '#059669', '#047857', '#0D9488', '#0F766E', '#0284C7', '#0369A1', '#7C3AED', '#6D28D9'
   ];
 
   useEffect(() => {
@@ -124,15 +127,31 @@ const CategoryManager = () => {
           </div>
           <div>
             <Label>Color</Label>
-            <div className="flex gap-2 mt-2">
-              {colorOptions.map((color) => (
-                <button
-                  key={color}
-                  className={`w-8 h-8 rounded-full border-2 ${newCategoryColor === color ? 'border-foreground' : 'border-border'}`}
-                  style={{ backgroundColor: color }}
-                  onClick={() => setNewCategoryColor(color)}
+            <div className="space-y-3 mt-2">
+              {/* Predefined Colors */}
+              <div className="flex flex-wrap gap-2">
+                {colorOptions.map((color) => (
+                  <button
+                    key={color}
+                    className={`w-8 h-8 rounded-full border-2 ${newCategoryColor === color ? 'border-foreground' : 'border-border'} hover:scale-110 transition-transform`}
+                    style={{ backgroundColor: color }}
+                    onClick={() => setNewCategoryColor(color)}
+                  />
+                ))}
+              </div>
+              
+              {/* Custom Color Input */}
+              <div className="flex items-center gap-2">
+                <Label htmlFor="customColor" className="text-sm text-muted-foreground">Custom:</Label>
+                <Input
+                  id="customColor"
+                  type="color"
+                  value={newCategoryColor}
+                  onChange={(e) => setNewCategoryColor(e.target.value)}
+                  className="w-16 h-8 p-1 rounded border cursor-pointer"
                 />
-              ))}
+                <span className="text-xs text-muted-foreground">{newCategoryColor}</span>
+              </div>
             </div>
           </div>
           <div className="flex items-end">
