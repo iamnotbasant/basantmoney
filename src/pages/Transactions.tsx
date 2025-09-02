@@ -48,6 +48,7 @@ interface PaymentMethod {
 interface Transaction {
   id: number;
   type: 'income' | 'expense';
+  source: string;
   description: string;
   amount: number;
   date: string;
@@ -69,6 +70,7 @@ const Transactions = () => {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const [editData, setEditData] = useState({
+    source: '',
     description: '',
     amount: '',
     date: '',
@@ -110,14 +112,13 @@ const Transactions = () => {
     console.log('Raw expense data:', expenseData);
 
     const incomeTransactions: Transaction[] = incomeData.map(item => {
-      // Combine source + notes for description
-      const notes = (item as any).notes;
-      const description = notes ? `${item.source} – ${notes}` : item.source;
+      const notes = (item as any).notes || '';
       
       return {
         id: item.id,
         type: 'income' as const,
-        description,
+        source: item.source,
+        description: notes,
         amount: item.amount,
         date: item.date,
         category: item.category,
@@ -126,14 +127,13 @@ const Transactions = () => {
     });
 
     const expenseTransactions: Transaction[] = expenseData.map(item => {
-      // Combine description + notes for description
-      const notes = (item as any).notes;
-      const description = notes ? `${item.description} – ${notes}` : item.description;
+      const notes = (item as any).notes || '';
       
       return {
         id: item.id,
         type: 'expense' as const,
-        description,
+        source: item.description,
+        description: notes,
         amount: item.amount,
         date: item.date,
         category: item.category,
@@ -151,6 +151,7 @@ const Transactions = () => {
   const handleDoubleClick = (transaction: Transaction) => {
     setEditingTransaction(transaction);
     setEditData({
+      source: transaction.source,
       description: transaction.description,
       amount: transaction.amount.toString(),
       date: transaction.date,
@@ -160,10 +161,10 @@ const Transactions = () => {
   };
 
   const handleEdit = () => {
-    if (!editData.description.trim() || !editData.amount || !editData.date || !editData.category) {
+    if (!editData.source.trim() || !editData.amount || !editData.date || !editData.category) {
       toast({
         title: "Error",
-        description: "Please fill in all fields",
+        description: "Please fill in all required fields",
         variant: "destructive",
       });
       return;
@@ -189,7 +190,8 @@ const Transactions = () => {
       if (item.id === editingTransaction.id) {
         return {
           ...item,
-          [editingTransaction.type === 'income' ? 'source' : 'description']: editData.description,
+          [editingTransaction.type === 'income' ? 'source' : 'description']: editData.source,
+          notes: editData.description,
           amount: amount,
           date: editData.date,
           category: editData.category
@@ -420,16 +422,16 @@ const Transactions = () => {
             {/* Desktop Table */}
             <div className="hidden md:block overflow-x-auto">
               <Table>
-                <TableHeader>
-                  <TableRow className="border-b-2">
-                    <TableHead className="font-semibold text-base w-[120px]">Date</TableHead>
-                    <TableHead className="font-semibold text-base w-[250px]">Description</TableHead>
-                    <TableHead className="font-semibold text-base w-[100px]">Type</TableHead>
-                    <TableHead className="font-semibold text-base w-[140px]">Category</TableHead>
-                    <TableHead className="font-semibold text-base w-[180px]">Payment Method</TableHead>
-                    <TableHead className="text-right font-semibold text-base w-[140px]">Amount</TableHead>
-                  </TableRow>
-                </TableHeader>
+                 <TableHeader>
+                   <TableRow className="border-b-2">
+                     <TableHead className="font-semibold text-base w-[120px]">Date</TableHead>
+                     <TableHead className="font-semibold text-base w-[200px]">Source</TableHead>
+                     <TableHead className="font-semibold text-base w-[200px]">Description</TableHead>
+                     <TableHead className="font-semibold text-base w-[140px]">Category</TableHead>
+                     <TableHead className="font-semibold text-base w-[180px]">Payment Method</TableHead>
+                     <TableHead className="text-right font-semibold text-base w-[140px]">Amount</TableHead>
+                   </TableRow>
+                 </TableHeader>
                 <TableBody>
                   {filteredTransactions.length > 0 ? (
                     filteredTransactions.map((transaction, index) => (
@@ -440,25 +442,15 @@ const Transactions = () => {
                         onDoubleClick={() => handleDoubleClick(transaction)}
                         title="Double click to edit"
                       >
-                        <TableCell className="text-muted-foreground py-4 text-sm">
-                          {formatDate(transaction.date)}
-                        </TableCell>
-                        <TableCell className="font-medium text-foreground py-4 text-sm">
-                          {transaction.description}
-                        </TableCell>
-                        <TableCell className="py-4">
-                          <Badge 
-                            variant="outline" 
-                            className={cn(
-                              "font-medium transition-all duration-200 text-xs px-2 py-1",
-                              transaction.type === 'income' 
-                                ? "text-green-700 border-green-300 bg-green-50 dark:text-green-300 dark:border-green-700 dark:bg-green-950" 
-                                : "text-red-700 border-red-300 bg-red-50 dark:text-red-300 dark:border-red-700 dark:bg-red-950"
-                            )}
-                          >
-                            {transaction.type === 'income' ? 'Income' : 'Expense'}
-                          </Badge>
-                        </TableCell>
+                         <TableCell className="text-muted-foreground py-4 text-sm">
+                           {formatDate(transaction.date)}
+                         </TableCell>
+                         <TableCell className="font-medium text-foreground py-4 text-sm">
+                           {transaction.source}
+                         </TableCell>
+                         <TableCell className="text-muted-foreground py-4 text-sm">
+                           {transaction.description || '-'}
+                         </TableCell>
                         <TableCell className="py-4">
                           <Badge variant="secondary" className="transition-all duration-200 text-xs">
                             {transaction.category.charAt(0).toUpperCase() + transaction.category.slice(1)}
@@ -524,7 +516,10 @@ const Transactions = () => {
                         {transaction.type === 'income' ? '+' : '-'}₹{transaction.amount.toLocaleString('en-IN')}
                       </span>
                     </div>
-                    <h3 className="font-semibold text-foreground mb-2 text-lg">{transaction.description}</h3>
+                    <h3 className="font-semibold text-foreground mb-1 text-lg">{transaction.source}</h3>
+                    {transaction.description && (
+                      <p className="text-muted-foreground mb-2 text-sm">{transaction.description}</p>
+                    )}
                     <div className="flex items-center gap-2 mb-2 flex-wrap">
                       <Badge 
                         variant="outline" 
@@ -598,13 +593,23 @@ const Transactions = () => {
             </DialogHeader>
             <div className="grid gap-4 py-4">
               <div className="space-y-2">
-                <Label htmlFor="description">
-                  {editingTransaction?.type === 'income' ? 'Source' : 'Description'}
+                <Label htmlFor="source">
+                  {editingTransaction?.type === 'income' ? 'Source' : 'Source/Shop'}
                 </Label>
+                <Input
+                  id="source"
+                  value={editData.source}
+                  onChange={(e) => setEditData({ ...editData, source: e.target.value })}
+                  placeholder={editingTransaction?.type === 'income' ? 'Client/Company name' : 'Shop/Store name'}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="description">Description/Notes</Label>
                 <Input
                   id="description"
                   value={editData.description}
                   onChange={(e) => setEditData({ ...editData, description: e.target.value })}
+                  placeholder="Description or reason (optional)"
                 />
               </div>
               <div className="space-y-2">
