@@ -118,35 +118,52 @@ const TransactionActions: React.FC<TransactionActionsProps> = ({ transaction, on
   };
 
   const handleDelete = () => {
+    const getCurrentBankId = () => localStorage.getItem('currentBankAccountId');
+    const storageKey = (base: string) => {
+      const bankId = getCurrentBankId();
+      return bankId ? `${base}:${bankId}` : base;
+    };
+
     // --- Revert Balances ---
     if (transaction.type === 'expense') {
-        const expenses: ExpenseData[] = JSON.parse(localStorage.getItem('expenseData') || '[]');
+        const expenses: ExpenseData[] = JSON.parse(localStorage.getItem(storageKey('expenseData')) || '[]');
         const expenseToDelete = expenses.find((e) => e.id === transaction.id);
 
         if (expenseToDelete && expenseToDelete.deductions) {
-            let subWallets: SubWallet[] = JSON.parse(localStorage.getItem('subWallets') || '[]');
+            let subWallets: SubWallet[] = JSON.parse(localStorage.getItem(storageKey('subWallets')) || '[]');
             
+            // Revert all deductions - add amounts back to the sources
             expenseToDelete.deductions.forEach((deduction) => {
                 if (deduction.type === 'subwallet') {
                     const subWalletIndex = subWallets.findIndex((sw) => sw.id === deduction.id);
                     if (subWalletIndex !== -1) {
                         subWallets[subWalletIndex].balance += deduction.amount;
+                        console.log(`Reverted ₹${deduction.amount} to sub-wallet: ${subWallets[subWalletIndex].name}`);
                     }
                 }
-                // No need to handle 'wallet' type, as parent wallet balances are dynamically calculated
+                // Main wallet deductions are handled automatically through dynamic calculation
+                // When the expense record is deleted, the balance will be recalculated properly
             });
 
-            localStorage.setItem('subWallets', JSON.stringify(subWallets));
+            localStorage.setItem(storageKey('subWallets'), JSON.stringify(subWallets));
         }
     } else if (transaction.type === 'income') {
-        const incomes: IncomeData[] = JSON.parse(localStorage.getItem('incomeData') || '[]');
+        const incomes: IncomeData[] = JSON.parse(localStorage.getItem(storageKey('incomeData')) || '[]');
         const incomeToDelete = incomes.find((i) => i.id === transaction.id);
 
         if (incomeToDelete) {
-            const distribution = JSON.parse(localStorage.getItem('distribution') || '{"saving": 50, "needs": 30, "wants": 20}');
-            let subWallets: SubWallet[] = JSON.parse(localStorage.getItem('subWallets') || '[]');
+            // Get current distribution settings
+            const userSettings = localStorage.getItem('userSettings');
+            let distribution = { saving: 50, needs: 30, wants: 20 };
+            if (userSettings) {
+                const parsed = JSON.parse(userSettings);
+                distribution = parsed.distribution || distribution;
+            }
+
+            let subWallets: SubWallet[] = JSON.parse(localStorage.getItem(storageKey('subWallets')) || '[]');
             const incomeAmount = incomeToDelete.amount;
 
+            // Calculate how much was originally allocated to each wallet type
             const savingAmount = (incomeAmount * distribution.saving) / 100;
             const needsAmount = (incomeAmount * distribution.needs) / 100;
             const wantsAmount = (incomeAmount * distribution.wants) / 100;
@@ -157,29 +174,44 @@ const TransactionActions: React.FC<TransactionActionsProps> = ({ transaction, on
                 wants: wantsAmount,
             };
 
+            // Subtract the allocated amounts from sub-wallets
             const updatedSubWallets = subWallets.map((sw) => {
                 const allocation = sw.allocationPercentage || 0;
                 const parentType = sw.parentWalletType;
-                const deductionAmount = (allocation / 100) * (walletIncomeMap[parentType as keyof typeof walletIncomeMap] || 0);
+                const revertAmount = (allocation / 100) * (walletIncomeMap[parentType as keyof typeof walletIncomeMap] || 0);
+                const newBalance = Math.max(0, (sw.balance || 0) - revertAmount);
+                
+                console.log(`Reverted ₹${revertAmount} from sub-wallet: ${sw.name}, new balance: ₹${newBalance}`);
+                
                 return {
                     ...sw,
-                    balance: Math.max(0, (sw.balance || 0) - deductionAmount)
+                    balance: newBalance
                 };
             });
-            localStorage.setItem('subWallets', JSON.stringify(updatedSubWallets));
+            localStorage.setItem(storageKey('subWallets'), JSON.stringify(updatedSubWallets));
         }
     }
 
     // --- Delete Transaction Record ---
-    const storageKey = transaction.type === 'income' ? 'incomeData' : 'expenseData';
-    const currentData = JSON.parse(localStorage.getItem(storageKey) || '[]');
+    const transactionStorageKey = transaction.type === 'income' ? storageKey('incomeData') : storageKey('expenseData');
+    const currentData = JSON.parse(localStorage.getItem(transactionStorageKey) || '[]');
     
     const updatedData = currentData.filter((item: any) => item.id !== transaction.id);
-    localStorage.setItem(storageKey, JSON.stringify(updatedData));
+    localStorage.setItem(transactionStorageKey, JSON.stringify(updatedData));
+    
+    // Dispatch events to notify other components about the changes
+    window.dispatchEvent(new CustomEvent('walletDataChanged'));
+    window.dispatchEvent(new CustomEvent('transactionDeleted', { 
+      detail: { 
+        transactionId: transaction.id, 
+        type: transaction.type,
+        amount: transaction.amount 
+      } 
+    }));
     
     toast({
       title: "Success",
-      description: "Transaction deleted and balances reverted.",
+      description: `Transaction deleted successfully. All balances have been updated.`,
     });
     
     onUpdate();
