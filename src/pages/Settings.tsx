@@ -156,6 +156,35 @@ const Settings = () => {
     navigate('/');
   };
 
+  const handleClearTransactions = () => {
+    const currentBankId = localStorage.getItem('currentBankId');
+    const storagePrefix = currentBankId ? `${currentBankId}_` : '';
+    
+    // Clear all transaction data and reset balances
+    localStorage.removeItem(`${storagePrefix}incomeData`);
+    localStorage.removeItem(`${storagePrefix}expenseData`);
+    localStorage.removeItem(`${storagePrefix}totalBalance`);
+    
+    // Reset wallet balances to 0 but keep wallet configurations
+    const wallets = JSON.parse(localStorage.getItem(`${storagePrefix}wallets`) || '[]');
+    const resetWallets = wallets.map((wallet: any) => ({ ...wallet, balance: 0 }));
+    localStorage.setItem(`${storagePrefix}wallets`, JSON.stringify(resetWallets));
+    
+    // Reset sub-wallet balances to 0 but keep configurations
+    const subWallets = JSON.parse(localStorage.getItem(`${storagePrefix}subWallets`) || '[]');
+    const resetSubWallets = subWallets.map((subWallet: any) => ({ ...subWallet, balance: 0 }));
+    localStorage.setItem(`${storagePrefix}subWallets`, JSON.stringify(resetSubWallets));
+    
+    // Dispatch events to update UI
+    window.dispatchEvent(new Event('walletDataChanged'));
+    window.dispatchEvent(new Event('transactionUpdated'));
+    
+    toast({
+      title: "Transactions Cleared",
+      description: "All transactions and balances have been reset to ₹0",
+    });
+  };
+
   const handleCurrencyChange = (value: string) => {
     const updatedSettings = { ...settings, currency: value };
     setSettings(updatedSettings);
@@ -387,6 +416,52 @@ const Settings = () => {
               </div>
             </div>
           </div>
+        </section>
+
+        {/* Clear Transactions Section */}
+        <section className="bg-card rounded-lg border p-6">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="p-2 bg-orange-500/10 rounded-lg">
+              <Trash2 className="h-5 w-5 text-orange-500" />
+            </div>
+            <h2 className="text-lg font-semibold text-foreground">Clear All Transactions</h2>
+          </div>
+
+          <div className="bg-orange-50 dark:bg-orange-950/20 rounded-lg p-4 mb-4">
+            <p className="text-sm text-muted-foreground">
+              This will clear all transactions and reset all wallet balances to ₹0. Your wallet cards and sub-wallet cards will remain but their balances will be reset.
+            </p>
+          </div>
+
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="outline" className="w-full sm:w-auto border-orange-500 text-orange-500 hover:bg-orange-500 hover:text-white">
+                <Trash2 className="h-4 w-4 mr-2" />
+                Clear All Transactions
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Clear All Transactions?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This action will permanently delete all transactions and reset balances to ₹0, including:
+                  <ul className="list-disc list-inside mt-2 space-y-1">
+                    <li>All income and expense records</li>
+                    <li>All wallet balances (reset to ₹0)</li>
+                    <li>All sub-wallet balances (reset to ₹0)</li>
+                    <li>Total balance (reset to ₹0)</li>
+                  </ul>
+                  <p className="mt-2 font-medium">Your wallet cards and sub-wallet cards will NOT be deleted.</p>
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={handleClearTransactions} className="bg-orange-500 hover:bg-orange-600">
+                  Yes, Clear All Transactions
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </section>
 
         {/* Reset Data Section */}
