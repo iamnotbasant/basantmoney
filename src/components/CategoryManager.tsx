@@ -70,6 +70,9 @@ const CategoryManager = () => {
     setCategories(updatedCategories);
     localStorage.setItem('categories', JSON.stringify(updatedCategories));
 
+    // Dispatch event to notify other components
+    window.dispatchEvent(new Event('categoriesChanged'));
+
     setNewCategoryName('');
     toast({
       title: "Success",
@@ -81,6 +84,9 @@ const CategoryManager = () => {
     const updatedCategories = categories.filter(cat => cat.id !== categoryId);
     setCategories(updatedCategories);
     localStorage.setItem('categories', JSON.stringify(updatedCategories));
+    
+    // Dispatch event to notify other components
+    window.dispatchEvent(new Event('categoriesChanged'));
     
     toast({
       title: "Success",

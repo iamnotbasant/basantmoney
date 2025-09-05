@@ -45,19 +45,27 @@ const ExpenseEntryEnhanced = () => {
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
 
   useEffect(() => {
-    // Load categories from localStorage
-    const storedCategories = localStorage.getItem('categories');
-    if (storedCategories) {
-      const allCategories = JSON.parse(storedCategories);
-      const expenseCategories = allCategories.filter((cat: Category) => cat.type === 'expense');
-      setCategories(expenseCategories);
-    }
+    const loadCategories = () => {
+      const storedCategories = localStorage.getItem('categories');
+      if (storedCategories) {
+        const allCategories = JSON.parse(storedCategories);
+        const expenseCategories = allCategories.filter((cat: Category) => cat.type === 'expense');
+        setCategories(expenseCategories);
+      }
+    };
 
     // Load payment methods from localStorage
     const storedMethods = localStorage.getItem('paymentMethods');
     if (storedMethods) {
       setPaymentMethods(JSON.parse(storedMethods));
     }
+
+    loadCategories();
+
+    // Listen for category updates
+    const handleCategoryUpdate = () => loadCategories();
+    window.addEventListener('categoriesChanged', handleCategoryUpdate);
+    return () => window.removeEventListener('categoriesChanged', handleCategoryUpdate);
   }, []);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {

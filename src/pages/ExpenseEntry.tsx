@@ -35,6 +35,19 @@ const ExpenseEntry = () => {
   useEffect(() => {
     loadData();
     setDate(new Date());
+
+    // Listen for category updates
+    const handleCategoryUpdate = () => {
+      const storedCategories = localStorage.getItem('categories');
+      if (storedCategories) {
+        const allCategories = JSON.parse(storedCategories);
+        const expenseCategories = allCategories.filter((cat: any) => cat.type === 'expense');
+        setCategories(expenseCategories);
+      }
+    };
+
+    window.addEventListener('categoriesChanged', handleCategoryUpdate);
+    return () => window.removeEventListener('categoriesChanged', handleCategoryUpdate);
   }, []);
 
   const loadData = () => {
@@ -58,22 +71,12 @@ const ExpenseEntry = () => {
       setExpenseHistory(JSON.parse(storedExpenses));
     }
 
-    // Load categories
-    const storedCategories = localStorage.getItem('expenseCategories');
+    // Load categories from the same key as CategoryManager
+    const storedCategories = localStorage.getItem('categories');
     if (storedCategories) {
-      setCategories(JSON.parse(storedCategories));
-    } else {
-      const defaultCategories = [
-        { id: '1', name: 'Needs', color: '#EF4444' },
-        { id: '2', name: 'Wants', color: '#3B82F6' },
-        { id: '3', name: 'Food', color: '#10B981' },
-        { id: '4', name: 'Travel', color: '#F59E0B' },
-        { id: '5', name: 'Bills', color: '#8B5CF6' },
-        { id: '6', name: 'Health', color: '#EC4899' },
-        { id: '7', name: 'Shopping', color: '#06B6D4' },
-        { id: '8', name: 'Other', color: '#84CC16' },
-      ];
-      setCategories(defaultCategories);
+      const allCategories = JSON.parse(storedCategories);
+      const expenseCategories = allCategories.filter((cat: any) => cat.type === 'expense');
+      setCategories(expenseCategories);
     }
 
     // Load payment methods
