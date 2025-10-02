@@ -93,7 +93,7 @@ const WalletCard: React.FC<WalletCardProps> = ({
       <div className="text-center">
         <p className="text-xs sm:text-sm text-muted-foreground mb-1 sm:mb-2">Total Balance</p>
         <p className="text-2xl sm:text-3xl font-bold text-foreground">
-          ₹{wallet.balance.toLocaleString('en-IN')}
+          ₹{Math.trunc(wallet.balance).toLocaleString('en-IN')}
         </p>
         
         {showSubWallets && walletSubWallets.length > 0 && (
@@ -103,8 +103,8 @@ const WalletCard: React.FC<WalletCardProps> = ({
               <span>Sub-wallets</span>
             </div>
             <div className="flex justify-between text-xs sm:text-sm">
-              <span className="font-medium">₹{Math.max(0, availableBalance).toLocaleString('en-IN')}</span>
-              <span className="font-medium">₹{allocatedToSubWallets.toLocaleString('en-IN')}</span>
+              <span className="font-medium">₹{Math.trunc(Math.max(0, availableBalance)).toLocaleString('en-IN')}</span>
+              <span className="font-medium">₹{Math.trunc(allocatedToSubWallets).toLocaleString('en-IN')}</span>
             </div>
             <p className="text-xs text-muted-foreground mt-1">
               {walletSubWallets.length} sub-wallet{walletSubWallets.length !== 1 ? 's' : ''}

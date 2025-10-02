@@ -148,7 +148,7 @@ const SubWalletCard: React.FC<SubWalletCardProps> = ({
           <span>Allocation: {subWallet.allocationPercentage}%</span>
         </div>
         <p className="text-lg font-semibold text-foreground">
-          ₹{subWallet.balance.toLocaleString('en-IN')}
+          ₹{Math.trunc(subWallet.balance).toLocaleString('en-IN')}
         </p>
         
         {subWallet.goal?.enabled && (
@@ -163,7 +163,7 @@ const SubWalletCard: React.FC<SubWalletCardProps> = ({
             <Progress value={goalProgress} className="h-2" />
             <div className="flex justify-between text-xs">
               <span className="text-muted-foreground">
-                Target: ₹{subWallet.goal.targetAmount.toLocaleString('en-IN')}
+                Target: ₹{Math.trunc(subWallet.goal.targetAmount).toLocaleString('en-IN')}
               </span>
               {goalProgress >= 100 && (
                 <span className="text-green-600 flex items-center gap-1">

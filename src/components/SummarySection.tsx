@@ -70,7 +70,7 @@ const SummarySection: React.FC<SummarySectionProps> = ({ incomeData, expenseData
             <div>
               <p className={`text-2xl sm:text-3xl font-bold ${card.textColor} leading-tight`}>
                 {card.title === 'Net Balance' && card.value < 0 && '-'}
-                ₹{Math.abs(card.value).toLocaleString('en-IN')}
+                ₹{Math.trunc(Math.abs(card.value)).toLocaleString('en-IN')}
               </p>
             </div>
           </div>
