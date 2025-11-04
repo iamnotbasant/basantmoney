@@ -1,23 +1,69 @@
 
-import React from 'react';
-import { Wallet as WalletIcon, Edit2, Trash2, Target, TrendingUp } from 'lucide-react';
+import React, { useState } from 'react';
+import { Wallet as WalletIcon, Edit2, Trash2, Target, TrendingUp, DollarSign } from 'lucide-react';
 import { SubWallet } from '@/types/finance';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { useToast } from '@/hooks/use-toast';
 
 interface SubWalletCardProps {
   subWallet: SubWallet;
   onEdit: (subWallet: SubWallet) => void;
   onDelete: (id: number) => void;
   onSetGoal?: (subWallet: SubWallet) => void;
+  onBalanceUpdate?: () => void;
 }
 
 const SubWalletCard: React.FC<SubWalletCardProps> = ({ 
   subWallet, 
   onEdit, 
   onDelete, 
-  onSetGoal 
+  onSetGoal,
+  onBalanceUpdate
 }) => {
+  const { toast } = useToast();
+  const [isBalanceDialogOpen, setIsBalanceDialogOpen] = useState(false);
+  const [newBalance, setNewBalance] = useState(subWallet.balance.toString());
+
+  const handleBalanceUpdate = () => {
+    const amount = parseFloat(newBalance);
+    
+    if (isNaN(amount) || amount < 0) {
+      toast({
+        title: "Error",
+        description: "Please enter a valid amount",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const currentSubWallets = JSON.parse(localStorage.getItem('subWallets') || '[]');
+      const updatedSubWallets = currentSubWallets.map((sw: SubWallet) => 
+        sw.id === subWallet.id ? { ...sw, balance: amount } : sw
+      );
+      
+      localStorage.setItem('subWallets', JSON.stringify(updatedSubWallets));
+      window.dispatchEvent(new Event('walletDataChanged'));
+      
+      toast({
+        title: "Success",
+        description: `Balance updated to ₹${amount.toFixed(2)}`,
+      });
+      
+      setIsBalanceDialogOpen(false);
+      if (onBalanceUpdate) onBalanceUpdate();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update balance",
+        variant: "destructive",
+      });
+    }
+  };
   const getColorClasses = () => {
     switch (subWallet.color) {
       case 'green':
@@ -101,46 +147,59 @@ const SubWalletCard: React.FC<SubWalletCardProps> = ({
     : 0;
 
   return (
-    <div className={`rounded-lg border ${getColorClasses()} p-4 hover:shadow-md transition-all duration-200`}>
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center space-x-2">
-          <div className={getIconColor()}>
-            <WalletIcon className="h-4 w-4" />
+    <>
+      <div className={`rounded-lg border ${getColorClasses()} p-4 hover:shadow-md transition-all duration-200`}>
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center space-x-2">
+            <div className={getIconColor()}>
+              <WalletIcon className="h-4 w-4" />
+            </div>
+            <span className="font-medium text-sm text-foreground">{subWallet.name}</span>
           </div>
-          <span className="font-medium text-sm text-foreground">{subWallet.name}</span>
-        </div>
-        <div className="flex space-x-1">
-          {onSetGoal && (
+          <div className="flex space-x-1">
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => onSetGoal(subWallet)}
-              className="h-6 w-6 p-0 text-primary hover:text-primary/80"
-              title="Set Goal"
+              onClick={() => {
+                setNewBalance(subWallet.balance.toString());
+                setIsBalanceDialogOpen(true);
+              }}
+              className="h-6 w-6 p-0 text-emerald-600 hover:text-emerald-800"
+              title="Edit Balance"
             >
-              <Target className="h-3 w-3" />
+              <DollarSign className="h-3 w-3" />
             </Button>
-          )}
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => onEdit(subWallet)}
-            className="h-6 w-6 p-0 text-blue-600 hover:text-blue-800"
-            title="Edit"
-          >
-            <Edit2 className="h-3 w-3" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => onDelete(subWallet.id)}
-            className="h-6 w-6 p-0 text-red-500 hover:text-red-700"
-            title="Delete"
-          >
-            <Trash2 className="h-3 w-3" />
-          </Button>
+            {onSetGoal && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => onSetGoal(subWallet)}
+                className="h-6 w-6 p-0 text-primary hover:text-primary/80"
+                title="Set Goal"
+              >
+                <Target className="h-3 w-3" />
+              </Button>
+            )}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onEdit(subWallet)}
+              className="h-6 w-6 p-0 text-blue-600 hover:text-blue-800"
+              title="Edit"
+            >
+              <Edit2 className="h-3 w-3" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onDelete(subWallet.id)}
+              className="h-6 w-6 p-0 text-red-500 hover:text-red-700"
+              title="Delete"
+            >
+              <Trash2 className="h-3 w-3" />
+            </Button>
+          </div>
         </div>
-      </div>
       
       <div className="space-y-2">
         <div className="flex justify-between text-xs text-muted-foreground">
@@ -176,6 +235,44 @@ const SubWalletCard: React.FC<SubWalletCardProps> = ({
         )}
       </div>
     </div>
+
+    <Dialog open={isBalanceDialogOpen} onOpenChange={setIsBalanceDialogOpen}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Edit Balance - {subWallet.name}</DialogTitle>
+          <DialogDescription>
+            Manually set the balance for this sub-wallet
+          </DialogDescription>
+        </DialogHeader>
+        
+        <div className="space-y-4">
+          <div>
+            <Label htmlFor="balance">New Balance (₹)</Label>
+            <Input
+              id="balance"
+              type="number"
+              step="0.01"
+              value={newBalance}
+              onChange={(e) => setNewBalance(e.target.value)}
+              placeholder="Enter new balance"
+            />
+            <p className="text-xs text-muted-foreground mt-1">
+              Current balance: ₹{subWallet.balance.toFixed(2)}
+            </p>
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setIsBalanceDialogOpen(false)}>
+            Cancel
+          </Button>
+          <Button onClick={handleBalanceUpdate}>
+            Update Balance
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  </>
   );
 };
 

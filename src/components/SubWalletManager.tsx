@@ -380,6 +380,7 @@ const SubWalletManager: React.FC<SubWalletManagerProps> = ({ wallets, onUpdate }
                   onEdit={handleEdit}
                   onDelete={handleDelete}
                   onSetGoal={handleSetGoal}
+                  onBalanceUpdate={loadSubWallets}
                 />
               ))}
             </div>
