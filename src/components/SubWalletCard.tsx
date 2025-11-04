@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
+import { WalletService } from '@/utils/walletService';
 
 interface SubWalletCardProps {
   subWallet: SubWallet;
@@ -41,12 +42,13 @@ const SubWalletCard: React.FC<SubWalletCardProps> = ({
     }
 
     try {
-      const currentSubWallets = JSON.parse(localStorage.getItem('subWallets') || '[]');
+      const storageKey = WalletService.storageKey('subWallets');
+      const currentSubWallets = JSON.parse(localStorage.getItem(storageKey) || '[]');
       const updatedSubWallets = currentSubWallets.map((sw: SubWallet) => 
-        sw.id === subWallet.id ? { ...sw, balance: amount } : sw
+        sw.id === subWallet.id ? { ...sw, balance: amount, manualBalance: true } : sw
       );
       
-      localStorage.setItem('subWallets', JSON.stringify(updatedSubWallets));
+      localStorage.setItem(storageKey, JSON.stringify(updatedSubWallets));
       window.dispatchEvent(new Event('walletDataChanged'));
       
       toast({

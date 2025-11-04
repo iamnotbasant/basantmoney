@@ -99,9 +99,13 @@ const SubWalletManager: React.FC<SubWalletManagerProps> = ({ wallets, onUpdate }
     // Check if this sub-wallet has a stored balance (from previous transactions)
     const existingSubWallet = subWallets.find(sw => sw.id === subWallet.id);
     if (existingSubWallet && existingSubWallet.balance !== undefined) {
-      // If it's being edited and allocation changed, recalculate proportionally
+      // If it has a manual balance set, keep it regardless of allocation changes
+      if ((existingSubWallet as any).manualBalance) {
+        return existingSubWallet.balance;
+      }
+      // If allocation percentage changed, keep the balance (don't reduce it)
       if (existingSubWallet.allocationPercentage !== subWallet.allocationPercentage) {
-        return allocatedFromParent;
+        return existingSubWallet.balance;
       }
       // Otherwise keep the existing balance
       return existingSubWallet.balance;
@@ -165,7 +169,8 @@ const SubWalletManager: React.FC<SubWalletManagerProps> = ({ wallets, onUpdate }
                 ...sw,
                 parentWalletType: formData.parentWalletType,
                 allocationPercentage: allocation
-              })
+              }),
+              manualBalance: (sw as any).manualBalance
             }
           : sw
       );

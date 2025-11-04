@@ -74,7 +74,8 @@ const Transactions = () => {
     description: '',
     amount: '',
     date: '',
-    category: ''
+    category: '',
+    paymentMethod: ''
   });
   const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
 
@@ -155,7 +156,8 @@ const Transactions = () => {
       description: transaction.description,
       amount: transaction.amount.toString(),
       date: transaction.date,
-      category: transaction.category
+      category: transaction.category,
+      paymentMethod: transaction.paymentMethod || ''
     });
     setIsEditOpen(true);
   };
@@ -194,7 +196,8 @@ const Transactions = () => {
           notes: editData.description,
           amount: amount,
           date: editData.date,
-          category: editData.category
+          category: editData.category,
+          paymentMethod: editData.paymentMethod
         };
       }
       return item;
@@ -627,6 +630,27 @@ const Transactions = () => {
                             style={{ backgroundColor: category.color }}
                           />
                           {category.name}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="paymentMethod">Payment Method</Label>
+                <Select value={editData.paymentMethod} onValueChange={(value) => setEditData({ ...editData, paymentMethod: value })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select payment method" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {paymentMethods.map((method) => (
+                      <SelectItem key={method.id} value={method.name}>
+                        <div className="flex items-center gap-2">
+                          <div 
+                            className="w-3 h-3 rounded-full" 
+                            style={{ backgroundColor: method.color }}
+                          />
+                          {method.name}
                         </div>
                       </SelectItem>
                     ))}
