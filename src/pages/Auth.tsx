@@ -22,7 +22,7 @@ const Auth = () => {
   });
   const [errors, setErrors] = useState<string | null>(null);
 
-  // Check if user is already logged in
+  // Check if user is already logged in and listen for auth changes
   useEffect(() => {
     const checkUser = async () => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -31,6 +31,17 @@ const Auth = () => {
       }
     };
     checkUser();
+
+    // Listen for auth state changes (handles redirect after login)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        if (event === 'SIGNED_IN' && session) {
+          navigate('/');
+        }
+      }
+    );
+
+    return () => subscription.unsubscribe();
   }, [navigate]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
