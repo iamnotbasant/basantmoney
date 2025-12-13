@@ -172,8 +172,8 @@ const Transactions = () => {
       return;
     }
 
-    const amount = parseFloat(editData.amount);
-    if (amount <= 0) {
+    const newAmount = parseFloat(editData.amount);
+    if (newAmount <= 0) {
       toast({
         title: "Error",
         description: "Amount must be greater than 0",
@@ -183,6 +183,81 @@ const Transactions = () => {
     }
 
     if (!editingTransaction) return;
+
+    const oldAmount = editingTransaction.amount;
+    const amountDifference = newAmount - oldAmount;
+    const subWalletsKey = WalletService.storageKey('subWallets');
+
+    // Update wallet/sub-wallet balances if amount changed
+    if (amountDifference !== 0) {
+      if (editingTransaction.type === 'income') {
+        // For income: adjust sub-wallet balances based on amount difference
+        const distribution = WalletService.getCurrentDistribution();
+        let subWallets: SubWallet[] = JSON.parse(localStorage.getItem(subWalletsKey) || '[]');
+
+        const savingDiff = (amountDifference * distribution.saving) / 100;
+        const needsDiff = (amountDifference * distribution.needs) / 100;
+        const wantsDiff = (amountDifference * distribution.wants) / 100;
+
+        const walletDiffMap = {
+          saving: savingDiff,
+          needs: needsDiff,
+          wants: wantsDiff,
+        };
+
+        const updatedSubWallets = subWallets.map((sw) => {
+          if ((sw as any).manualBalance) return sw; // Skip manually set balances
+          const allocation = sw.allocationPercentage || 0;
+          const parentType = sw.parentWalletType;
+          const adjustmentAmount = (allocation / 100) * (walletDiffMap[parentType as keyof typeof walletDiffMap] || 0);
+          return {
+            ...sw,
+            balance: Math.max(0, (sw.balance || 0) + adjustmentAmount)
+          };
+        });
+        localStorage.setItem(subWalletsKey, JSON.stringify(updatedSubWallets));
+      } else if (editingTransaction.type === 'expense') {
+        // For expense: adjust deductions proportionally based on amount change
+        const expenses: ExpenseData[] = JSON.parse(localStorage.getItem(WalletService.storageKey('expenseData')) || '[]');
+        const expenseToEdit = expenses.find((e) => e.id === editingTransaction.id);
+
+        if (expenseToEdit && expenseToEdit.deductions && expenseToEdit.deductions.length > 0) {
+          let subWallets: SubWallet[] = JSON.parse(localStorage.getItem(subWalletsKey) || '[]');
+          
+          // Calculate the ratio of new to old amount
+          const ratio = newAmount / oldAmount;
+
+          expenseToEdit.deductions.forEach((deduction) => {
+            if (deduction.type === 'subwallet') {
+              const subWalletIndex = subWallets.findIndex((sw) => sw.id === deduction.id);
+              if (subWalletIndex !== -1) {
+                const oldDeduction = deduction.amount;
+                const newDeduction = oldDeduction * ratio;
+                const balanceAdjustment = oldDeduction - newDeduction; // Positive if expense decreased
+                subWallets[subWalletIndex].balance = Math.max(0, (subWallets[subWalletIndex].balance || 0) + balanceAdjustment);
+              }
+            }
+          });
+
+          localStorage.setItem(subWalletsKey, JSON.stringify(subWallets));
+
+          // Update deductions in the expense record
+          const updatedDeductions = expenseToEdit.deductions.map(d => ({
+            ...d,
+            amount: d.amount * ratio
+          }));
+
+          // Update expense data with new deductions
+          const updatedExpenses = expenses.map((item) => {
+            if (item.id === editingTransaction.id) {
+              return { ...item, deductions: updatedDeductions };
+            }
+            return item;
+          });
+          localStorage.setItem(WalletService.storageKey('expenseData'), JSON.stringify(updatedExpenses));
+        }
+      }
+    }
 
     // Update the transaction data
     const storageKey = editingTransaction.type === 'income' ? WalletService.storageKey('incomeData') : WalletService.storageKey('expenseData');
@@ -194,7 +269,7 @@ const Transactions = () => {
           ...item,
           [editingTransaction.type === 'income' ? 'source' : 'description']: editData.source,
           notes: editData.description,
-          amount: amount,
+          amount: newAmount,
           date: editData.date,
           category: editData.category,
           paymentMethod: editData.paymentMethod
@@ -204,6 +279,9 @@ const Transactions = () => {
     });
 
     localStorage.setItem(storageKey, JSON.stringify(updatedData));
+    
+    // Trigger wallet data refresh
+    window.dispatchEvent(new Event('walletDataChanged'));
     
     toast({
       title: "Success",
@@ -218,32 +296,34 @@ const Transactions = () => {
   const handleDelete = () => {
     if (!editingTransaction) return;
 
+    const subWalletsKey = WalletService.storageKey('subWallets');
+
     // --- Revert Balances ---
     if (editingTransaction.type === 'expense') {
         const expenses: ExpenseData[] = JSON.parse(localStorage.getItem(WalletService.storageKey('expenseData')) || '[]');
         const expenseToDelete = expenses.find((e) => e.id === editingTransaction.id);
 
         if (expenseToDelete && expenseToDelete.deductions) {
-            let subWallets: SubWallet[] = JSON.parse(localStorage.getItem('subWallets') || '[]');
+            let subWallets: SubWallet[] = JSON.parse(localStorage.getItem(subWalletsKey) || '[]');
             
             expenseToDelete.deductions.forEach((deduction) => {
                 if (deduction.type === 'subwallet') {
                     const subWalletIndex = subWallets.findIndex((sw) => sw.id === deduction.id);
                     if (subWalletIndex !== -1) {
-                        subWallets[subWalletIndex].balance += deduction.amount;
+                        subWallets[subWalletIndex].balance = (subWallets[subWalletIndex].balance || 0) + deduction.amount;
                     }
                 }
             });
 
-            localStorage.setItem('subWallets', JSON.stringify(subWallets));
+            localStorage.setItem(subWalletsKey, JSON.stringify(subWallets));
         }
     } else if (editingTransaction.type === 'income') {
         const incomes: IncomeData[] = JSON.parse(localStorage.getItem(WalletService.storageKey('incomeData')) || '[]');
         const incomeToDelete = incomes.find((i) => i.id === editingTransaction.id);
 
         if (incomeToDelete) {
-            const distribution = JSON.parse(localStorage.getItem('distribution') || '{"saving": 50, "needs": 30, "wants": 20}');
-            let subWallets: SubWallet[] = JSON.parse(localStorage.getItem('subWallets') || '[]');
+            const distribution = WalletService.getCurrentDistribution();
+            let subWallets: SubWallet[] = JSON.parse(localStorage.getItem(subWalletsKey) || '[]');
             const incomeAmount = incomeToDelete.amount;
 
             const savingAmount = (incomeAmount * distribution.saving) / 100;
@@ -257,6 +337,7 @@ const Transactions = () => {
             };
 
             const updatedSubWallets = subWallets.map((sw) => {
+                if ((sw as any).manualBalance) return sw; // Skip manually set balances
                 const allocation = sw.allocationPercentage || 0;
                 const parentType = sw.parentWalletType;
                 const deductionAmount = (allocation / 100) * (walletIncomeMap[parentType as keyof typeof walletIncomeMap] || 0);
@@ -265,7 +346,7 @@ const Transactions = () => {
                     balance: Math.max(0, (sw.balance || 0) - deductionAmount)
                 };
             });
-            localStorage.setItem('subWallets', JSON.stringify(updatedSubWallets));
+            localStorage.setItem(subWalletsKey, JSON.stringify(updatedSubWallets));
         }
     }
 
@@ -275,6 +356,9 @@ const Transactions = () => {
     
     const updatedData = currentData.filter((item: any) => item.id !== editingTransaction.id);
     localStorage.setItem(storageKey, JSON.stringify(updatedData));
+    
+    // Trigger wallet data refresh
+    window.dispatchEvent(new Event('walletDataChanged'));
     
     toast({
       title: "Success",
