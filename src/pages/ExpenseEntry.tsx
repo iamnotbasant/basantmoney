@@ -15,6 +15,9 @@ import { Wallet, ExpenseData, SubWallet } from '@/types/finance';
 import { toast } from '@/hooks/use-toast';
 import { WalletService } from '@/utils/walletService';
 import CollapsibleSection from '@/components/CollapsibleSection';
+import { useExpenseData } from '@/hooks/useExpenseData';
+import { useWalletData } from '@/hooks/useWalletData';
+import { useBankAccounts } from '@/hooks/useBankAccounts';
 
 const ExpenseEntry = () => {
   const navigate = useNavigate();
@@ -28,9 +31,14 @@ const ExpenseEntry = () => {
   const [wallets, setWallets] = useState<Wallet[]>([]);
   const [subWallets, setSubWallets] = useState<SubWallet[]>([]);
   const [selectedQueue, setSelectedQueue] = useState<{ type: 'subwallet' | 'wallet', id: number }[]>([]);
-  const [expenseHistory, setExpenseHistory] = useState<ExpenseData[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
   const [paymentMethods, setPaymentMethods] = useState<any[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Supabase hooks for data persistence
+  const { currentAccount } = useBankAccounts();
+  const { addExpense } = useExpenseData(currentAccount?.id);
+  const { subWallets: supabaseSubWallets, processExpenseDeductions, refetch: refetchWallets } = useWalletData(currentAccount?.id);
 
   useEffect(() => {
     loadData();
@@ -66,10 +74,7 @@ const ExpenseEntry = () => {
       setSubWallets(JSON.parse(storedSubWallets));
     }
 
-    const storedExpenses = localStorage.getItem(WalletService.storageKey('expenseData'));
-    if (storedExpenses) {
-      setExpenseHistory(JSON.parse(storedExpenses));
-    }
+    // Expense history is now fetched from Supabase via useExpenseData hook
 
     // Load categories from the same key as CategoryManager
     const storedCategories = localStorage.getItem('categories');
@@ -225,7 +230,7 @@ const ExpenseEntry = () => {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!amount || !title || !category || !paymentMethod || !date || !notes.trim() || selectedQueue.length === 0) {
@@ -249,64 +254,82 @@ const ExpenseEntry = () => {
       return;
     }
 
-    console.log(`Processing expense of ₹${expenseAmount}`);
-    console.log('Selection queue:', selectedQueue);
+    setIsSubmitting(true);
 
-    // Use WalletService to process the expense
-    const { deductions, success } = WalletService.processExpense(expenseAmount, selectedQueue);
+    try {
+      console.log(`Processing expense of ₹${expenseAmount}`);
+      console.log('Selection queue:', selectedQueue);
 
-    if (!success) {
+      // Use WalletService to process the expense
+      const { deductions, success } = WalletService.processExpense(expenseAmount, selectedQueue);
+
+      if (!success) {
+        toast({
+          title: "Transaction Failed",
+          description: "Unable to complete the transaction with available funds.",
+          variant: "destructive",
+        });
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Save expense to Supabase
+      const result = await addExpense({
+        description: title,
+        amount: expenseAmount,
+        date: format(date, 'yyyy-MM-dd'),
+        category: category.toLowerCase(),
+        deductions: deductions.map(({ name, ...rest }) => rest),
+        bank_account_id: currentAccount?.id || null,
+      });
+
+      if (!result) {
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Process deductions in Supabase
+      await processExpenseDeductions(deductions);
+
+      // Also apply to localStorage for backward compatibility
+      WalletService.applyExpenseDeductions(deductions);
+
+      console.log('Final deductions applied:', deductions);
+
+      // Trigger wallet data refresh across the app
+      window.dispatchEvent(new CustomEvent('walletDataChanged'));
+
+      // Reload data
+      loadData();
+      refetchWallets();
+
+      const sourcesSummary = deductions.map(s => `₹${s.amount} from ${s.name}`).join(', ');
       toast({
-        title: "Transaction Failed",
-        description: "Unable to complete the transaction with available funds.",
+        title: "Expense Saved to Backend!",
+        description: `₹${expenseAmount.toLocaleString('en-IN')} deducted from: ${sourcesSummary}`,
+      });
+
+      // Reset form/selections
+      setAmount('');
+      setTitle('');
+      setCategory('');
+      setPaymentMethod('');
+      setNotes('');
+      setAttachment(null);
+      setSelectedQueue([]);
+      setDate(new Date());
+
+      setTimeout(() => navigate('/'), 1000);
+    } catch (error) {
+      console.error('Error saving expense:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save expense",
         variant: "destructive",
       });
-      return;
+    } finally {
+      setIsSubmitting(false);
     }
-
-    // Apply the deductions
-    WalletService.applyExpenseDeductions(deductions);
-
-    const newExpense: ExpenseData = {
-      id: Date.now(),
-      description: title,
-      amount: expenseAmount,
-      date: format(date, 'yyyy-MM-dd'),
-      category: category.toLowerCase(),
-      notes: notes.trim(),
-      deductions: deductions.map(({ name, ...rest }) => rest) // Remove name for storage
-    };
-
-    const storedExpenses = localStorage.getItem(WalletService.storageKey('expenseData'));
-    const expenseHistory = storedExpenses ? JSON.parse(storedExpenses) : [];
-    const updatedExpenses = [...expenseHistory, newExpense];
-    localStorage.setItem(WalletService.storageKey('expenseData'), JSON.stringify(updatedExpenses));
-
-    console.log('Final deductions applied:', deductions);
-
-    // Trigger wallet data refresh across the app
-    window.dispatchEvent(new CustomEvent('walletDataChanged'));
-
-    // Reload data
-    loadData();
-
-    const sourcesSummary = deductions.map(s => `₹${s.amount} from ${s.name}`).join(', ');
-    toast({
-      title: "Expense Added Successfully!",
-      description: `₹${expenseAmount.toLocaleString('en-IN')} deducted from: ${sourcesSummary}`,
-    });
-
-    // Reset form/selections
-    setAmount('');
-    setTitle('');
-    setCategory('');
-    setPaymentMethod('');
-    setNotes('');
-    setAttachment(null);
-    setSelectedQueue([]);
-    setDate(new Date());
-
-    setTimeout(() => navigate('/'), 1000);
   };
 
   const { preview, remainingExpense } = calculateDeductionPreview();
