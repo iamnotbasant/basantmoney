@@ -25,6 +25,9 @@ import { toast } from 'sonner';
 import { Category } from '@/types/finance';
 import { WalletService } from '@/utils/walletService';
 import CollapsibleSection from '@/components/CollapsibleSection';
+import { useIncomeData } from '@/hooks/useIncomeData';
+import { useWalletData } from '@/hooks/useWalletData';
+import { useBankAccounts } from '@/hooks/useBankAccounts';
 
 interface IncomeEntry {
   id: number;
@@ -65,7 +68,12 @@ const IncomeEntry = () => {
   const [attachment, setAttachment] = useState<File | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
-  const [incomeHistory, setIncomeHistory] = useState<IncomeEntry[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // Supabase hooks for data persistence
+  const { currentAccount } = useBankAccounts();
+  const { incomeData, addIncome } = useIncomeData(currentAccount?.id);
+  const { processIncomeDistribution } = useWalletData(currentAccount?.id);
   
   // Distribution settings state
   const [settings, setSettings] = useState<UserSettings>({
@@ -116,11 +124,7 @@ const IncomeEntry = () => {
       setPaymentMethods(defaultMethods);
     }
 
-    // Load income history from bank-specific storage
-    const savedIncome = localStorage.getItem(WalletService.storageKey('incomeData'));
-    if (savedIncome) {
-      setIncomeHistory(JSON.parse(savedIncome));
-    }
+    // Income history is now fetched from Supabase via useIncomeData hook
 
     // Load user settings
     const storedSettings = localStorage.getItem('userSettings');
@@ -168,7 +172,7 @@ const IncomeEntry = () => {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!source.trim() || !amount || !date || !selectedCategory || !selectedPaymentMethod || !notes.trim()) {
@@ -187,73 +191,65 @@ const IncomeEntry = () => {
       return;
     }
 
-    // Use the new wallet service to process income
-    const { walletUpdates, subWalletUpdates } = WalletService.processIncome(incomeAmount);
+    setIsSubmitting(true);
 
-    // Create income entry with new fields
-    const newIncomeEntry: IncomeEntry = {
-      id: Date.now(),
-      source: source.trim(),
-      amount: incomeAmount,
-      date: date.toISOString().split('T')[0],
-      category: selectedCategory,
-      paymentMethod: selectedPaymentMethod,
-      notes: notes.trim() || undefined,
-      attachment: attachment?.name || undefined
-    };
+    try {
+      // Save income to Supabase
+      const result = await addIncome({
+        source: source.trim(),
+        amount: incomeAmount,
+        date: date.toISOString().split('T')[0],
+        category: selectedCategory,
+        bank_account_id: currentAccount?.id || null,
+      });
 
-    // Update income data (bank-scoped)
-    const currentIncomeData = JSON.parse(localStorage.getItem(WalletService.storageKey('incomeData')) || '[]');
-    const updatedIncomeData = [...currentIncomeData, {
-      id: newIncomeEntry.id,
-      source: newIncomeEntry.source,
-      amount: newIncomeEntry.amount,
-      date: newIncomeEntry.date,
-      category: newIncomeEntry.category,
-      paymentMethod: newIncomeEntry.paymentMethod,
-      notes: newIncomeEntry.notes,
-      attachment: newIncomeEntry.attachment
-    }];
+      if (!result) {
+        setIsSubmitting(false);
+        return;
+      }
 
-    // Apply updates using wallet service
-    WalletService.applyIncomeUpdates(subWalletUpdates);
+      // Process income distribution to subwallets in Supabase
+      await processIncomeDistribution(incomeAmount, settings.distribution);
 
-    // Save to localStorage
-    localStorage.setItem(WalletService.storageKey('incomeData'), JSON.stringify(updatedIncomeData));
-    
-    const updatedHistory = [...incomeHistory, newIncomeEntry];
-    setIncomeHistory(updatedHistory);
-    localStorage.setItem(WalletService.storageKey('incomeData'), JSON.stringify(updatedIncomeData));
+      // Also update localStorage for backward compatibility with WalletService
+      const { walletUpdates, subWalletUpdates } = WalletService.processIncome(incomeAmount);
+      WalletService.applyIncomeUpdates(subWalletUpdates);
 
-    // Show detailed breakdown
-    const breakdown = walletUpdates.map(update => {
-      const percentage = update.type === 'saving' ? settings.distribution.saving : 
-                        update.type === 'needs' ? settings.distribution.needs : 
-                        settings.distribution.wants;
-      return `${update.type.charAt(0).toUpperCase() + update.type.slice(1)}: ₹${update.amount.toFixed(2)} (${percentage}%)`;
-    }).join(', ');
+      // Show detailed breakdown
+      const breakdown = walletUpdates.map(update => {
+        const percentage = update.type === 'saving' ? settings.distribution.saving : 
+                          update.type === 'needs' ? settings.distribution.needs : 
+                          settings.distribution.wants;
+        return `${update.type.charAt(0).toUpperCase() + update.type.slice(1)}: ₹${update.amount.toFixed(2)} (${percentage}%)`;
+      }).join(', ');
 
-    toast.success(`₹${incomeAmount.toLocaleString('en-IN')} distributed successfully! ${breakdown}`);
+      toast.success(`₹${incomeAmount.toLocaleString('en-IN')} saved to backend and distributed! ${breakdown}`);
 
-    console.log('Income Distribution:', {
-      total: incomeAmount,
-      breakdown: walletUpdates,
-      subWalletUpdates
-    });
+      console.log('Income saved to Supabase:', {
+        total: incomeAmount,
+        breakdown: walletUpdates,
+        subWalletUpdates
+      });
 
-    // Reset form
-    setSource('');
-    setAmount('');
-    setDate(new Date());
-    setSelectedCategory('');
-    setSelectedPaymentMethod('');
-    setNotes('');
-    setAttachment(null);
+      // Reset form
+      setSource('');
+      setAmount('');
+      setDate(new Date());
+      setSelectedCategory('');
+      setSelectedPaymentMethod('');
+      setNotes('');
+      setAttachment(null);
 
-    // Navigate back to dashboard after a short delay
-    setTimeout(() => {
-      navigate('/');
-    }, 1500);
+      // Navigate back to dashboard after a short delay
+      setTimeout(() => {
+        navigate('/');
+      }, 1500);
+    } catch (error) {
+      console.error('Error saving income:', error);
+      toast.error('Failed to save income');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -529,21 +525,21 @@ const IncomeEntry = () => {
         </div>
 
         {/* Recent Income History */}
-        {incomeHistory.length > 0 && (
+        {incomeData.length > 0 && (
           <Card className="mt-8 animate-fade-in" style={{ animationDelay: '0.2s' }}>
             <CardHeader>
               <CardTitle>Recent Income Entries</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
-                {incomeHistory.slice(-5).reverse().map((entry) => (
+                {incomeData.slice(0, 5).map((entry) => (
                   <div key={entry.id} className="flex justify-between items-center p-3 bg-accent rounded-lg hover:bg-accent/80 transition-colors duration-200">
                     <div>
                       <div className="font-medium">{entry.source}</div>
                       <div className="text-sm text-muted-foreground">{entry.date}</div>
                     </div>
                     <div className="text-lg font-semibold text-foreground">
-                      ₹{entry.amount.toLocaleString('en-IN')}
+                      ₹{Number(entry.amount).toLocaleString('en-IN')}
                     </div>
                   </div>
                 ))}
