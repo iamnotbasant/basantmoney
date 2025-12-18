@@ -9,7 +9,7 @@ import NetBalanceDisplay from '@/components/NetBalanceDisplay';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent } from '@/components/ui/card';
-import { Plus, TrendingUp, TrendingDown, Calendar, ChevronDown, ChevronUp, Eye, EyeOff, Wallet as WalletIcon } from 'lucide-react';
+import { Plus, TrendingUp, TrendingDown, Calendar, ChevronDown, ChevronUp, Eye, EyeOff, Wallet as WalletIcon, Loader2 } from 'lucide-react';
 import { Wallet, IncomeData, ExpenseData } from '@/types/finance';
 import { WalletService } from '@/utils/walletService';
 import {
@@ -20,87 +20,67 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import { useIncomeData } from '@/hooks/useIncomeData';
+import { useExpenseData } from '@/hooks/useExpenseData';
+import { useWalletData } from '@/hooks/useWalletData';
+import { useBankAccounts } from '@/hooks/useBankAccounts';
 
 const Index = () => {
   const navigate = useNavigate();
-  const [wallets, setWallets] = useState<Wallet[]>([]);
-  const [incomeData, setIncomeData] = useState<IncomeData[]>([]);
-  const [expenseData, setExpenseData] = useState<ExpenseData[]>([]);
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
   const [selectedYear] = useState(new Date().getFullYear());
   const [showMonthFilter, setShowMonthFilter] = useState(false);
+
+  // Supabase hooks for real-time data
+  const { currentAccount } = useBankAccounts();
+  const { incomeData: supabaseIncome, loading: incomeLoading, getTotalIncome } = useIncomeData(currentAccount?.id);
+  const { expenseData: supabaseExpenses, loading: expenseLoading, getTotalExpenses } = useExpenseData(currentAccount?.id);
+  const { wallets: supabaseWallets, subWallets, loading: walletsLoading } = useWalletData(currentAccount?.id);
 
   const months = [
     'January', 'February', 'March', 'April', 'May', 'June',
     'July', 'August', 'September', 'October', 'November', 'December'
   ];
 
-  // Initialize wallet system and load data
-  useEffect(() => {
-    console.log('Initializing wallet system...');
-    WalletService.ensureInitialized();
-    
-    const storedWallets = localStorage.getItem(WalletService.storageKey('wallets'));
-    const storedSubWallets = localStorage.getItem(WalletService.storageKey('subWallets'));
-    const storedIncome = localStorage.getItem(WalletService.storageKey('incomeData'));
-    const storedExpenses = localStorage.getItem(WalletService.storageKey('expenseData'));
+  // Convert Supabase data to local format
+  const incomeData: IncomeData[] = supabaseIncome.map(item => ({
+    id: item.id,
+    source: item.source,
+    amount: Number(item.amount),
+    date: item.date,
+    category: item.category,
+  }));
 
-    // Ensure wallet system is initialized (only creates empty structure if missing)
-    WalletService.ensureInitialized();
-    
-    if (storedWallets) {
-      // Load wallets with calculated balances
-      const walletData = JSON.parse(storedWallets);
-      const dynamicWallets = walletData.map((wallet: Wallet) => ({
-        ...wallet,
-        balance: WalletService.calculateWalletBalance(wallet.type)
-      }));
-      setWallets(dynamicWallets);
-    }
+  const expenseData: ExpenseData[] = supabaseExpenses.map(item => ({
+    id: item.id,
+    description: item.description,
+    amount: Number(item.amount),
+    date: item.date,
+    category: item.category,
+    deductions: (item.deductions as any) || [],
+  }));
 
-    // Load existing data
-    if (storedIncome) {
-      const loadedIncome = JSON.parse(storedIncome);
-      setIncomeData(loadedIncome);
-    } else {
-      setIncomeData([]);
-      localStorage.setItem(WalletService.storageKey('incomeData'), JSON.stringify([]));
-    }
+  // Convert Supabase wallets to local format
+  const wallets: Wallet[] = supabaseWallets.map(w => ({
+    id: w.id,
+    name: w.name,
+    balance: Number(w.balance) || 0,
+    type: w.type as 'saving' | 'needs' | 'wants',
+    color: w.color,
+  }));
 
-    if (storedExpenses) {
-      const loadedExpenses = JSON.parse(storedExpenses);
-      setExpenseData(loadedExpenses);
-    } else {
-      setExpenseData([]);
-      localStorage.setItem(WalletService.storageKey('expenseData'), JSON.stringify([]));
-    }
+  // Calculate wallet balances including subwallets
+  const getWalletBalance = (walletType: string) => {
+    const walletSubWallets = subWallets.filter(sw => sw.parent_wallet_type === walletType);
+    const subWalletTotal = walletSubWallets.reduce((sum, sw) => sum + Number(sw.balance || 0), 0);
+    return subWalletTotal;
+  };
 
-    // Add event listener for wallet data changes
-    const handleWalletDataChange = () => {
-      console.log('Wallet/bank data changed, refreshing...');
-      const storedWallets = localStorage.getItem(WalletService.storageKey('wallets'));
-      if (storedWallets) {
-        const walletData = JSON.parse(storedWallets);
-        const dynamicWallets = walletData.map((wallet: Wallet) => ({
-          ...wallet,
-          balance: WalletService.calculateWalletBalance(wallet.type)
-        }));
-        setWallets(dynamicWallets);
-      }
-      const storedIncome = localStorage.getItem(WalletService.storageKey('incomeData'));
-      const storedExpenses = localStorage.getItem(WalletService.storageKey('expenseData'));
-      setIncomeData(storedIncome ? JSON.parse(storedIncome) : []);
-      setExpenseData(storedExpenses ? JSON.parse(storedExpenses) : []);
-    };
-
-    window.addEventListener('walletDataChanged', handleWalletDataChange);
-    window.addEventListener('bankAccountChanged', handleWalletDataChange);
-
-    return () => {
-      window.removeEventListener('walletDataChanged', handleWalletDataChange);
-      window.removeEventListener('bankAccountChanged', handleWalletDataChange);
-    };
-  }, []);
+  // Create dynamic wallets with calculated balances from Supabase
+  const dynamicWallets = wallets.map(wallet => ({
+    ...wallet,
+    balance: getWalletBalance(wallet.type)
+  }));
 
   // Filter data by selected month and year (ONLY for summary cards)
   const filteredIncomeData = incomeData.filter(item => {
@@ -117,16 +97,26 @@ const Index = () => {
     return itemMonth === selectedMonth && itemYear === selectedYear;
   });
 
-  // Calculate totals using new wallet service
-  const totalIncomeAllTime = incomeData.reduce((sum, item) => sum + item.amount, 0);
-  const totalExpensesAllTime = expenseData.reduce((sum, item) => sum + item.amount, 0);
+  // Calculate totals from Supabase data
+  const totalIncomeAllTime = getTotalIncome();
+  const totalExpensesAllTime = getTotalExpenses();
   const netBalance = totalIncomeAllTime - totalExpensesAllTime;
 
-  // Create dynamic wallets with calculated balances
-  const dynamicWallets = wallets.map(wallet => ({
-    ...wallet,
-    balance: WalletService.calculateWalletBalance(wallet.type)
-  }));
+  const isLoading = incomeLoading || expenseLoading || walletsLoading;
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <div className="flex items-center justify-center h-[60vh]">
+          <div className="text-center space-y-4">
+            <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
+            <p className="text-muted-foreground">Loading your financial data...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">

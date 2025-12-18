@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '@/components/Header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Filter, Trash2 } from 'lucide-react';
+import { Plus, Filter, Trash2, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -38,6 +38,10 @@ import {
   SelectItem,
 } from '@/components/ui/select';
 import { WalletService } from '@/utils/walletService';
+import { useIncomeData } from '@/hooks/useIncomeData';
+import { useExpenseData } from '@/hooks/useExpenseData';
+import { useWalletData } from '@/hooks/useWalletData';
+import { useBankAccounts } from '@/hooks/useBankAccounts';
 
 interface PaymentMethod {
   id: string;
@@ -59,7 +63,6 @@ interface Transaction {
 const Transactions = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [filteredTransactions, setFilteredTransactions] = useState<Transaction[]>([]);
   const [filterType, setFilterType] = useState<string>('all');
   const [filterCategory, setFilterCategory] = useState<string>('all');
@@ -79,10 +82,43 @@ const Transactions = () => {
   });
   const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
 
+  // Supabase hooks for real-time data
+  const { currentAccount } = useBankAccounts();
+  const { incomeData: supabaseIncome, loading: incomeLoading, updateIncome, deleteIncome, refetch: refetchIncome } = useIncomeData(currentAccount?.id);
+  const { expenseData: supabaseExpenses, loading: expenseLoading, updateExpense, deleteExpense, refetch: refetchExpenses } = useExpenseData(currentAccount?.id);
+  const { subWallets, processExpenseDeductions, refetch: refetchWallets } = useWalletData(currentAccount?.id);
+
+  // Convert Supabase data to Transaction format
+  const transactions = useMemo(() => {
+    const incomeTransactions: Transaction[] = supabaseIncome.map(item => ({
+      id: item.id,
+      type: 'income' as const,
+      source: item.source,
+      description: '',
+      amount: Number(item.amount),
+      date: item.date,
+      category: item.category,
+      paymentMethod: 'Not specified'
+    }));
+
+    const expenseTransactions: Transaction[] = supabaseExpenses.map(item => ({
+      id: item.id,
+      type: 'expense' as const,
+      source: item.description,
+      description: '',
+      amount: Number(item.amount),
+      date: item.date,
+      category: item.category,
+      paymentMethod: 'Not specified'
+    }));
+
+    return [...incomeTransactions, ...expenseTransactions]
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  }, [supabaseIncome, supabaseExpenses]);
+
   useEffect(() => {
     loadPaymentMethods();
     loadCategories();
-    loadTransactions();
   }, []);
 
   useEffect(() => {
@@ -103,52 +139,6 @@ const Transactions = () => {
     }
   };
 
-  const loadTransactions = () => {
-    console.log('Loading transactions from localStorage...');
-    
-    const incomeData: IncomeData[] = JSON.parse(localStorage.getItem(WalletService.storageKey('incomeData')) || '[]');
-    const expenseData: ExpenseData[] = JSON.parse(localStorage.getItem(WalletService.storageKey('expenseData')) || '[]');
-
-    console.log('Raw income data:', incomeData);
-    console.log('Raw expense data:', expenseData);
-
-    const incomeTransactions: Transaction[] = incomeData.map(item => {
-      const notes = (item as any).notes || '';
-      
-      return {
-        id: item.id,
-        type: 'income' as const,
-        source: item.source,
-        description: notes,
-        amount: item.amount,
-        date: item.date,
-        category: item.category,
-        paymentMethod: (item as any).paymentMethod || 'Not specified'
-      };
-    });
-
-    const expenseTransactions: Transaction[] = expenseData.map(item => {
-      const notes = (item as any).notes || '';
-      
-      return {
-        id: item.id,
-        type: 'expense' as const,
-        source: item.description,
-        description: notes,
-        amount: item.amount,
-        date: item.date,
-        category: item.category,
-        paymentMethod: (item as any).paymentMethod || 'Not specified'
-      };
-    });
-
-    const allTransactions = [...incomeTransactions, ...expenseTransactions]
-      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-
-    console.log('All transactions loaded:', allTransactions);
-    setTransactions(allTransactions);
-  };
-
   const handleDoubleClick = (transaction: Transaction) => {
     setEditingTransaction(transaction);
     setEditData({
@@ -162,7 +152,7 @@ const Transactions = () => {
     setIsEditOpen(true);
   };
 
-  const handleEdit = () => {
+  const handleEdit = async () => {
     if (!editData.source.trim() || !editData.amount || !editData.date || !editData.category) {
       toast({
         title: "Error",
@@ -184,191 +174,74 @@ const Transactions = () => {
 
     if (!editingTransaction) return;
 
-    const oldAmount = editingTransaction.amount;
-    const amountDifference = newAmount - oldAmount;
-    const subWalletsKey = WalletService.storageKey('subWallets');
-
-    // Update wallet/sub-wallet balances if amount changed
-    if (amountDifference !== 0) {
+    try {
       if (editingTransaction.type === 'income') {
-        // For income: adjust sub-wallet balances based on amount difference
-        const distribution = WalletService.getCurrentDistribution();
-        let subWallets: SubWallet[] = JSON.parse(localStorage.getItem(subWalletsKey) || '[]');
-
-        const savingDiff = (amountDifference * distribution.saving) / 100;
-        const needsDiff = (amountDifference * distribution.needs) / 100;
-        const wantsDiff = (amountDifference * distribution.wants) / 100;
-
-        const walletDiffMap = {
-          saving: savingDiff,
-          needs: needsDiff,
-          wants: wantsDiff,
-        };
-
-        const updatedSubWallets = subWallets.map((sw) => {
-          if ((sw as any).manualBalance) return sw; // Skip manually set balances
-          const allocation = sw.allocationPercentage || 0;
-          const parentType = sw.parentWalletType;
-          const adjustmentAmount = (allocation / 100) * (walletDiffMap[parentType as keyof typeof walletDiffMap] || 0);
-          return {
-            ...sw,
-            balance: Math.max(0, (sw.balance || 0) + adjustmentAmount)
-          };
-        });
-        localStorage.setItem(subWalletsKey, JSON.stringify(updatedSubWallets));
-      } else if (editingTransaction.type === 'expense') {
-        // For expense: adjust deductions proportionally based on amount change
-        const expenses: ExpenseData[] = JSON.parse(localStorage.getItem(WalletService.storageKey('expenseData')) || '[]');
-        const expenseToEdit = expenses.find((e) => e.id === editingTransaction.id);
-
-        if (expenseToEdit && expenseToEdit.deductions && expenseToEdit.deductions.length > 0) {
-          let subWallets: SubWallet[] = JSON.parse(localStorage.getItem(subWalletsKey) || '[]');
-          
-          // Calculate the ratio of new to old amount
-          const ratio = newAmount / oldAmount;
-
-          expenseToEdit.deductions.forEach((deduction) => {
-            if (deduction.type === 'subwallet') {
-              const subWalletIndex = subWallets.findIndex((sw) => sw.id === deduction.id);
-              if (subWalletIndex !== -1) {
-                const oldDeduction = deduction.amount;
-                const newDeduction = oldDeduction * ratio;
-                const balanceAdjustment = oldDeduction - newDeduction; // Positive if expense decreased
-                subWallets[subWalletIndex].balance = Math.max(0, (subWallets[subWalletIndex].balance || 0) + balanceAdjustment);
-              }
-            }
-          });
-
-          localStorage.setItem(subWalletsKey, JSON.stringify(subWallets));
-
-          // Update deductions in the expense record
-          const updatedDeductions = expenseToEdit.deductions.map(d => ({
-            ...d,
-            amount: d.amount * ratio
-          }));
-
-          // Update expense data with new deductions
-          const updatedExpenses = expenses.map((item) => {
-            if (item.id === editingTransaction.id) {
-              return { ...item, deductions: updatedDeductions };
-            }
-            return item;
-          });
-          localStorage.setItem(WalletService.storageKey('expenseData'), JSON.stringify(updatedExpenses));
-        }
-      }
-    }
-
-    // Update the transaction data
-    const storageKey = editingTransaction.type === 'income' ? WalletService.storageKey('incomeData') : WalletService.storageKey('expenseData');
-    const currentData = JSON.parse(localStorage.getItem(storageKey) || '[]');
-    
-    const updatedData = currentData.map((item: any) => {
-      if (item.id === editingTransaction.id) {
-        return {
-          ...item,
-          [editingTransaction.type === 'income' ? 'source' : 'description']: editData.source,
-          notes: editData.description,
+        await updateIncome(editingTransaction.id, {
+          source: editData.source,
           amount: newAmount,
           date: editData.date,
           category: editData.category,
-          paymentMethod: editData.paymentMethod
-        };
+        });
+      } else {
+        await updateExpense(editingTransaction.id, {
+          description: editData.source,
+          amount: newAmount,
+          date: editData.date,
+          category: editData.category,
+        });
       }
-      return item;
-    });
 
-    localStorage.setItem(storageKey, JSON.stringify(updatedData));
-    
-    // Trigger wallet data refresh
-    window.dispatchEvent(new Event('walletDataChanged'));
-    
-    toast({
-      title: "Success",
-      description: "Transaction updated successfully",
-    });
-    
-    setIsEditOpen(false);
-    setEditingTransaction(null);
-    loadTransactions();
+      // Trigger wallet data refresh
+      window.dispatchEvent(new Event('walletDataChanged'));
+      refetchWallets();
+      
+      toast({
+        title: "Success",
+        description: "Transaction updated in backend",
+      });
+      
+      setIsEditOpen(false);
+      setEditingTransaction(null);
+    } catch (error) {
+      console.error('Error updating transaction:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update transaction",
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (!editingTransaction) return;
 
-    const subWalletsKey = WalletService.storageKey('subWallets');
+    try {
+      if (editingTransaction.type === 'income') {
+        await deleteIncome(editingTransaction.id);
+      } else {
+        await deleteExpense(editingTransaction.id);
+      }
 
-    // --- Revert Balances ---
-    if (editingTransaction.type === 'expense') {
-        const expenses: ExpenseData[] = JSON.parse(localStorage.getItem(WalletService.storageKey('expenseData')) || '[]');
-        const expenseToDelete = expenses.find((e) => e.id === editingTransaction.id);
-
-        if (expenseToDelete && expenseToDelete.deductions) {
-            let subWallets: SubWallet[] = JSON.parse(localStorage.getItem(subWalletsKey) || '[]');
-            
-            expenseToDelete.deductions.forEach((deduction) => {
-                if (deduction.type === 'subwallet') {
-                    const subWalletIndex = subWallets.findIndex((sw) => sw.id === deduction.id);
-                    if (subWalletIndex !== -1) {
-                        subWallets[subWalletIndex].balance = (subWallets[subWalletIndex].balance || 0) + deduction.amount;
-                    }
-                }
-            });
-
-            localStorage.setItem(subWalletsKey, JSON.stringify(subWallets));
-        }
-    } else if (editingTransaction.type === 'income') {
-        const incomes: IncomeData[] = JSON.parse(localStorage.getItem(WalletService.storageKey('incomeData')) || '[]');
-        const incomeToDelete = incomes.find((i) => i.id === editingTransaction.id);
-
-        if (incomeToDelete) {
-            const distribution = WalletService.getCurrentDistribution();
-            let subWallets: SubWallet[] = JSON.parse(localStorage.getItem(subWalletsKey) || '[]');
-            const incomeAmount = incomeToDelete.amount;
-
-            const savingAmount = (incomeAmount * distribution.saving) / 100;
-            const needsAmount = (incomeAmount * distribution.needs) / 100;
-            const wantsAmount = (incomeAmount * distribution.wants) / 100;
-            
-            const walletIncomeMap = {
-                saving: savingAmount,
-                needs: needsAmount,
-                wants: wantsAmount,
-            };
-
-            const updatedSubWallets = subWallets.map((sw) => {
-                if ((sw as any).manualBalance) return sw; // Skip manually set balances
-                const allocation = sw.allocationPercentage || 0;
-                const parentType = sw.parentWalletType;
-                const deductionAmount = (allocation / 100) * (walletIncomeMap[parentType as keyof typeof walletIncomeMap] || 0);
-                return {
-                    ...sw,
-                    balance: Math.max(0, (sw.balance || 0) - deductionAmount)
-                };
-            });
-            localStorage.setItem(subWalletsKey, JSON.stringify(updatedSubWallets));
-        }
+      // Trigger wallet data refresh
+      window.dispatchEvent(new Event('walletDataChanged'));
+      refetchWallets();
+      
+      toast({
+        title: "Success",
+        description: "Transaction deleted from backend",
+      });
+      
+      setIsEditOpen(false);
+      setIsDeleteAlertOpen(false);
+      setEditingTransaction(null);
+    } catch (error) {
+      console.error('Error deleting transaction:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete transaction",
+        variant: "destructive",
+      });
     }
-
-    // --- Delete Transaction Record ---
-    const storageKey = editingTransaction.type === 'income' ? WalletService.storageKey('incomeData') : WalletService.storageKey('expenseData');
-    const currentData = JSON.parse(localStorage.getItem(storageKey) || '[]');
-    
-    const updatedData = currentData.filter((item: any) => item.id !== editingTransaction.id);
-    localStorage.setItem(storageKey, JSON.stringify(updatedData));
-    
-    // Trigger wallet data refresh
-    window.dispatchEvent(new Event('walletDataChanged'));
-    
-    toast({
-      title: "Success",
-      description: "Transaction deleted and balances reverted.",
-    });
-    
-    setIsEditOpen(false);
-    setIsDeleteAlertOpen(false);
-    setEditingTransaction(null);
-    loadTransactions();
   };
 
   const filterTransactions = () => {
@@ -442,6 +315,22 @@ const Transactions = () => {
     if (!editingTransaction) return [];
     return categories.filter((cat: Category) => cat.type === editingTransaction.type);
   };
+
+  const isLoading = incomeLoading || expenseLoading;
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <div className="flex items-center justify-center h-[60vh]">
+          <div className="text-center space-y-4">
+            <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
+            <p className="text-muted-foreground">Loading transactions from backend...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
