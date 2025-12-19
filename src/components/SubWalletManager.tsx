@@ -88,15 +88,7 @@ const SubWalletManager: React.FC<SubWalletManagerProps> = ({ wallets, onUpdate }
       return;
     }
 
-    const parentWallet = getWalletByType(formData.parentWalletType);
-    if (!parentWallet) {
-      toast({
-        title: "Error",
-        description: "Parent wallet not found",
-        variant: "destructive",
-      });
-      return;
-    }
+    // Parent wallet type is stored directly, no need to validate wallet existence
 
     setIsSubmitting(true);
 
