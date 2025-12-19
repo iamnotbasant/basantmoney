@@ -15,6 +15,8 @@ export interface SubWallet {
   allocationPercentage: number;
   color: string;
   order: number;
+  goalEnabled?: boolean;
+  goalTargetAmount?: number;
   goal?: {
     targetAmount: number;
     enabled: boolean;

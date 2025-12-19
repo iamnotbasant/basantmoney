@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -23,8 +22,21 @@ const SubWalletGoalDialog: React.FC<SubWalletGoalDialogProps> = ({
   onUpdate
 }) => {
   const { toast } = useToast();
-  const [goalEnabled, setGoalEnabled] = useState(subWallet.goal?.enabled || false);
-  const [targetAmount, setTargetAmount] = useState(subWallet.goal?.targetAmount?.toString() || '');
+  
+  // Support both old and new format
+  const initialGoalEnabled = subWallet.goalEnabled || subWallet.goal?.enabled || false;
+  const initialTargetAmount = subWallet.goalTargetAmount || subWallet.goal?.targetAmount || 0;
+  
+  const [goalEnabled, setGoalEnabled] = useState(initialGoalEnabled);
+  const [targetAmount, setTargetAmount] = useState(initialTargetAmount > 0 ? initialTargetAmount.toString() : '');
+
+  // Update state when subWallet changes
+  useEffect(() => {
+    const enabled = subWallet.goalEnabled || subWallet.goal?.enabled || false;
+    const amount = subWallet.goalTargetAmount || subWallet.goal?.targetAmount || 0;
+    setGoalEnabled(enabled);
+    setTargetAmount(amount > 0 ? amount.toString() : '');
+  }, [subWallet]);
 
   const handleSave = () => {
     if (goalEnabled && (!targetAmount || parseFloat(targetAmount) <= 0)) {
@@ -36,8 +48,12 @@ const SubWalletGoalDialog: React.FC<SubWalletGoalDialogProps> = ({
       return;
     }
 
+    // Use the new format for the updated sub-wallet
     const updatedSubWallet = {
       ...subWallet,
+      goalEnabled: goalEnabled,
+      goalTargetAmount: goalEnabled ? parseFloat(targetAmount) : 0,
+      // Also keep the old format for backwards compatibility
       goal: goalEnabled ? {
         targetAmount: parseFloat(targetAmount),
         enabled: true
