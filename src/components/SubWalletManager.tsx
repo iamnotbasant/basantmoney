@@ -1,16 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Plus, Wallet as WalletIcon, Sparkles } from 'lucide-react';
-import { SubWallet, Wallet } from '@/types/finance';
+import { Plus, Wallet as WalletIcon, Sparkles, Loader2 } from 'lucide-react';
+import { Wallet } from '@/types/finance';
 import SubWalletCard from './SubWalletCard';
 import SubWalletGoalDialog from './SubWalletGoalDialog';
 import { useToast } from '@/hooks/use-toast';
 import { getAvailableColor, getAllUsedColors } from '@/utils/colorGenerator';
-import { WalletService } from '@/utils/walletService';
+import { useWalletData, SubWalletEntry } from '@/hooks/useWalletData';
+import { useBankAccounts } from '@/hooks/useBankAccounts';
 
 interface SubWalletManagerProps {
   wallets: Wallet[];
@@ -19,11 +20,23 @@ interface SubWalletManagerProps {
 
 const SubWalletManager: React.FC<SubWalletManagerProps> = ({ wallets, onUpdate }) => {
   const { toast } = useToast();
-  const [subWallets, setSubWallets] = useState<SubWallet[]>([]);
+  const { bankAccounts } = useBankAccounts();
+  const primaryAccount = bankAccounts.find(acc => acc.is_primary);
+  
+  const { 
+    subWallets, 
+    loading, 
+    createSubWallet, 
+    updateSubWallet, 
+    deleteSubWallet,
+    refetch 
+  } = useWalletData(primaryAccount?.id);
+
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isGoalDialogOpen, setIsGoalDialogOpen] = useState(false);
-  const [selectedSubWallet, setSelectedSubWallet] = useState<SubWallet | null>(null);
-  const [editingSubWallet, setEditingSubWallet] = useState<SubWallet | null>(null);
+  const [selectedSubWallet, setSelectedSubWallet] = useState<SubWalletEntry | null>(null);
+  const [editingSubWallet, setEditingSubWallet] = useState<SubWalletEntry | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     parentWalletType: 'saving' as 'saving' | 'needs' | 'wants',
@@ -31,90 +44,21 @@ const SubWalletManager: React.FC<SubWalletManagerProps> = ({ wallets, onUpdate }
     color: 'blue'
   });
 
-  const colors = [
-    { value: 'blue', label: 'Blue' },
-    { value: 'green', label: 'Green' },
-    { value: 'purple', label: 'Purple' },
-    { value: 'yellow', label: 'Yellow' },
-    { value: 'red', label: 'Red' }
-  ];
-
-  useEffect(() => {
-    loadSubWallets();
-
-    // Listen for bank account changes
-    const handleBankAccountChanged = () => {
-      loadSubWallets();
-    };
-
-    window.addEventListener('bankAccountChanged', handleBankAccountChanged);
-    return () => {
-      window.removeEventListener('bankAccountChanged', handleBankAccountChanged);
-    };
-  }, []);
-
-  const loadSubWallets = () => {
-    WalletService.ensureInitialized();
-    const stored = localStorage.getItem(WalletService.storageKey('subWallets'));
-    if (stored) {
-      const parsedSubWallets = JSON.parse(stored);
-      console.log('Loading user-created subwallets:', parsedSubWallets);
-      setSubWallets(parsedSubWallets);
-    } else {
-      console.log('No subwallets found - starting with empty array');
-      setSubWallets([]);
-    }
-  };
-
-  const saveSubWallets = (newSubWallets: SubWallet[]) => {
-    localStorage.setItem(WalletService.storageKey('subWallets'), JSON.stringify(newSubWallets));
-    setSubWallets(newSubWallets);
-    onUpdate();
-    
-    // Dispatch event for wallet data changes
-    window.dispatchEvent(new CustomEvent('walletDataChanged'));
-  };
-
   const getWalletByType = (type: 'saving' | 'needs' | 'wants') => {
     return wallets.find(w => w.type === type);
   };
 
   const getTotalAllocationForWallet = (walletType: 'saving' | 'needs' | 'wants', excludeId?: number) => {
     return subWallets
-      .filter(sw => sw.parentWalletType === walletType && sw.id !== excludeId)
-      .reduce((sum, sw) => sum + sw.allocationPercentage, 0);
+      .filter(sw => sw.parent_wallet_type === walletType && sw.id !== excludeId)
+      .reduce((sum, sw) => sum + sw.allocation_percentage, 0);
   };
 
   const getAvailableAllocation = (walletType: 'saving' | 'needs' | 'wants', excludeId?: number) => {
     return 100 - getTotalAllocationForWallet(walletType, excludeId);
   };
 
-  const calculateSubWalletBalance = (subWallet: SubWallet) => {
-    const parentWallet = getWalletByType(subWallet.parentWalletType);
-    if (!parentWallet) return 0;
-    
-    // Calculate allocated balance from parent wallet
-    const allocatedFromParent = (parentWallet.balance * subWallet.allocationPercentage) / 100;
-    
-    // Check if this sub-wallet has a stored balance (from previous transactions)
-    const existingSubWallet = subWallets.find(sw => sw.id === subWallet.id);
-    if (existingSubWallet && existingSubWallet.balance !== undefined) {
-      // If it has a manual balance set, keep it regardless of allocation changes
-      if ((existingSubWallet as any).manualBalance) {
-        return existingSubWallet.balance;
-      }
-      // If allocation percentage changed, keep the balance (don't reduce it)
-      if (existingSubWallet.allocationPercentage !== subWallet.allocationPercentage) {
-        return existingSubWallet.balance;
-      }
-      // Otherwise keep the existing balance
-      return existingSubWallet.balance;
-    }
-    
-    return allocatedFromParent;
-  };
-
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!formData.name.trim() || !formData.allocationPercentage) {
       toast({
         title: "Error",
@@ -154,59 +98,60 @@ const SubWalletManager: React.FC<SubWalletManagerProps> = ({ wallets, onUpdate }
       return;
     }
 
-    if (editingSubWallet) {
-      // Update existing sub-wallet
-      const updatedSubWallets = subWallets.map(sw => 
-        sw.id === editingSubWallet.id 
-          ? {
-              ...sw,
-              name: formData.name,
-              parentWalletType: formData.parentWalletType,
-              parentWalletId: parentWallet.id,
-              allocationPercentage: allocation,
-              color: formData.color,
-              balance: calculateSubWalletBalance({
-                ...sw,
-                parentWalletType: formData.parentWalletType,
-                allocationPercentage: allocation
-              }),
-              manualBalance: (sw as any).manualBalance
-            }
-          : sw
-      );
-      saveSubWallets(updatedSubWallets);
-      toast({
-        title: "Success",
-        description: "Sub-wallet updated successfully",
-      });
-    } else {
-      // Auto-assign color for new sub-wallet
-      const usedColors = getAllUsedColors(subWallets);
-      const autoColor = getAvailableColor(usedColors);
-      
-      // Create new sub-wallet
-      const newSubWallet: SubWallet = {
-        id: Date.now(),
-        name: formData.name,
-        parentWalletId: parentWallet.id,
-        parentWalletType: formData.parentWalletType,
-        allocationPercentage: allocation,
-        color: autoColor,
-        order: subWallets.length,
-        balance: 0
-      };
-      
-      newSubWallet.balance = calculateSubWalletBalance(newSubWallet);
-      const updatedSubWallets = [...subWallets, newSubWallet];
-      saveSubWallets(updatedSubWallets);
-      
-      toast({
-        title: "Success",
-        description: `Sub-wallet created with auto-assigned ${autoColor} color`,
-      });
-    }
+    setIsSubmitting(true);
 
-    resetForm();
+    try {
+      if (editingSubWallet) {
+        // Update existing sub-wallet in Supabase
+        const success = await updateSubWallet(editingSubWallet.id, {
+          name: formData.name,
+          parent_wallet_type: formData.parentWalletType,
+          allocation_percentage: allocation,
+          color: formData.color,
+        });
+
+        if (success) {
+          toast({
+            title: "Success",
+            description: "Sub-wallet updated successfully",
+          });
+          onUpdate();
+        }
+      } else {
+        // Auto-assign color for new sub-wallet
+        const usedColors = subWallets.map(sw => sw.color);
+        const autoColor = getAvailableColor(usedColors);
+        
+        // Create new sub-wallet in Supabase
+        const result = await createSubWallet({
+          name: formData.name,
+          parent_wallet_type: formData.parentWalletType,
+          allocation_percentage: allocation,
+          color: autoColor,
+          bank_account_id: primaryAccount?.id || null,
+          order_position: subWallets.length,
+        });
+
+        if (result) {
+          toast({
+            title: "Success",
+            description: `Sub-wallet created with auto-assigned ${autoColor} color`,
+          });
+          onUpdate();
+        }
+      }
+
+      resetForm();
+    } catch (error) {
+      console.error('Error saving subwallet:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save sub-wallet",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const resetForm = () => {
@@ -220,71 +165,74 @@ const SubWalletManager: React.FC<SubWalletManagerProps> = ({ wallets, onUpdate }
     setIsDialogOpen(false);
   };
 
-  const handleEdit = (subWallet: SubWallet) => {
+  const handleEdit = (subWallet: SubWalletEntry) => {
     setEditingSubWallet(subWallet);
     setFormData({
       name: subWallet.name,
-      parentWalletType: subWallet.parentWalletType,
-      allocationPercentage: subWallet.allocationPercentage.toString(),
+      parentWalletType: subWallet.parent_wallet_type as 'saving' | 'needs' | 'wants',
+      allocationPercentage: subWallet.allocation_percentage.toString(),
       color: subWallet.color
     });
     setIsDialogOpen(true);
   };
 
-  const handleDelete = (id: number) => {
-    const updatedSubWallets = subWallets.filter(sw => sw.id !== id);
-    saveSubWallets(updatedSubWallets);
-    toast({
-      title: "Success",
-      description: "Sub-wallet deleted successfully",
-    });
+  const handleDelete = async (id: number) => {
+    const success = await deleteSubWallet(id);
+    if (success) {
+      toast({
+        title: "Success",
+        description: "Sub-wallet deleted successfully",
+      });
+      onUpdate();
+    }
   };
 
-  const handleSetGoal = (subWallet: SubWallet) => {
+  const handleSetGoal = (subWallet: SubWalletEntry) => {
     setSelectedSubWallet(subWallet);
     setIsGoalDialogOpen(true);
   };
 
-  const handleUpdateGoal = (updatedSubWallet: SubWallet) => {
-    const updatedSubWallets = subWallets.map(sw => 
-      sw.id === updatedSubWallet.id ? updatedSubWallet : sw
-    );
-    saveSubWallets(updatedSubWallets);
+  const handleUpdateGoal = async (updatedSubWallet: any) => {
+    await updateSubWallet(updatedSubWallet.id, {
+      goal_enabled: updatedSubWallet.goalEnabled,
+      goal_target_amount: updatedSubWallet.goalTargetAmount,
+    });
+    onUpdate();
   };
 
-  // Update sub-wallet balances when parent wallet balances change (only for newly created ones)
-  useEffect(() => {
-    const updatedSubWallets = subWallets.map(sw => {
-      // Only recalculate if the sub-wallet doesn't have custom balance from transactions
-      const parentWallet = getWalletByType(sw.parentWalletType);
-      if (!parentWallet) return sw;
-      
-      const expectedBalance = (parentWallet.balance * sw.allocationPercentage) / 100;
-      
-      // If the current balance is very close to the expected allocation balance,
-      // it means it hasn't been modified by transactions, so update it
-      if (Math.abs(sw.balance - expectedBalance) < 0.01) {
-        return {
-          ...sw,
-          balance: expectedBalance
-        };
-      }
-      
-      // Otherwise, keep the existing balance (it's been modified by transactions)
-      return sw;
-    });
-    
-    if (JSON.stringify(updatedSubWallets) !== JSON.stringify(subWallets)) {
-      setSubWallets(updatedSubWallets);
-      localStorage.setItem(WalletService.storageKey('subWallets'), JSON.stringify(updatedSubWallets));
-    }
-  }, [wallets]);
+  const handleBalanceUpdate = async () => {
+    await refetch();
+    onUpdate();
+  };
 
   const groupedSubWallets = {
-    saving: subWallets.filter(sw => sw.parentWalletType === 'saving'),
-    needs: subWallets.filter(sw => sw.parentWalletType === 'needs'),
-    wants: subWallets.filter(sw => sw.parentWalletType === 'wants')
+    saving: subWallets.filter(sw => sw.parent_wallet_type === 'saving'),
+    needs: subWallets.filter(sw => sw.parent_wallet_type === 'needs'),
+    wants: subWallets.filter(sw => sw.parent_wallet_type === 'wants')
   };
+
+  // Convert SubWalletEntry to the format expected by SubWalletCard
+  const convertToCardFormat = (sw: SubWalletEntry) => ({
+    id: sw.id,
+    name: sw.name,
+    parentWalletId: sw.parent_wallet_id || 0,
+    parentWalletType: sw.parent_wallet_type as 'saving' | 'needs' | 'wants',
+    allocationPercentage: sw.allocation_percentage,
+    color: sw.color,
+    order: sw.order_position || 0,
+    balance: sw.balance || 0,
+    goalEnabled: sw.goal_enabled || false,
+    goalTargetAmount: sw.goal_target_amount || 0,
+  });
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <span className="ml-2 text-muted-foreground">Loading sub-wallets...</span>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -351,10 +299,11 @@ const SubWalletManager: React.FC<SubWalletManagerProps> = ({ wallets, onUpdate }
               </div>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={resetForm}>
+              <Button variant="outline" onClick={resetForm} disabled={isSubmitting}>
                 Cancel
               </Button>
-              <Button onClick={handleSubmit}>
+              <Button onClick={handleSubmit} disabled={isSubmitting}>
+                {isSubmitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                 {editingSubWallet ? 'Update' : 'Create'} Sub-Wallet
               </Button>
             </DialogFooter>
@@ -381,11 +330,11 @@ const SubWalletManager: React.FC<SubWalletManagerProps> = ({ wallets, onUpdate }
               {subWalletList.map((subWallet) => (
                 <SubWalletCard
                   key={subWallet.id}
-                  subWallet={subWallet}
-                  onEdit={handleEdit}
+                  subWallet={convertToCardFormat(subWallet)}
+                  onEdit={() => handleEdit(subWallet)}
                   onDelete={handleDelete}
-                  onSetGoal={handleSetGoal}
-                  onBalanceUpdate={loadSubWallets}
+                  onSetGoal={() => handleSetGoal(subWallet)}
+                  onBalanceUpdate={handleBalanceUpdate}
                 />
               ))}
             </div>
@@ -408,7 +357,7 @@ const SubWalletManager: React.FC<SubWalletManagerProps> = ({ wallets, onUpdate }
             setIsGoalDialogOpen(false);
             setSelectedSubWallet(null);
           }}
-          subWallet={selectedSubWallet}
+          subWallet={convertToCardFormat(selectedSubWallet)}
           onUpdate={handleUpdateGoal}
         />
       )}

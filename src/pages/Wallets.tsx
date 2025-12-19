@@ -1,95 +1,77 @@
-
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Loader2 } from 'lucide-react';
 import Header from '@/components/Header';
 import WalletCard from '@/components/WalletCard';
 import SubWalletManager from '@/components/SubWalletManager';
 import TransferFunds from '@/components/TransferFunds';
 import { Wallet } from '@/types/finance';
-import { WalletService } from '@/utils/walletService';
-
-interface UserSettings {
-  distribution: {
-    saving: number;
-    needs: number;
-    wants: number;
-  };
-  defaultWallet: 'saving' | 'needs' | 'wants';
-  currency: string;
-  appTheme: 'light' | 'dark' | 'system';
-}
+import { useWalletData } from '@/hooks/useWalletData';
+import { useBankAccounts } from '@/hooks/useBankAccounts';
 
 const Wallets = () => {
   const navigate = useNavigate();
-  const [wallets, setWallets] = useState<Wallet[]>([]);
-  const [settings, setSettings] = useState<UserSettings>({
-    distribution: { saving: 50, needs: 30, wants: 20 },
-    defaultWallet: 'saving',
-    currency: '₹',
-    appTheme: 'system'
-  });
+  const { bankAccounts } = useBankAccounts();
+  const primaryAccount = bankAccounts.find(acc => acc.is_primary);
+  
+  const { wallets: supabaseWallets, subWallets, loading, refetch } = useWalletData(primaryAccount?.id);
 
-  const loadWallets = () => {
-    console.log('Loading wallet data...');
-    try {
-      const storedWallets = localStorage.getItem('wallets');
-      if (storedWallets) {
-        const walletData = JSON.parse(storedWallets);
-        const dynamicWallets = walletData.map((wallet: Wallet) => {
-          const calculatedBalance = WalletService.calculateWalletBalance(wallet.type);
-          console.log(`${wallet.name} calculated balance:`, calculatedBalance);
-          return {
-            ...wallet,
-            balance: calculatedBalance
-          };
-        });
-        setWallets(dynamicWallets);
-        console.log('Updated wallets:', dynamicWallets);
-      }
-    } catch (error) {
-      console.error('Error loading wallets:', error);
-      // Ensure wallet system is initialized
-      WalletService.ensureInitialized();
-      setWallets([]);
-    }
-  };
-
-  const loadSettings = () => {
+  // Get user settings for distribution percentages
+  const getSettings = () => {
     try {
       const storedSettings = localStorage.getItem('userSettings');
       if (storedSettings) {
-        const parsed = JSON.parse(storedSettings);
-        setSettings(parsed);
+        return JSON.parse(storedSettings);
       }
     } catch (error) {
       console.error('Error loading settings:', error);
     }
+    return {
+      distribution: { saving: 50, needs: 30, wants: 20 },
+      defaultWallet: 'saving',
+      currency: '₹',
+      appTheme: 'system'
+    };
   };
 
-  useEffect(() => {
-    loadWallets();
-    loadSettings();
-    
-    // Add event listener for storage changes to refresh wallet data
-    const handleStorageChange = () => {
-      console.log('Storage changed, refreshing wallet data...');
-      loadWallets();
-      loadSettings();
-    };
+  const settings = getSettings();
 
-    // Listen for custom events when transactions are made
-    window.addEventListener('walletDataChanged', handleStorageChange);
+  // Convert Supabase wallets to local format with calculated balances
+  const wallets: Wallet[] = supabaseWallets.map(w => {
+    // Calculate balance from sub-wallets
+    const relatedSubWallets = subWallets.filter(sw => sw.parent_wallet_type === w.type);
+    const totalSubWalletBalance = relatedSubWallets.reduce((sum, sw) => sum + (sw.balance || 0), 0);
     
-    return () => {
-      window.removeEventListener('walletDataChanged', handleStorageChange);
+    return {
+      id: w.id,
+      name: w.name,
+      balance: totalSubWalletBalance,
+      type: w.type as 'saving' | 'needs' | 'wants',
+      color: w.color,
     };
-  }, []);
+  });
 
   const getWalletPercentage = (walletType: 'saving' | 'needs' | 'wants') => {
     return settings.distribution[walletType];
   };
+
+  const handleUpdate = () => {
+    refetch();
+    window.dispatchEvent(new CustomEvent('walletDataChanged'));
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <div className="flex items-center justify-center py-20">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <span className="ml-2 text-muted-foreground">Loading wallets...</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -110,7 +92,7 @@ const Wallets = () => {
               </Button>
               <h1 className="text-lg sm:text-xl font-semibold text-foreground">Wallets</h1>
             </div>
-            <TransferFunds wallets={wallets} onUpdate={loadWallets} />
+            <TransferFunds wallets={wallets} onUpdate={handleUpdate} />
           </div>
         </div>
       </header>
@@ -134,7 +116,7 @@ const Wallets = () => {
 
         {/* Sub-Wallets Section - Mobile optimized */}
         <section>
-          <SubWalletManager wallets={wallets} onUpdate={loadWallets} />
+          <SubWalletManager wallets={wallets} onUpdate={handleUpdate} />
         </section>
       </main>
     </div>

@@ -1,6 +1,5 @@
-
 import React, { useState } from 'react';
-import { Wallet as WalletIcon, Edit2, Trash2, Target, TrendingUp, DollarSign } from 'lucide-react';
+import { Wallet as WalletIcon, Edit2, Trash2, Target, TrendingUp, DollarSign, Loader2 } from 'lucide-react';
 import { SubWallet } from '@/types/finance';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -8,7 +7,8 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { WalletService } from '@/utils/walletService';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/components/AuthProvider';
 
 interface SubWalletCardProps {
   subWallet: SubWallet;
@@ -26,10 +26,12 @@ const SubWalletCard: React.FC<SubWalletCardProps> = ({
   onBalanceUpdate
 }) => {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [isBalanceDialogOpen, setIsBalanceDialogOpen] = useState(false);
   const [newBalance, setNewBalance] = useState(subWallet.balance.toString());
+  const [isUpdating, setIsUpdating] = useState(false);
 
-  const handleBalanceUpdate = () => {
+  const handleBalanceUpdate = async () => {
     const amount = parseFloat(newBalance);
     
     if (isNaN(amount) || amount < 0) {
@@ -41,31 +43,51 @@ const SubWalletCard: React.FC<SubWalletCardProps> = ({
       return;
     }
 
+    if (!user) {
+      toast({
+        title: "Error",
+        description: "Please login to update balance",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsUpdating(true);
+
     try {
-      const storageKey = WalletService.storageKey('subWallets');
-      const currentSubWallets = JSON.parse(localStorage.getItem(storageKey) || '[]');
-      const updatedSubWallets = currentSubWallets.map((sw: SubWallet) => 
-        sw.id === subWallet.id ? { ...sw, balance: amount, manualBalance: true } : sw
-      );
-      
-      localStorage.setItem(storageKey, JSON.stringify(updatedSubWallets));
-      window.dispatchEvent(new Event('walletDataChanged'));
-      
+      const { error } = await supabase
+        .from('user_subwallets')
+        .update({
+          balance: amount,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', subWallet.id)
+        .eq('user_id', user.id);
+
+      if (error) {
+        throw error;
+      }
+
       toast({
         title: "Success",
         description: `Balance updated to ₹${amount.toFixed(2)}`,
       });
       
       setIsBalanceDialogOpen(false);
+      window.dispatchEvent(new CustomEvent('walletDataChanged'));
       if (onBalanceUpdate) onBalanceUpdate();
     } catch (error) {
+      console.error('Error updating balance:', error);
       toast({
         title: "Error",
         description: "Failed to update balance",
         variant: "destructive",
       });
+    } finally {
+      setIsUpdating(false);
     }
   };
+
   const getColorClasses = () => {
     switch (subWallet.color) {
       case 'green':
@@ -144,8 +166,12 @@ const SubWalletCard: React.FC<SubWalletCardProps> = ({
     }
   };
 
-  const goalProgress = subWallet.goal?.enabled 
-    ? Math.min((subWallet.balance / subWallet.goal.targetAmount) * 100, 100)
+  // Support both old and new goal format
+  const goalEnabled = subWallet.goalEnabled || subWallet.goal?.enabled || false;
+  const goalTargetAmount = subWallet.goalTargetAmount || subWallet.goal?.targetAmount || 0;
+  
+  const goalProgress = goalEnabled && goalTargetAmount > 0
+    ? Math.min((subWallet.balance / goalTargetAmount) * 100, 100)
     : 0;
 
   return (
@@ -203,78 +229,79 @@ const SubWalletCard: React.FC<SubWalletCardProps> = ({
           </div>
         </div>
       
-      <div className="space-y-2">
-        <div className="flex justify-between text-xs text-muted-foreground">
-          <span>Balance</span>
-          <span>Allocation: {subWallet.allocationPercentage}%</span>
-        </div>
-        <p className="text-lg font-semibold text-foreground">
-          ₹{Math.trunc(subWallet.balance).toLocaleString('en-IN')}
-        </p>
-        
-        {subWallet.goal?.enabled && (
-          <div className="space-y-1">
-            <div className="flex justify-between text-xs text-muted-foreground">
-              <span className="flex items-center gap-1">
-                <Target className="h-3 w-3" />
-                Goal Progress
-              </span>
-              <span>{goalProgress.toFixed(1)}%</span>
-            </div>
-            <Progress value={goalProgress} className="h-2" />
-            <div className="flex justify-between text-xs">
-              <span className="text-muted-foreground">
-                Target: ₹{Math.trunc(subWallet.goal.targetAmount).toLocaleString('en-IN')}
-              </span>
-              {goalProgress >= 100 && (
-                <span className="text-green-600 flex items-center gap-1">
-                  <TrendingUp className="h-3 w-3" />
-                  Goal Achieved!
+        <div className="space-y-2">
+          <div className="flex justify-between text-xs text-muted-foreground">
+            <span>Balance</span>
+            <span>Allocation: {subWallet.allocationPercentage}%</span>
+          </div>
+          <p className="text-lg font-semibold text-foreground">
+            ₹{Math.trunc(subWallet.balance).toLocaleString('en-IN')}
+          </p>
+          
+          {goalEnabled && goalTargetAmount > 0 && (
+            <div className="space-y-1">
+              <div className="flex justify-between text-xs text-muted-foreground">
+                <span className="flex items-center gap-1">
+                  <Target className="h-3 w-3" />
+                  Goal Progress
                 </span>
-              )}
+                <span>{goalProgress.toFixed(1)}%</span>
+              </div>
+              <Progress value={goalProgress} className="h-2" />
+              <div className="flex justify-between text-xs">
+                <span className="text-muted-foreground">
+                  Target: ₹{Math.trunc(goalTargetAmount).toLocaleString('en-IN')}
+                </span>
+                {goalProgress >= 100 && (
+                  <span className="text-green-600 flex items-center gap-1">
+                    <TrendingUp className="h-3 w-3" />
+                    Goal Achieved!
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      <Dialog open={isBalanceDialogOpen} onOpenChange={setIsBalanceDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit Balance - {subWallet.name}</DialogTitle>
+            <DialogDescription>
+              Manually set the balance for this sub-wallet
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="balance">New Balance (₹)</Label>
+              <Input
+                id="balance"
+                type="number"
+                step="0.01"
+                value={newBalance}
+                onChange={(e) => setNewBalance(e.target.value)}
+                placeholder="Enter new balance"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Current balance: ₹{subWallet.balance.toFixed(2)}
+              </p>
             </div>
           </div>
-        )}
-      </div>
-    </div>
 
-    <Dialog open={isBalanceDialogOpen} onOpenChange={setIsBalanceDialogOpen}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Edit Balance - {subWallet.name}</DialogTitle>
-          <DialogDescription>
-            Manually set the balance for this sub-wallet
-          </DialogDescription>
-        </DialogHeader>
-        
-        <div className="space-y-4">
-          <div>
-            <Label htmlFor="balance">New Balance (₹)</Label>
-            <Input
-              id="balance"
-              type="number"
-              step="0.01"
-              value={newBalance}
-              onChange={(e) => setNewBalance(e.target.value)}
-              placeholder="Enter new balance"
-            />
-            <p className="text-xs text-muted-foreground mt-1">
-              Current balance: ₹{subWallet.balance.toFixed(2)}
-            </p>
-          </div>
-        </div>
-
-        <DialogFooter>
-          <Button variant="outline" onClick={() => setIsBalanceDialogOpen(false)}>
-            Cancel
-          </Button>
-          <Button onClick={handleBalanceUpdate}>
-            Update Balance
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  </>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsBalanceDialogOpen(false)} disabled={isUpdating}>
+              Cancel
+            </Button>
+            <Button onClick={handleBalanceUpdate} disabled={isUpdating}>
+              {isUpdating && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Update Balance
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };
 
