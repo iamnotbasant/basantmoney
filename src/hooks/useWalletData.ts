@@ -45,22 +45,19 @@ export const useWalletData = (bankAccountId?: string | null) => {
     }
 
     try {
-      let walletQuery = supabase
+      // Fetch all wallets and subwallets for the user (don't filter by bank_account_id to ensure visibility)
+      // This allows seeing wallets/subwallets even if they have mismatched or null bank_account_id
+      const walletQuery = supabase
         .from('user_wallets')
         .select('*')
         .eq('user_id', user.id)
         .order('id', { ascending: true });
 
-      let subWalletQuery = supabase
+      const subWalletQuery = supabase
         .from('user_subwallets')
         .select('*')
         .eq('user_id', user.id)
         .order('order_position', { ascending: true });
-
-      if (bankAccountId) {
-        walletQuery = walletQuery.eq('bank_account_id', bankAccountId);
-        subWalletQuery = subWalletQuery.eq('bank_account_id', bankAccountId);
-      }
 
       const [walletsResult, subWalletsResult] = await Promise.all([
         walletQuery,

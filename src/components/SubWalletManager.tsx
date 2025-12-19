@@ -304,15 +304,20 @@ const SubWalletManager: React.FC<SubWalletManagerProps> = ({ wallets, onUpdate }
       </div>
 
       {Object.entries(groupedSubWallets).map(([walletType, subWalletList]) => {
-        const parentWallet = getWalletByType(walletType as 'saving' | 'needs' | 'wants');
-        if (!parentWallet || subWalletList.length === 0) return null;
+        if (subWalletList.length === 0) return null;
+
+        const walletNames: Record<string, string> = {
+          saving: 'Saving',
+          needs: 'Needs',
+          wants: 'Wants'
+        };
 
         return (
           <div key={walletType} className="bg-card border border-border rounded-lg p-6">
             <div className="flex items-center mb-4">
               <WalletIcon className="h-5 w-5 mr-2 text-primary" />
               <h3 className="text-lg font-medium capitalize text-foreground">
-                {walletType} Wallet Sub-Wallets
+                {walletNames[walletType] || walletType} Wallet Sub-Wallets
               </h3>
               <span className="ml-auto text-sm text-muted-foreground">
                 Total Allocated: {getTotalAllocationForWallet(walletType as 'saving' | 'needs' | 'wants')}%
