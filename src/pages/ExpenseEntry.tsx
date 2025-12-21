@@ -28,8 +28,6 @@ const ExpenseEntry = () => {
   const [date, setDate] = useState<Date>();
   const [notes, setNotes] = useState('');
   const [attachment, setAttachment] = useState<File | null>(null);
-  const [wallets, setWallets] = useState<Wallet[]>([]);
-  const [subWallets, setSubWallets] = useState<SubWallet[]>([]);
   const [selectedQueue, setSelectedQueue] = useState<{ type: 'subwallet' | 'wallet', id: number }[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
   const [paymentMethods, setPaymentMethods] = useState<any[]>([]);
@@ -38,7 +36,7 @@ const ExpenseEntry = () => {
   // Supabase hooks for data persistence
   const { currentAccount } = useBankAccounts();
   const { addExpense } = useExpenseData(currentAccount?.id);
-  const { subWallets: supabaseSubWallets, processExpenseDeductions, refetch: refetchWallets } = useWalletData(currentAccount?.id);
+  const { wallets, subWallets, processExpenseDeductions, refetch: refetchWallets } = useWalletData();
 
   useEffect(() => {
     loadData();
@@ -59,23 +57,6 @@ const ExpenseEntry = () => {
   }, []);
 
   const loadData = () => {
-    const storedWallets = localStorage.getItem(WalletService.storageKey('wallets'));
-    if (storedWallets) {
-      const walletData = JSON.parse(storedWallets);
-      const dynamicWallets = walletData.map((wallet: Wallet) => ({
-        ...wallet,
-        balance: WalletService.calculateWalletBalance(wallet.type)
-      }));
-      setWallets(dynamicWallets);
-    }
-
-    const storedSubWallets = localStorage.getItem(WalletService.storageKey('subWallets'));
-    if (storedSubWallets) {
-      setSubWallets(JSON.parse(storedSubWallets));
-    }
-
-    // Expense history is now fetched from Supabase via useExpenseData hook
-
     // Load categories from the same key as CategoryManager
     const storedCategories = localStorage.getItem('categories');
     if (storedCategories) {
@@ -161,16 +142,17 @@ const ExpenseEntry = () => {
       
       if (sel.type === 'subwallet') {
         const subWallet = subWallets.find(sw => sw.id === sel.id);
-        if (subWallet && subWallet.balance > 0) {
-          const deduction = Math.min(subWallet.balance, remainingExpense);
-          console.log(`SubWallet ${subWallet.name}: balance=₹${subWallet.balance}, deduction=₹${deduction}`);
+        if (subWallet && (subWallet.balance || 0) > 0) {
+          const balance = subWallet.balance || 0;
+          const deduction = Math.min(balance, remainingExpense);
+          console.log(`SubWallet ${subWallet.name}: balance=₹${balance}, deduction=₹${deduction}`);
           if (deduction > 0) {
             preview.push({
               type: 'subwallet',
               id: subWallet.id,
               name: subWallet.name,
               deduction,
-              balance: subWallet.balance
+              balance: balance
             });
             remainingExpense -= deduction;
           }
@@ -179,11 +161,12 @@ const ExpenseEntry = () => {
         const wallet = wallets.find(w => w.id === sel.id);
         if (wallet) {
           const allocatedToSubWallets = subWallets
-            .filter(sw => sw.parentWalletType === wallet.type)
-            .reduce((sum, sw) => sum + sw.balance, 0);
-          const availableBalance = Math.max(0, wallet.balance - allocatedToSubWallets);
+            .filter(sw => sw.parent_wallet_type === wallet.type)
+            .reduce((sum, sw) => sum + (sw.balance || 0), 0);
+          const walletBalance = wallet.balance || 0;
+          const availableBalance = Math.max(0, walletBalance - allocatedToSubWallets);
           const deduction = Math.min(availableBalance, remainingExpense);
-          console.log(`Wallet ${wallet.name}: total=₹${wallet.balance}, allocated=₹${allocatedToSubWallets}, available=₹${availableBalance}, deduction=₹${deduction}`);
+          console.log(`Wallet ${wallet.name}: total=₹${walletBalance}, allocated=₹${allocatedToSubWallets}, available=₹${availableBalance}, deduction=₹${deduction}`);
           if (deduction > 0) {
             preview.push({
               type: 'wallet',
@@ -213,9 +196,9 @@ const ExpenseEntry = () => {
         const wallet = wallets.find(w => w.id === sel.id);
         if (wallet) {
           const allocatedToSubWallets = subWallets
-            .filter(sw => sw.parentWalletType === wallet.type)
-            .reduce((sum, sw) => sum + sw.balance, 0);
-          const availableBalance = wallet.balance - allocatedToSubWallets;
+            .filter(sw => sw.parent_wallet_type === wallet.type)
+            .reduce((sum, sw) => sum + (sw.balance || 0), 0);
+          const availableBalance = (wallet.balance || 0) - allocatedToSubWallets;
           total += Math.max(0, availableBalance);
         }
       }
@@ -335,9 +318,9 @@ const ExpenseEntry = () => {
   const { preview, remainingExpense } = calculateDeductionPreview();
 
   const groupedSubWallets = {
-    saving: subWallets.filter(sw => sw.parentWalletType === 'saving'),
-    needs: subWallets.filter(sw => sw.parentWalletType === 'needs'),
-    wants: subWallets.filter(sw => sw.parentWalletType === 'wants')
+    saving: subWallets.filter(sw => sw.parent_wallet_type === 'saving'),
+    needs: subWallets.filter(sw => sw.parent_wallet_type === 'needs'),
+    wants: subWallets.filter(sw => sw.parent_wallet_type === 'wants')
   };
 
   return (
@@ -574,9 +557,9 @@ const ExpenseEntry = () => {
               <div className="space-y-4">
                 {wallets.map((wallet) => {
                   const allocatedToSubWallets = subWallets
-                    .filter(sw => sw.parentWalletType === wallet.type)
-                    .reduce((sum, sw) => sum + sw.balance, 0);
-                  const availableBalance = wallet.balance - allocatedToSubWallets;
+                    .filter(sw => sw.parent_wallet_type === wallet.type)
+                    .reduce((sum, sw) => sum + (sw.balance || 0), 0);
+                  const availableBalance = (wallet.balance || 0) - allocatedToSubWallets;
                   
                   return (
                     <div
