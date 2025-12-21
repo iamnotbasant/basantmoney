@@ -286,6 +286,43 @@ export const useWalletData = (bankAccountId?: string | null) => {
     }
   };
 
+  // Restore expense deductions (add amounts back to subwallets when expense is deleted)
+  const restoreExpenseDeductions = async (
+    deductions: { type: 'wallet' | 'subwallet'; id: number; amount: number }[]
+  ) => {
+    if (!user) return false;
+
+    try {
+      for (const deduction of deductions) {
+        if (deduction.type === 'subwallet') {
+          // Fetch current balance from database to ensure accuracy
+          const { data: currentSubWallet } = await supabase
+            .from('user_subwallets')
+            .select('balance')
+            .eq('id', deduction.id)
+            .eq('user_id', user.id)
+            .single();
+
+          if (currentSubWallet) {
+            const newBalance = (currentSubWallet.balance || 0) + deduction.amount;
+            await supabase
+              .from('user_subwallets')
+              .update({ balance: newBalance, updated_at: new Date().toISOString() })
+              .eq('id', deduction.id)
+              .eq('user_id', user.id);
+          }
+        }
+      }
+
+      await fetchWallets();
+      window.dispatchEvent(new CustomEvent('walletDataChanged'));
+      return true;
+    } catch (error) {
+      console.error('Error restoring expense deductions:', error);
+      return false;
+    }
+  };
+
   useEffect(() => {
     fetchWallets();
   }, [fetchWallets]);
@@ -310,6 +347,7 @@ export const useWalletData = (bankAccountId?: string | null) => {
     deleteSubWallet,
     processIncomeDistribution,
     processExpenseDeductions,
+    restoreExpenseDeductions,
     refetch: fetchWallets,
   };
 };
