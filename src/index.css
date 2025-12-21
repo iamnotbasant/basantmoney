@@ -100,6 +100,7 @@
 
   body {
     @apply bg-background text-foreground;
+    font-family: 'Inter', sans-serif;
     /* Prevent horizontal scrolling on mobile */
     overflow-x: hidden;
   }
@@ -113,6 +114,7 @@
   html {
     -webkit-text-size-adjust: 100%;
     -ms-text-size-adjust: 100%;
+    font-family: 'Inter', sans-serif;
   }
 }
 
