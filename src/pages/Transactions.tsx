@@ -86,7 +86,7 @@ const Transactions = () => {
   const { currentAccount } = useBankAccounts();
   const { incomeData: supabaseIncome, loading: incomeLoading, updateIncome, deleteIncome, refetch: refetchIncome } = useIncomeData(currentAccount?.id);
   const { expenseData: supabaseExpenses, loading: expenseLoading, updateExpense, deleteExpense, refetch: refetchExpenses } = useExpenseData(currentAccount?.id);
-  const { subWallets, processExpenseDeductions, refetch: refetchWallets } = useWalletData(currentAccount?.id);
+  const { subWallets, processExpenseDeductions, restoreExpenseDeductions, refetch: refetchWallets } = useWalletData(currentAccount?.id);
 
   // Convert Supabase data to Transaction format
   const transactions = useMemo(() => {
@@ -219,6 +219,18 @@ const Transactions = () => {
       if (editingTransaction.type === 'income') {
         await deleteIncome(editingTransaction.id);
       } else {
+        // Find the expense to get its deductions before deleting
+        const expenseToDelete = supabaseExpenses.find(e => e.id === editingTransaction.id);
+        
+        if (expenseToDelete?.deductions) {
+          // Parse deductions and restore balances
+          const deductions = expenseToDelete.deductions as unknown as { type: 'wallet' | 'subwallet'; id: number; amount: number }[];
+          if (Array.isArray(deductions) && deductions.length > 0) {
+            console.log('Restoring deductions:', deductions);
+            await restoreExpenseDeductions(deductions);
+          }
+        }
+        
         await deleteExpense(editingTransaction.id);
       }
 
@@ -228,7 +240,7 @@ const Transactions = () => {
       
       toast({
         title: "Success",
-        description: "Transaction deleted from backend",
+        description: "Transaction deleted and balances restored",
       });
       
       setIsEditOpen(false);
