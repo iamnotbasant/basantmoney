@@ -243,10 +243,50 @@ const ExpenseEntry = () => {
       console.log(`Processing expense of ₹${expenseAmount}`);
       console.log('Selection queue:', selectedQueue);
 
-      // Use WalletService to process the expense
-      const { deductions, success } = WalletService.processExpense(expenseAmount, selectedQueue);
+      // Build deductions directly from Supabase data (not localStorage)
+      let remainingExpense = expenseAmount;
+      const deductions: { type: 'subwallet' | 'wallet', id: number, amount: number, name: string }[] = [];
 
-      if (!success) {
+      for (const selection of selectedQueue) {
+        if (remainingExpense <= 0) break;
+
+        if (selection.type === 'subwallet') {
+          const subWallet = subWallets.find(sw => sw.id === selection.id);
+          if (subWallet && (subWallet.balance || 0) > 0) {
+            const deductionAmount = Math.min(subWallet.balance || 0, remainingExpense);
+            if (deductionAmount > 0) {
+              deductions.push({
+                type: 'subwallet',
+                id: subWallet.id,
+                amount: deductionAmount,
+                name: subWallet.name
+              });
+              remainingExpense -= deductionAmount;
+            }
+          }
+        } else if (selection.type === 'wallet') {
+          const wallet = wallets.find(w => w.id === selection.id);
+          if (wallet) {
+            const allocatedToSubWallets = subWallets
+              .filter(sw => sw.parent_wallet_type === wallet.type)
+              .reduce((sum, sw) => sum + (sw.balance || 0), 0);
+            const availableBalance = Math.max(0, (wallet.balance || 0) - allocatedToSubWallets);
+            const deductionAmount = Math.min(availableBalance, remainingExpense);
+            
+            if (deductionAmount > 0) {
+              deductions.push({
+                type: 'wallet',
+                id: wallet.id,
+                amount: deductionAmount,
+                name: wallet.name
+              });
+              remainingExpense -= deductionAmount;
+            }
+          }
+        }
+      }
+
+      if (remainingExpense > 0) {
         toast({
           title: "Transaction Failed",
           description: "Unable to complete the transaction with available funds.",
@@ -273,9 +313,6 @@ const ExpenseEntry = () => {
 
       // Process deductions in Supabase
       await processExpenseDeductions(deductions);
-
-      // Also apply to localStorage for backward compatibility
-      WalletService.applyExpenseDeductions(deductions);
 
       console.log('Final deductions applied:', deductions);
 
