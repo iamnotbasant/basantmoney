@@ -296,12 +296,13 @@ const ExpenseEntry = () => {
         return;
       }
 
-      // Save expense to Supabase
+      // Save expense to Supabase with payment method
       const result = await addExpense({
         description: title,
         amount: expenseAmount,
         date: format(date, 'yyyy-MM-dd'),
         category: category.toLowerCase(),
+        payment_method: paymentMethod,
         deductions: deductions.map(({ name, ...rest }) => rest),
         bank_account_id: currentAccount?.id || null,
       });

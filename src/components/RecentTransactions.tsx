@@ -1,12 +1,12 @@
-
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ArrowRight, TrendingUp, TrendingDown } from 'lucide-react';
-import { IncomeData, ExpenseData } from '@/types/finance';
-import { WalletService } from '@/utils/walletService';
+import { useIncomeData } from '@/hooks/useIncomeData';
+import { useExpenseData } from '@/hooks/useExpenseData';
+import { useBankAccounts } from '@/hooks/useBankAccounts';
 
 interface Transaction {
   id: number;
@@ -19,21 +19,17 @@ interface Transaction {
 
 const RecentTransactions = () => {
   const navigate = useNavigate();
-  const [recentTransactions, setRecentTransactions] = useState<Transaction[]>([]);
+  const { currentAccount } = useBankAccounts();
+  const { incomeData, loading: incomeLoading } = useIncomeData(currentAccount?.id);
+  const { expenseData, loading: expenseLoading } = useExpenseData(currentAccount?.id);
 
-  useEffect(() => {
-    loadRecentTransactions();
-  }, []);
-
-  const loadRecentTransactions = () => {
-    const incomeData: IncomeData[] = JSON.parse(localStorage.getItem(WalletService.storageKey('incomeData')) || '[]');
-    const expenseData: ExpenseData[] = JSON.parse(localStorage.getItem(WalletService.storageKey('expenseData')) || '[]');
-
+  // Convert Supabase data to Transaction format and get recent 5
+  const recentTransactions = React.useMemo(() => {
     const incomeTransactions: Transaction[] = incomeData.map(item => ({
       id: item.id,
       type: 'income' as const,
       description: item.source,
-      amount: item.amount,
+      amount: Number(item.amount),
       date: item.date,
       category: item.category
     }));
@@ -42,17 +38,15 @@ const RecentTransactions = () => {
       id: item.id,
       type: 'expense' as const,
       description: item.description,
-      amount: item.amount,
+      amount: Number(item.amount),
       date: item.date,
       category: item.category
     }));
 
-    const allTransactions = [...incomeTransactions, ...expenseTransactions]
+    return [...incomeTransactions, ...expenseTransactions]
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
       .slice(0, 5);
-
-    setRecentTransactions(allTransactions);
-  };
+  }, [incomeData, expenseData]);
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-IN', {
@@ -60,6 +54,8 @@ const RecentTransactions = () => {
       month: 'short'
     });
   };
+
+  const isLoading = incomeLoading || expenseLoading;
 
   return (
     <Card>
@@ -76,7 +72,11 @@ const RecentTransactions = () => {
         </Button>
       </CardHeader>
       <CardContent>
-        {recentTransactions.length > 0 ? (
+        {isLoading ? (
+          <div className="text-center py-8 text-muted-foreground">
+            <p>Loading transactions...</p>
+          </div>
+        ) : recentTransactions.length > 0 ? (
           <div className="space-y-3">
             {recentTransactions.map((transaction) => (
               <div
