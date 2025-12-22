@@ -194,13 +194,14 @@ const IncomeEntry = () => {
     setIsSubmitting(true);
 
     try {
-      // Save income to Supabase with payment method
+      // Save income to Supabase with payment method and notes
       const result = await addIncome({
         source: source.trim(),
         amount: incomeAmount,
         date: date.toISOString().split('T')[0],
         category: selectedCategory,
         payment_method: selectedPaymentMethod,
+        notes: notes.trim() || null,
         bank_account_id: currentAccount?.id || null,
       });
 

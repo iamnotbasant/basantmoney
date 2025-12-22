@@ -117,6 +117,7 @@ export type Database = {
           deductions: Json | null
           description: string
           id: number
+          notes: string | null
           payment_method: string | null
           updated_at: string | null
           user_id: string
@@ -130,6 +131,7 @@ export type Database = {
           deductions?: Json | null
           description: string
           id?: number
+          notes?: string | null
           payment_method?: string | null
           updated_at?: string | null
           user_id: string
@@ -143,6 +145,7 @@ export type Database = {
           deductions?: Json | null
           description?: string
           id?: number
+          notes?: string | null
           payment_method?: string | null
           updated_at?: string | null
           user_id?: string
@@ -202,6 +205,7 @@ export type Database = {
           created_at: string | null
           date: string
           id: number
+          notes: string | null
           payment_method: string | null
           source: string
           updated_at: string | null
@@ -214,6 +218,7 @@ export type Database = {
           created_at?: string | null
           date: string
           id?: number
+          notes?: string | null
           payment_method?: string | null
           source: string
           updated_at?: string | null
@@ -226,6 +231,7 @@ export type Database = {
           created_at?: string | null
           date?: string
           id?: number
+          notes?: string | null
           payment_method?: string | null
           source?: string
           updated_at?: string | null
