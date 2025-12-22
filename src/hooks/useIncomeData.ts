@@ -11,6 +11,7 @@ export interface IncomeEntry {
   date: string;
   category: string;
   payment_method?: string | null;
+  notes?: string | null;
   bank_account_id?: string | null;
   created_at?: string;
   updated_at?: string;
@@ -60,6 +61,7 @@ export const useIncomeData = (bankAccountId?: string | null) => {
     date: string;
     category: string;
     payment_method?: string | null;
+    notes?: string | null;
     bank_account_id?: string | null;
   }) => {
     if (!user) {
@@ -77,6 +79,7 @@ export const useIncomeData = (bankAccountId?: string | null) => {
           date: income.date,
           category: income.category,
           payment_method: income.payment_method || null,
+          notes: income.notes || null,
           bank_account_id: income.bank_account_id || null,
         })
         .select()

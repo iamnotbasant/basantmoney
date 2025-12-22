@@ -94,7 +94,7 @@ const Transactions = () => {
       id: item.id,
       type: 'income' as const,
       source: item.source,
-      description: '',
+      description: (item as any).notes || '',
       amount: Number(item.amount),
       date: item.date,
       category: item.category,
@@ -105,7 +105,7 @@ const Transactions = () => {
       id: item.id,
       type: 'expense' as const,
       source: item.description,
-      description: '',
+      description: (item as any).notes || '',
       amount: Number(item.amount),
       date: item.date,
       category: item.category,
@@ -181,14 +181,18 @@ const Transactions = () => {
           amount: newAmount,
           date: editData.date,
           category: editData.category,
-        });
+          payment_method: editData.paymentMethod || null,
+          notes: editData.description || null,
+        } as any);
       } else {
         await updateExpense(editingTransaction.id, {
           description: editData.source,
           amount: newAmount,
           date: editData.date,
           category: editData.category,
-        });
+          payment_method: editData.paymentMethod || null,
+          notes: editData.description || null,
+        } as any);
       }
 
       // Trigger wallet data refresh
