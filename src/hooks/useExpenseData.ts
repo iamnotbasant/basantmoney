@@ -11,6 +11,7 @@ export interface ExpenseEntry {
   amount: number;
   date: string;
   category: string;
+  payment_method?: string | null;
   deductions?: Json;
   bank_account_id?: string | null;
   created_at?: string;
@@ -66,6 +67,7 @@ export const useExpenseData = (bankAccountId?: string | null) => {
     amount: number;
     date: string;
     category: string;
+    payment_method?: string | null;
     deductions?: DeductionItem[];
     bank_account_id?: string | null;
   }) => {
@@ -83,6 +85,7 @@ export const useExpenseData = (bankAccountId?: string | null) => {
           amount: expense.amount,
           date: expense.date,
           category: expense.category,
+          payment_method: expense.payment_method || null,
           deductions: expense.deductions as unknown as Json,
           bank_account_id: expense.bank_account_id || null,
         })

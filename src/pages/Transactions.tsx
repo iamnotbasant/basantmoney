@@ -98,7 +98,7 @@ const Transactions = () => {
       amount: Number(item.amount),
       date: item.date,
       category: item.category,
-      paymentMethod: 'Not specified'
+      paymentMethod: (item as any).payment_method || 'Not specified'
     }));
 
     const expenseTransactions: Transaction[] = supabaseExpenses.map(item => ({
@@ -109,7 +109,7 @@ const Transactions = () => {
       amount: Number(item.amount),
       date: item.date,
       category: item.category,
-      paymentMethod: 'Not specified'
+      paymentMethod: (item as any).payment_method || 'Not specified'
     }));
 
     return [...incomeTransactions, ...expenseTransactions]
