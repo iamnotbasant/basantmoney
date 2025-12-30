@@ -297,10 +297,16 @@ const ExpenseEntry = () => {
       }
 
       // Save expense to Supabase with payment method and notes
+      // Use local date format to avoid timezone issues
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      const localDateString = `${year}-${month}-${day}`;
+      
       const result = await addExpense({
         description: title,
         amount: expenseAmount,
-        date: format(date, 'yyyy-MM-dd'),
+        date: localDateString,
         category: category.toLowerCase(),
         payment_method: paymentMethod,
         notes: notes.trim() || null,
