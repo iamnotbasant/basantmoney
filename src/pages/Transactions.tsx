@@ -86,7 +86,7 @@ const Transactions = () => {
   const { currentAccount } = useBankAccounts();
   const { incomeData: supabaseIncome, loading: incomeLoading, updateIncome, deleteIncome, refetch: refetchIncome } = useIncomeData(currentAccount?.id);
   const { expenseData: supabaseExpenses, loading: expenseLoading, updateExpense, deleteExpense, refetch: refetchExpenses } = useExpenseData(currentAccount?.id);
-  const { subWallets, processExpenseDeductions, restoreExpenseDeductions, refetch: refetchWallets } = useWalletData(currentAccount?.id);
+  const { subWallets, processExpenseDeductions, restoreExpenseDeductions, reverseIncomeDistribution, refetch: refetchWallets } = useWalletData(currentAccount?.id);
 
   // Convert Supabase data to Transaction format
   const transactions = useMemo(() => {
@@ -221,7 +221,11 @@ const Transactions = () => {
 
     try {
       if (editingTransaction.type === 'income') {
+        const incomeToDelete = supabaseIncome.find(i => i.id === editingTransaction.id);
         await deleteIncome(editingTransaction.id);
+        if (incomeToDelete) {
+          await reverseIncomeDistribution(Number(incomeToDelete.amount) || 0);
+        }
       } else {
         // Find the expense to get its deductions before deleting
         const expenseToDelete = supabaseExpenses.find(e => e.id === editingTransaction.id);
