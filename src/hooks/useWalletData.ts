@@ -286,6 +286,40 @@ export const useWalletData = (bankAccountId?: string | null) => {
     }
   };
 
+  // Reverse an income distribution (when an income is deleted)
+  const reverseIncomeDistribution = async (incomeAmount: number) => {
+    if (!user) return false;
+    try {
+      let distribution = { saving: 50, needs: 30, wants: 20 };
+      try {
+        const s = JSON.parse(localStorage.getItem('userSettings') || '{}');
+        if (s?.distribution) distribution = { ...distribution, ...s.distribution };
+      } catch {}
+
+      const { data: fresh } = await supabase
+        .from('user_subwallets')
+        .select('id, balance, parent_wallet_type, allocation_percentage')
+        .eq('user_id', user.id);
+
+      for (const sw of fresh || []) {
+        const pct = (distribution as any)[sw.parent_wallet_type] || 0;
+        const remove = (((incomeAmount * pct) / 100) * sw.allocation_percentage) / 100;
+        if (!remove) continue;
+        await supabase
+          .from('user_subwallets')
+          .update({ balance: (sw.balance || 0) - remove, updated_at: new Date().toISOString() })
+          .eq('id', sw.id)
+          .eq('user_id', user.id);
+      }
+      await fetchWallets();
+      window.dispatchEvent(new CustomEvent('walletDataChanged'));
+      return true;
+    } catch (error) {
+      console.error('Error reversing income distribution:', error);
+      return false;
+    }
+  };
+
   // Restore expense deductions (add amounts back to subwallets when expense is deleted)
   const restoreExpenseDeductions = async (
     deductions: { type: 'wallet' | 'subwallet'; id: number; amount: number }[]
@@ -348,6 +382,7 @@ export const useWalletData = (bankAccountId?: string | null) => {
     processIncomeDistribution,
     processExpenseDeductions,
     restoreExpenseDeductions,
+    reverseIncomeDistribution,
     refetch: fetchWallets,
   };
 };
