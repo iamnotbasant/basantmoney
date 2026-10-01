@@ -2,7 +2,6 @@
 import React from 'react';
 import { Filter } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { cn } from '@/lib/utils';
 
 interface TransactionsFilterBarProps {
   filterType: string;
@@ -28,48 +27,39 @@ const TransactionsFilterBar: React.FC<TransactionsFilterBarProps> = ({
   getUniqueCategories,
 }) => {
   return (
-    <div className="flex flex-row flex-wrap gap-4 items-center w-full lg:w-auto">
-      {/* Filter label */}
-      <div className="flex items-center gap-2">
-        <Filter className="h-5 w-5 text-muted-foreground" />
-        <span className="text-base text-muted-foreground font-medium">Filters:</span>
+    <div className="flex w-full flex-col gap-3 md:flex-row md:items-center">
+      <div className="flex shrink-0 items-center gap-2 text-muted-foreground">
+        <Filter className="h-4 w-4" />
+        <span className="text-sm font-medium">Filter by</span>
       </div>
+      <div className="grid w-full grid-cols-1 gap-2 sm:grid-cols-3">
+        <Select value={filterType} onValueChange={setFilterType}>
+          <SelectTrigger className="h-10 w-full rounded-md text-sm">
+            <SelectValue placeholder="All Types" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Types</SelectItem>
+            <SelectItem value="income">Income</SelectItem>
+            <SelectItem value="expense">Expense</SelectItem>
+          </SelectContent>
+        </Select>
 
-      {/* Type dropdown */}
-      <Select value={filterType} onValueChange={setFilterType}>
-        <SelectTrigger className="w-40 h-11 text-base font-normal rounded-md border">
-          <SelectValue placeholder="All Types" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="all">All Types</SelectItem>
-          <SelectItem value="income">Income</SelectItem>
-          <SelectItem value="expense">Expense</SelectItem>
-        </SelectContent>
-      </Select>
+        <Select value={filterCategory} onValueChange={setFilterCategory}>
+          <SelectTrigger className="h-10 w-full rounded-md text-sm">
+            <SelectValue placeholder="All Categories" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Categories</SelectItem>
+            {getUniqueCategories().map(category => (
+              <SelectItem key={category} value={category}>
+                {category.charAt(0).toUpperCase() + category.slice(1)}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
 
-
-      {/* Category dropdown */}
-      <Select value={filterCategory} onValueChange={setFilterCategory}>
-        <SelectTrigger className="w-56 h-11 text-base font-normal rounded-md border font-normal outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-shadow"
-          style={{ boxShadow: 'none', borderColor: '#132144' }}
-        >
-          <SelectValue placeholder="All Categories" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="all">All Categories</SelectItem>
-          {getUniqueCategories().map(category => (
-            <SelectItem key={category} value={category}>
-              {category.charAt(0).toUpperCase() + category.slice(1)}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-
-      {/* Month filter moved to end */}
-      <div className="flex items-center gap-2">
-        <span className="text-base text-muted-foreground font-medium">Month:</span>
         <Select value={filterMonth} onValueChange={setFilterMonth}>
-          <SelectTrigger className="w-48 h-11 text-base font-normal rounded-md border">
+          <SelectTrigger className="h-10 w-full rounded-md text-sm">
             <SelectValue placeholder="All Months" />
           </SelectTrigger>
           <SelectContent>

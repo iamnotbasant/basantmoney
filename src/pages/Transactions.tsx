@@ -448,47 +448,47 @@ const Transactions = () => {
 
         {/* Actions and Filters */}
         <Card className="mb-8 animate-fade-in">
-          <CardContent className="p-6">
-            <div className="flex flex-col lg:flex-row gap-6 items-start lg:items-center justify-between">
-              {/* Action Buttons */}
-              <div className="flex flex-col sm:flex-row gap-4 w-full lg:w-auto">
+          <CardContent className="p-4 sm:p-5">
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
                 <Button 
                   onClick={() => navigate('/income')}
-                  className="flex items-center justify-center gap-2 h-11 px-6 transition-all duration-300 transform hover:-translate-y-0.5 font-semibold bg-[#131a29]"
+                  className="h-10 gap-2 px-4 font-semibold transition-colors"
                 >
-                  <Plus className="h-5 w-5" />
+                  <Plus className="h-4 w-4" />
                   Add Income
                 </Button>
                 <Button 
                   onClick={() => navigate('/expense')}
                   variant="outline"
-                  className="flex items-center justify-center gap-2 h-11 px-6 transition-all duration-300 transform hover:-translate-y-0.5 font-semibold"
+                  className="h-10 gap-2 px-4 font-semibold transition-colors"
                 >
-                  <Plus className="h-5 w-5" />
+                  <Plus className="h-4 w-4" />
                   Add Expense
                 </Button>
-                <Button variant="outline" onClick={() => exportData('csv')} className="flex items-center justify-center gap-2 h-11 px-6 font-semibold">
-                  <Download className="h-5 w-5" />
+                <Button variant="outline" onClick={() => exportData('csv')} className="h-10 gap-2 px-4 font-semibold transition-colors">
+                  <Download className="h-4 w-4" />
                   Export CSV
                 </Button>
-                <Button variant="outline" onClick={() => exportData('json')} className="flex items-center justify-center gap-2 h-11 px-6 font-semibold">
-                  <Download className="h-5 w-5" />
+                <Button variant="outline" onClick={() => exportData('json')} className="h-10 gap-2 px-4 font-semibold transition-colors">
+                  <Download className="h-4 w-4" />
                   Export JSON
                 </Button>
               </div>
 
-              {/* REFACTOR: Use new filter bar */}
-              <TransactionsFilterBar
-                filterType={filterType}
-                setFilterType={setFilterType}
-                filterMonth={filterMonth}
-                setFilterMonth={setFilterMonth}
-                filterCategory={filterCategory}
-                setFilterCategory={setFilterCategory}
-                getUniqueMonths={getUniqueMonths}
-                formatMonthForDisplay={formatMonthForDisplay}
-                getUniqueCategories={getUniqueCategories}
-              />
+              <div className="border-t pt-4">
+                <TransactionsFilterBar
+                  filterType={filterType}
+                  setFilterType={setFilterType}
+                  filterMonth={filterMonth}
+                  setFilterMonth={setFilterMonth}
+                  filterCategory={filterCategory}
+                  setFilterCategory={setFilterCategory}
+                  getUniqueMonths={getUniqueMonths}
+                  formatMonthForDisplay={formatMonthForDisplay}
+                  getUniqueCategories={getUniqueCategories}
+                />
+              </div>
             </div>
           </CardContent>
         </Card>
