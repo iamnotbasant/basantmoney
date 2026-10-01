@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Filter, Trash2, Loader2 } from 'lucide-react';
+import { Plus, Filter, Trash2, Loader2, Download } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -352,6 +352,87 @@ const Transactions = () => {
     );
   }
 
+  const exportData = (format: 'csv' | 'json') => {
+    const list = [...filteredTransactions].sort((a, b) => a.date.localeCompare(b.date));
+    if (list.length === 0) {
+      toast({ title: 'Nothing to export', description: 'No transactions match the current filters.' });
+      return;
+    }
+    const firstDate = list[0].date;
+    const startingBalance = transactions
+      .filter(t => t.date < firstDate)
+      .reduce((s, t) => s + (t.type === 'income' ? t.amount : -t.amount), 0);
+    let running = startingBalance;
+    const rows = list.map(t => {
+      running += t.type === 'income' ? t.amount : -t.amount;
+      return {
+        date: t.date,
+        type: t.type,
+        source: t.source,
+        description: t.description,
+        category: t.category,
+        payment_method: t.paymentMethod || '',
+        credit: t.type === 'income' ? t.amount : 0,
+        debit: t.type === 'expense' ? t.amount : 0,
+        balance: Number(running.toFixed(2)),
+      };
+    });
+    const totalIncome = list.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
+    const totalExpense = list.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
+    const totalBalance = transactions.reduce((s, t) => s + (t.type === 'income' ? t.amount : -t.amount), 0);
+    const summary = {
+      exported_on: new Date().toLocaleString('en-IN'),
+      filters: { type: filterType, month: filterMonth, category: filterCategory, payment_method: filterPaymentMethod },
+      from_date: firstDate,
+      to_date: list[list.length - 1].date,
+      starting_balance: Number(startingBalance.toFixed(2)),
+      total_income: Number(totalIncome.toFixed(2)),
+      total_expense: Number(totalExpense.toFixed(2)),
+      closing_balance: Number(running.toFixed(2)),
+      total_balance_all_time: Number(totalBalance.toFixed(2)),
+      transaction_count: list.length,
+    };
+
+    let content: string;
+    let mime: string;
+    if (format === 'json') {
+      content = JSON.stringify({ summary, transactions: rows }, null, 2);
+      mime = 'application/json';
+    } else {
+      const esc = (v: unknown) => {
+        const s = String(v ?? '');
+        return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+      };
+      const lines = [
+        ['Statement Summary'],
+        ['Exported On', summary.exported_on],
+        ['From Date', summary.from_date],
+        ['To Date', summary.to_date],
+        ['Starting Balance', summary.starting_balance],
+        ['Total Income', summary.total_income],
+        ['Total Expense', summary.total_expense],
+        ['Closing Balance', summary.closing_balance],
+        ['Total Balance (All Time)', summary.total_balance_all_time],
+        ['Transactions', summary.transaction_count],
+        [],
+        ['Date', 'Type', 'Source', 'Description', 'Category', 'Payment Method', 'Credit', 'Debit', 'Balance'],
+        ...rows.map(r => [r.date, r.type, r.source, r.description, r.category, r.payment_method, r.credit, r.debit, r.balance]),
+      ];
+      content = lines.map(l => l.map(esc).join(',')).join('\n');
+      mime = 'text/csv';
+    }
+    const blob = new Blob([content], { type: mime });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `transactions-${new Date().toISOString().slice(0, 10)}.${format}`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast({ title: 'Exported', description: `${list.length} transactions downloaded as ${format.toUpperCase()}` });
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
@@ -385,6 +466,14 @@ const Transactions = () => {
                 >
                   <Plus className="h-5 w-5" />
                   Add Expense
+                </Button>
+                <Button variant="outline" onClick={() => exportData('csv')} className="flex items-center justify-center gap-2 h-11 px-6 font-semibold">
+                  <Download className="h-5 w-5" />
+                  Export CSV
+                </Button>
+                <Button variant="outline" onClick={() => exportData('json')} className="flex items-center justify-center gap-2 h-11 px-6 font-semibold">
+                  <Download className="h-5 w-5" />
+                  Export JSON
                 </Button>
               </div>
 

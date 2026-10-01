@@ -77,9 +77,15 @@ const Index = () => {
   };
 
   // Create dynamic wallets with calculated balances from Supabase
+  // Calculate totals from all transactions
+  const totalIncomeAllTime = getTotalIncome();
+  const totalExpensesAllTime = getTotalExpenses();
+  const netBalance = totalIncomeAllTime - totalExpensesAllTime;
+
+  // For now, Saving wallet shows the same as Total Balance
   const dynamicWallets = wallets.map(wallet => ({
     ...wallet,
-    balance: getWalletBalance(wallet.type)
+    balance: wallet.type === 'saving' ? netBalance : getWalletBalance(wallet.type)
   }));
 
   // Filter data by selected month and year (ONLY for summary cards)
@@ -96,11 +102,6 @@ const Index = () => {
     const itemYear = itemDate.getFullYear();
     return itemMonth === selectedMonth && itemYear === selectedYear;
   });
-
-  // Calculate totals from Supabase data
-  const totalIncomeAllTime = getTotalIncome();
-  const totalExpensesAllTime = getTotalExpenses();
-  const netBalance = totalIncomeAllTime - totalExpensesAllTime;
 
   const isLoading = incomeLoading || expenseLoading || walletsLoading;
 
