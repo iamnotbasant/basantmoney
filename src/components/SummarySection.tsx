@@ -18,33 +18,30 @@ const SummarySection: React.FC<SummarySectionProps> = ({ incomeData, expenseData
       title: 'Net Balance',
       value: netBalance,
       icon: DollarSign,
-      color: netBalance >= 0 ? 'green' : 'red',
       bgColor: netBalance >= 0 
-        ? 'bg-emerald-500/10 border-emerald-500/20 dark:bg-emerald-950/20' 
-        : 'bg-rose-500/10 border-rose-500/20 dark:bg-rose-950/20',
+        ? 'bg-emerald-500/10 border-emerald-500/20 dark:bg-emerald-500/10 dark:border-emerald-500/30' 
+        : 'bg-rose-500/10 border-rose-500/20 dark:bg-rose-500/10 dark:border-rose-500/30',
       iconColor: netBalance >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400',
       textColor: netBalance >= 0 ? 'text-emerald-700 dark:text-emerald-300' : 'text-rose-700 dark:text-rose-300',
-      iconBg: netBalance >= 0 ? 'bg-emerald-500/20 text-emerald-600' : 'bg-rose-500/20 text-rose-600'
+      iconBg: netBalance >= 0 ? 'bg-emerald-500/20 dark:bg-emerald-500/20' : 'bg-rose-500/20 dark:bg-rose-500/20'
     },
     {
       title: 'Total Income',
       value: totalIncome,
       icon: TrendingUp,
-      color: 'green',
-      bgColor: 'bg-emerald-500/10 border-emerald-500/20 dark:bg-emerald-950/20',
+      bgColor: 'bg-emerald-500/10 border-emerald-500/20 dark:bg-emerald-500/10 dark:border-emerald-500/30',
       iconColor: 'text-emerald-600 dark:text-emerald-400',
       textColor: 'text-emerald-700 dark:text-emerald-300',
-      iconBg: 'bg-emerald-500/20 text-emerald-600'
+      iconBg: 'bg-emerald-500/20 dark:bg-emerald-500/20'
     },
     {
       title: 'Total Expenses',
       value: totalExpenses,
       icon: TrendingDown,
-      color: 'red',
-      bgColor: 'bg-rose-500/10 border-rose-500/20 dark:bg-rose-950/20',
+      bgColor: 'bg-rose-500/10 border-rose-500/20 dark:bg-rose-500/10 dark:border-rose-500/30',
       iconColor: 'text-rose-600 dark:text-rose-400',
       textColor: 'text-rose-700 dark:text-rose-300',
-      iconBg: 'bg-rose-500/20 text-rose-600'
+      iconBg: 'bg-rose-500/20 dark:bg-rose-500/20'
     }
   ];
 
@@ -62,7 +59,7 @@ const SummarySection: React.FC<SummarySectionProps> = ({ incomeData, expenseData
           >
             <div className="flex items-start justify-between mb-4">
               <div className="flex-1">
-                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{card.title}</p>
+                <p className="text-xs font-semibold uppercase tracking-wider text-foreground/75 dark:text-foreground/80">{card.title}</p>
               </div>
               <div className={`p-2.5 rounded-xl ${card.iconBg}`}>
                 <card.icon className={`h-5 w-5 ${card.iconColor}`} />
