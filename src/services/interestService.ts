@@ -27,6 +27,9 @@ import {
   EXPECTED_PRE_RECONCILIATION,
   extractWalletBalances,
   matchesPreReconciliationState,
+  computeUnallocated,
+  evaluateReconciliation,
+  ReconcileBalancesResult,
 } from '@/utils/interestEngine';
 import { toast } from 'sonner';
 
@@ -259,10 +262,29 @@ export class InterestService {
     const warnings: string[] = [];
     const adoptedEntries: string[] = [];
 
-    // 1. RECONCILIATION (Spec §6)
-    // Needs: -₹598.91 -> 0
-    // Wants: -₹399.27 -> 0
-    // Saving / Main: +₹998.18 -> ₹11,130.05
+    // CRITICAL: Do NOT run user-scoped DB migration without a valid authenticated userId!
+    // Never mark interest_first_run_completed in localStorage if userId is missing.
+    if (!userId) {
+      console.warn('First-run migration called without valid userId. Postponing until auth is ready.');
+      return {
+        reconciliationReport: {
+          timestamp: new Date().toISOString(),
+          status: 'skipped',
+          lines: ['First-run migration postponed: User is not authenticated.'],
+          savingMoved: 0,
+          needsMoved: 0,
+          wantsMoved: 0,
+          resultingBalances: { savingMain: 0, needs: 0, wants: 0, total: 0 },
+          reason: 'User not authenticated',
+        },
+        adoptedEntries: [],
+        novemberAmount: 0,
+        warnings: ['User not authenticated, first-run migration postponed.'],
+      };
+    }
+
+    // 1. RECONCILIATION (Spec §6 & Bug 2 Fix)
+    // Synchronize virtual wallets with ledger total: Main ₹10,131.88 -> ₹11,130.05
     const reconciliationReport = await this.executeReconciliation(userId);
     if (reconciliationReport.status === 'skipped') {
       warnings.push(
@@ -276,6 +298,7 @@ export class InterestService {
       const { data: incomeEntries } = await supabase
         .from('user_income')
         .select('*')
+        .eq('user_id', userId)
         .eq('source', 'Slice')
         .order('date', { ascending: true });
 
@@ -326,12 +349,17 @@ export class InterestService {
       console.warn('Could not adopt Supabase entries directly:', e);
     }
 
-    // 3. BACKFILL & NOVEMBER ENTRY CREATION
-    // Calculate November interest up to 10 Nov 2026
+    // 3. BACKFILL & NOVEMBER ENTRY CREATION (Bug 1 Fix)
+    // Catch-up backfill: 01 Nov up to yesterday (Kolkata time, bank D+1 credit)
+    const todayStr = getKolkataDateString();
+    const yesterdayStr = getKolkataYesterdayString(todayStr);
     const rates = await this.getInterestRates('Slice');
-    const novDates = getDateRange('2026-11-01', '2026-11-10');
-    const novBalances = novDates.map(date => ({ date, balance: 11130.05 }));
-    const novRecords = novDates.map(date => {
+
+    // On 10 Nov, backfill 01-09 Nov (job computes yesterday only)
+    const novEndDate = yesterdayStr >= '2026-11-01' ? yesterdayStr : '2026-11-01';
+    const novDates = getDateRange('2026-11-01', novEndDate);
+
+    const novRecords: InterestDayRecord[] = novDates.map(date => {
       const rate = getRateForDate(rates, date);
       const interest = calculateDailyInterest(11130.05, rate);
       return {
@@ -345,53 +373,117 @@ export class InterestService {
     });
 
     // Upsert November interest_days
-    for (const record of novRecords) {
-      try {
-        await supabase.from('interest_days').upsert([record], {
-          onConflict: 'user_id,interest_date,account',
-        });
-      } catch {
-        // ignore
+    if (novRecords.length > 0) {
+      const { error: upsertErr } = await supabase.from('interest_days').upsert(novRecords, {
+        onConflict: 'user_id,interest_date,account',
+      });
+      if (upsertErr) {
+        const errMsg = `Failed to upsert interest_days in first-run migration: ${upsertErr.message}`;
+        console.error(errMsg);
+        warnings.push(errMsg);
+        await this.logJobRun('app-open', 0, 'failed', upsertErr.message, userId);
+        return {
+          reconciliationReport,
+          adoptedEntries,
+          novemberAmount: 0,
+          warnings,
+        };
       }
     }
 
-    // Create or update November 2026 entry
-    const novemberTotal = 16.80; // 10 days * 1.68
-    if (userId) {
-      try {
-        const { data: existingNov } = await supabase
-          .from('user_income')
-          .select('id, amount, is_manually_edited')
-          .eq('user_id', userId)
-          .eq('is_auto_interest', true)
-          .like('date', '2026-11%')
-          .maybeSingle();
+    // Dynamic November total: sum of persisted day rows
+    const novemberTotal = roundToTwoDecimals(novRecords.reduce((sum, r) => sum + r.interest_amount, 0));
 
-        if (!existingNov) {
-          await supabase.from('user_income').insert([{
-            user_id: userId,
-            source: 'Slice',
-            category: 'Interest',
-            notes: 'November savings interest',
-            amount: novemberTotal,
-            date: '2026-11-30',
-            payment_method: 'UPI',
-            is_auto_interest: true,
-            auto_interest_status: 'estimated',
-            wallet_target: 'saving',
-          }]);
-        } else if (!existingNov.is_manually_edited) {
-          await supabase.from('user_income').update({
-            amount: novemberTotal,
-            auto_interest_status: 'estimated',
-          }).eq('id', existingNov.id);
-        }
-      } catch (e) {
-        console.warn('Could not persist November entry to Supabase:', e);
+    // Get user primary bank account so bank_account_id is always assigned (Anti-flicker fix)
+    let primaryBankId: string | null = null;
+    try {
+      const { data: bankData } = await supabase
+        .from('user_bank_accounts')
+        .select('id')
+        .eq('user_id', userId)
+        .order('is_primary', { ascending: false })
+        .limit(1);
+      if (bankData && bankData.length > 0) {
+        primaryBankId = bankData[0].id;
       }
+    } catch (e) {
+      console.warn('Could not fetch bank accounts:', e);
+    }
+    if (!primaryBankId && typeof localStorage !== 'undefined') {
+      primaryBankId = localStorage.getItem('currentBankAccountId');
     }
 
-    localStorage.setItem(this.STORAGE_KEY_FIRST_RUN_DONE, 'true');
+    // Create or update November 2026 entry with verified bank_account_id
+    try {
+      const { data: existingNov, error: existingErr } = await supabase
+        .from('user_income')
+        .select('id, amount, is_manually_edited, bank_account_id')
+        .eq('user_id', userId)
+        .eq('is_auto_interest', true)
+        .like('date', '2026-11%')
+        .maybeSingle();
+
+      if (existingErr) {
+        throw new Error(`Failed to check existing November entry: ${existingErr.message}`);
+      }
+
+      let writeError: any = null;
+      if (!existingNov) {
+        const { error: insertErr } = await supabase.from('user_income').insert([{
+          user_id: userId,
+          source: 'Slice',
+          category: 'Interest',
+          notes: 'November savings interest',
+          amount: novemberTotal,
+          date: '2026-11-30',
+          payment_method: 'UPI',
+          is_auto_interest: true,
+          auto_interest_status: 'estimated',
+          wallet_target: 'saving',
+          bank_account_id: primaryBankId,
+        }]);
+        writeError = insertErr;
+      } else if (!existingNov.is_manually_edited) {
+        const { error: updateErr } = await supabase.from('user_income').update({
+          amount: novemberTotal,
+          auto_interest_status: 'estimated',
+          bank_account_id: primaryBankId || existingNov.bank_account_id,
+          updated_at: new Date().toISOString(),
+        }).eq('id', existingNov.id);
+        writeError = updateErr;
+      }
+
+      if (writeError) {
+        throw writeError;
+      }
+
+      // Read-back verification to guarantee entry exists in DB
+      const { data: verifiedNov, error: readBackErr } = await supabase
+        .from('user_income')
+        .select('id, amount, bank_account_id')
+        .eq('user_id', userId)
+        .eq('is_auto_interest', true)
+        .like('date', '2026-11%')
+        .maybeSingle();
+
+      if (readBackErr || !verifiedNov) {
+        throw new Error(`Verification read-back of November interest failed: ${readBackErr?.message || 'Row not found'}`);
+      }
+
+      // ONLY mark first-run completed after persistence is verified!
+      localStorage.setItem(this.STORAGE_KEY_FIRST_RUN_DONE, 'true');
+      await this.logJobRun('app-open', novRecords.length, 'ok', undefined, userId);
+    } catch (e: any) {
+      console.error('Could not persist or verify November entry:', e);
+      warnings.push(`Could not persist November interest: ${e?.message || e}`);
+      await this.logJobRun('app-open', 0, 'failed', e?.message || String(e), userId);
+      return {
+        reconciliationReport,
+        adoptedEntries,
+        novemberAmount: 0,
+        warnings,
+      };
+    }
 
     return {
       reconciliationReport,
@@ -399,6 +491,46 @@ export class InterestService {
       novemberAmount: novemberTotal,
       warnings,
     };
+  }
+
+  /**
+   * Helper to compute total ledger balance (totalIncome - totalExpenses).
+   */
+  static async getLedgerTotal(userId?: string): Promise<number | null> {
+    if (userId) {
+      try {
+        const [incRes, expRes] = await Promise.all([
+          supabase.from('user_income').select('amount').eq('user_id', userId),
+          supabase.from('user_expenses').select('amount').eq('user_id', userId),
+        ]);
+        if (!incRes.error && !expRes.error && incRes.data) {
+          const inc = incRes.data.reduce((sum, item) => sum + Number(item.amount), 0);
+          const exp = (expRes.data || []).reduce((sum, item) => sum + Number(item.amount), 0);
+          return roundToTwoDecimals(inc - exp);
+        }
+      } catch (e) {
+        console.warn('Error computing ledger total from Supabase:', e);
+      }
+    }
+
+    if (typeof localStorage !== 'undefined') {
+      try {
+        const bankId = localStorage.getItem('currentBankAccountId');
+        const incKey = bankId ? `incomeData:${bankId}` : 'incomeData';
+        const expKey = bankId ? `expenseData:${bankId}` : 'expenseData';
+        const localIncomes = JSON.parse(localStorage.getItem(incKey) || localStorage.getItem('incomeData') || '[]');
+        const localExpenses = JSON.parse(localStorage.getItem(expKey) || localStorage.getItem('expenseData') || '[]');
+        if (localIncomes.length > 0) {
+          const inc = localIncomes.reduce((sum: number, item: any) => sum + Number(item.amount), 0);
+          const exp = localExpenses.reduce((sum: number, item: any) => sum + Number(item.amount), 0);
+          return roundToTwoDecimals(inc - exp);
+        }
+      } catch (e) {
+        console.warn('Error computing ledger total from localStorage:', e);
+      }
+    }
+
+    return null;
   }
 
   /**
@@ -445,16 +577,8 @@ export class InterestService {
     const dbExtracted = extractWalletBalances(dbSubwallets, dbWallets);
     const localExtracted = extractWalletBalances(localSubwallets, localWallets);
 
-    // If either DB or local matches the expected pre-reconciliation state, use the matching one
-    if (matchesPreReconciliationState(dbExtracted)) {
-      return dbExtracted;
-    }
-    if (matchesPreReconciliationState(localExtracted)) {
-      return localExtracted;
-    }
-
-    // If neither matches, prefer DB if user is authenticated and DB has data, otherwise local
-    if (userId && (dbSubwallets.length > 0 || dbWallets.length > 0) && dbExtracted.total > 0) {
+    // Prefer DB if user is authenticated and DB has data, otherwise local
+    if (userId && (dbSubwallets.length > 0 || dbWallets.length > 0)) {
       return dbExtracted;
     }
 
@@ -462,44 +586,44 @@ export class InterestService {
   }
 
   /**
-   * Execute ₹998.18 wallet reconciliation per user order (Spec §6):
-   * Guarded: Reads current balances first. Applies move ONLY if they match
-   * the expected pre-reconciliation state within ₹0.05:
-   * Main ≈ ₹10,131.88, Needs ≈ ₹598.91, Wants ≈ ₹399.27 (Total ≈ ₹11,130.05).
+   * Execute wallet reconciliation per user order (Spec §6 & Bug 2 Fix):
+   * Dynamic unallocated computation:
+   * unallocated = ledger total (totalIncome - totalExpense) - sum(all wallet balances).
    *
-   * If balances do NOT match (e.g. user opens app after 10 Nov and has new
-   * transactions), reconciliation is safely SKIPPED without modifying any balance,
-   * a skipped report is persisted, and the user is warned.
+   * If Needs and Wants are ₹0 and unallocated ≈ ₹998.17 (within ₹0.05),
+   * move exactly that unallocated amount into Saving / sub-wallet "Main"
+   * (Main ₹10,131.88 -> ₹11,130.05), Needs/Wants stay ₹0.
+   *
+   * Idempotent: If already reconciled (Main = ledger, Needs=0, Wants=0), moves ₹0.
+   * Guarded: If numbers do NOT reconcile within ₹0.05, safely SKIPS without touching balances.
    */
   static async executeReconciliation(userId?: string): Promise<ReconciliationReport> {
     const lines: string[] = [];
     const timestamp = new Date().toISOString();
 
     const currentBalances = await this.getCurrentWalletBalances(userId);
-    const isMatch = matchesPreReconciliationState(currentBalances, 0.05);
+    const ledgerTotal = await this.getLedgerTotal(userId);
 
-    if (!isMatch) {
-      // DATA SAFETY GUARD: DO NOT TOUCH ANY BALANCE
+    if (ledgerTotal === null || isNaN(ledgerTotal)) {
+      console.warn('Reconciliation skipped safely: Ledger total could not be determined from Supabase or localStorage.');
       lines.push('--- RECONCILIATION AUDIT LOG (SKIPPED) ---');
-      lines.push('Status: skipped — balances have changed since 10 Nov');
-      lines.push('Data Safety Guard: Automatic reconciliation skipped to protect user funds.');
+      lines.push('Status: skipped — ledger total unavailable');
+      lines.push('Data Safety Guard: Automatic reconciliation skipped safely because ledger total could not be determined.');
       lines.push('Expected pre-reconciliation state (10 Nov 2026):');
-      lines.push(`  Saving / Main: ₹${EXPECTED_PRE_RECONCILIATION.savingMain.toFixed(2)}`);
-      lines.push(`  Needs:         ₹${EXPECTED_PRE_RECONCILIATION.needs.toFixed(2)}`);
-      lines.push(`  Wants:         ₹${EXPECTED_PRE_RECONCILIATION.wants.toFixed(2)}`);
-      lines.push(`  Total:         ₹${EXPECTED_PRE_RECONCILIATION.total.toFixed(2)}`);
+      lines.push('  Saving / Main: ₹10,131.88 (Needs: ₹0.00, Wants: ₹0.00, Unallocated: ₹998.17)');
       lines.push('Actual current balances detected:');
       lines.push(`  Saving / Main: ₹${currentBalances.savingMain.toFixed(2)}`);
       lines.push(`  Needs:         ₹${currentBalances.needs.toFixed(2)}`);
       lines.push(`  Wants:         ₹${currentBalances.wants.toFixed(2)}`);
-      lines.push(`  Total:         ₹${currentBalances.total.toFixed(2)}`);
+      lines.push(`  Total Wallets: ₹${currentBalances.total.toFixed(2)}`);
+      lines.push('  Ledger Total:  Unavailable (null / NaN)');
       lines.push('Action: No balances were modified.');
-      lines.push('Recommendation: Please verify wallet allocations manually in Wallets settings.');
+      lines.push('Recommendation: Please verify bank transactions and wallet allocations.');
 
       const skippedReport: ReconciliationReport = {
         timestamp,
         status: 'skipped',
-        reason: 'skipped — balances have changed since 10 Nov',
+        reason: 'skipped — ledger total unavailable from Supabase or localStorage',
         lines,
         savingMoved: 0,
         needsMoved: 0,
@@ -518,16 +642,89 @@ export class InterestService {
       return skippedReport;
     }
 
-    // MATCH CONFIRMED: Proceed with reconciliation moves
+    const evalResult = evaluateReconciliation(currentBalances, ledgerTotal, 0.05);
+
+    if (!evalResult.canReconcile) {
+      // DATA SAFETY GUARD: DO NOT TOUCH ANY BALANCE
+      lines.push('--- RECONCILIATION AUDIT LOG (SKIPPED) ---');
+      lines.push('Status: skipped — balances have changed since 10 Nov');
+      lines.push('Data Safety Guard: Automatic reconciliation skipped to protect user funds.');
+      lines.push('Expected pre-reconciliation state (10 Nov 2026):');
+      lines.push('  Saving / Main: ₹10,131.88 (Needs: ₹0.00, Wants: ₹0.00, Unallocated: ₹998.17)');
+      lines.push('Actual current balances detected:');
+      lines.push(`  Saving / Main: ₹${currentBalances.savingMain.toFixed(2)}`);
+      lines.push(`  Needs:         ₹${currentBalances.needs.toFixed(2)}`);
+      lines.push(`  Wants:         ₹${currentBalances.wants.toFixed(2)}`);
+      lines.push(`  Total Wallets: ₹${currentBalances.total.toFixed(2)}`);
+      lines.push(`  Ledger Total:  ₹${ledgerTotal.toFixed(2)}`);
+      lines.push(`  Unallocated:   ₹${evalResult.unallocated.toFixed(2)}`);
+      lines.push('Action: No balances were modified.');
+      lines.push('Recommendation: Please verify wallet allocations manually in Wallets settings.');
+
+      const skippedReport: ReconciliationReport = {
+        timestamp,
+        status: 'skipped',
+        reason: evalResult.reason || 'skipped — balances have changed since 10 Nov',
+        lines,
+        savingMoved: 0,
+        needsMoved: 0,
+        wantsMoved: 0,
+        currentBalances,
+        resultingBalances: { ...currentBalances },
+      };
+
+      try {
+        localStorage.setItem(this.STORAGE_KEY_RECONCILIATION, JSON.stringify(skippedReport));
+        window.dispatchEvent(new CustomEvent('walletDataChanged'));
+      } catch (e) {
+        console.warn('Error saving skipped reconciliation report:', e);
+      }
+
+      return skippedReport;
+    }
+
+    if (evalResult.action === 'already_reconciled') {
+      lines.push('--- RECONCILIATION AUDIT LOG (ALREADY RECONCILED) ---');
+      lines.push('Status: applied');
+      lines.push(`Saving / Main is already ₹${evalResult.resultingBalances.savingMain.toFixed(2)}, Needs = ₹0.00, Wants = ₹0.00.`);
+      lines.push('Total moved to Saving/Main: ₹0.00 (idempotent run).');
+
+      const alreadyReport: ReconciliationReport = {
+        timestamp,
+        status: 'applied',
+        lines,
+        savingMoved: 0,
+        needsMoved: 0,
+        wantsMoved: 0,
+        currentBalances,
+        resultingBalances: evalResult.resultingBalances,
+      };
+
+      try {
+        localStorage.setItem(this.STORAGE_KEY_RECONCILIATION, JSON.stringify(alreadyReport));
+        window.dispatchEvent(new CustomEvent('walletDataChanged'));
+      } catch (e) {
+        console.warn('Error saving reconciliation report:', e);
+      }
+
+      return alreadyReport;
+    }
+
+    // MATCH CONFIRMED (apply_unallocated or apply_legacy_transfer)
     lines.push('--- RECONCILIATION AUDIT LOG (10 Nov 2026) ---');
     lines.push('Status: applied');
-    lines.push('User Order: Synchronize virtual wallets to Slice statement balance ₹11,130.05');
+    lines.push(`User Order: Synchronize virtual wallets to Slice statement balance ₹${evalResult.resultingBalances.savingMain.toFixed(2)}`);
     lines.push(`Prior state: Main ₹${currentBalances.savingMain.toFixed(2)}, Needs ₹${currentBalances.needs.toFixed(2)}, Wants ₹${currentBalances.wants.toFixed(2)} (Total ₹${currentBalances.total.toFixed(2)})`);
-    lines.push(`Moving Needs ₹${currentBalances.needs.toFixed(2)} back to Saving / sub-wallet "Main"`);
-    lines.push(`Moving Wants ₹${currentBalances.wants.toFixed(2)} back to Saving / sub-wallet "Main"`);
-    lines.push('Total moved to Saving/Main: ₹998.18');
-    lines.push('Resulting balances: Saving/Main = ₹11,130.05, Needs = ₹0.00, Wants = ₹0.00');
-    lines.push('Total Slice balance: ₹11,130.05 (100% Saving / Main)');
+    if (evalResult.action === 'apply_unallocated') {
+      lines.push(`Unallocated amount: ₹${evalResult.unallocated.toFixed(2)} (Ledger ₹${ledgerTotal.toFixed(2)} - Wallets ₹${currentBalances.total.toFixed(2)})`);
+      lines.push(`Allocating unallocated ₹${evalResult.savingMoved.toFixed(2)} to Saving / sub-wallet "Main"`);
+    } else {
+      lines.push(`Moving Needs ₹${currentBalances.needs.toFixed(2)} back to Saving / sub-wallet "Main"`);
+      lines.push(`Moving Wants ₹${currentBalances.wants.toFixed(2)} back to Saving / sub-wallet "Main"`);
+    }
+    lines.push(`Total moved to Saving/Main: ₹${evalResult.savingMoved.toFixed(2)}`);
+    lines.push(`Resulting balances: Saving/Main = ₹${evalResult.resultingBalances.savingMain.toFixed(2)}, Needs = ₹0.00, Wants = ₹0.00`);
+    lines.push(`Total Slice balance: ₹${evalResult.resultingBalances.total.toFixed(2)} (100% Saving / Main)`);
 
     // 1. Update in-app localStorage subwallets & wallets
     try {
@@ -547,7 +744,7 @@ export class InterestService {
           return { ...sw, balance: 0 };
         } else if (sw.parentWalletType === 'saving' && (sw.name.toLowerCase() === 'main' || !foundMain)) {
           foundMain = true;
-          return { ...sw, name: 'Main', balance: 11130.05 };
+          return { ...sw, name: 'Main', balance: evalResult.resultingBalances.savingMain };
         }
         return sw;
       });
@@ -556,7 +753,7 @@ export class InterestService {
         subWallets.unshift({
           id: 1,
           name: 'Main',
-          balance: 11130.05,
+          balance: evalResult.resultingBalances.savingMain,
           parentWalletType: 'saving',
           allocationPercentage: 100,
           color: 'green',
@@ -571,13 +768,13 @@ export class InterestService {
       const walletsKey = storageKey('wallets');
       const rawWallets = localStorage.getItem(walletsKey) || localStorage.getItem('wallets');
       let wallets = rawWallets ? JSON.parse(rawWallets) : [
-        { id: 1, name: 'Saving Wallet', balance: 11130.05, type: 'saving', color: 'green' },
+        { id: 1, name: 'Saving Wallet', balance: evalResult.resultingBalances.savingMain, type: 'saving', color: 'green' },
         { id: 2, name: 'Needs Wallet', balance: 0, type: 'needs', color: 'blue' },
         { id: 3, name: 'Wants Wallet', balance: 0, type: 'wants', color: 'purple' },
       ];
 
       wallets = wallets.map((w: any) => {
-        if (w.type === 'saving') return { ...w, balance: 11130.05 };
+        if (w.type === 'saving') return { ...w, balance: evalResult.resultingBalances.savingMain };
         if (w.type === 'needs') return { ...w, balance: 0 };
         if (w.type === 'wants') return { ...w, balance: 0 };
         return w;
@@ -592,19 +789,12 @@ export class InterestService {
     // 2. Update Supabase wallets and subwallets if connected
     if (userId) {
       try {
-        // Zero out needs subwallets
+        // Zero out needs and wants subwallets
         await supabase
           .from('user_subwallets')
           .update({ balance: 0, updated_at: new Date().toISOString() })
           .eq('user_id', userId)
-          .eq('parent_wallet_type', 'needs');
-
-        // Zero out wants subwallets
-        await supabase
-          .from('user_subwallets')
-          .update({ balance: 0, updated_at: new Date().toISOString() })
-          .eq('user_id', userId)
-          .eq('parent_wallet_type', 'wants');
+          .in('parent_wallet_type', ['needs', 'wants']);
 
         // Check if subwallet "Main" exists under saving
         const { data: savingSubs } = await supabase
@@ -617,13 +807,13 @@ export class InterestService {
         if (mainSub) {
           await supabase
             .from('user_subwallets')
-            .update({ balance: 11130.05, updated_at: new Date().toISOString() })
+            .update({ balance: evalResult.resultingBalances.savingMain, updated_at: new Date().toISOString() })
             .eq('id', mainSub.id)
             .eq('user_id', userId);
         } else if (savingSubs && savingSubs.length > 0) {
           await supabase
             .from('user_subwallets')
-            .update({ name: 'Main', balance: 11130.05, updated_at: new Date().toISOString() })
+            .update({ name: 'Main', balance: evalResult.resultingBalances.savingMain, updated_at: new Date().toISOString() })
             .eq('id', savingSubs[0].id)
             .eq('user_id', userId);
         } else {
@@ -631,7 +821,7 @@ export class InterestService {
           await supabase.from('user_subwallets').insert([{
             user_id: userId,
             name: 'Main',
-            balance: 11130.05,
+            balance: evalResult.resultingBalances.savingMain,
             parent_wallet_type: 'saving',
             allocation_percentage: 100,
             color: 'green',
@@ -642,7 +832,7 @@ export class InterestService {
         // Update user_wallets table
         await supabase
           .from('user_wallets')
-          .update({ balance: 11130.05, updated_at: new Date().toISOString() })
+          .update({ balance: evalResult.resultingBalances.savingMain, updated_at: new Date().toISOString() })
           .eq('user_id', userId)
           .eq('type', 'saving');
 
@@ -660,16 +850,11 @@ export class InterestService {
       timestamp,
       status: 'applied',
       lines,
-      savingMoved: 998.18,
-      needsMoved: 598.91,
-      wantsMoved: 399.27,
+      savingMoved: evalResult.savingMoved,
+      needsMoved: evalResult.needsMoved,
+      wantsMoved: evalResult.wantsMoved,
       currentBalances,
-      resultingBalances: {
-        savingMain: 11130.05,
-        needs: 0,
-        wants: 0,
-        total: 11130.05,
-      },
+      resultingBalances: evalResult.resultingBalances,
     };
 
     localStorage.setItem(this.STORAGE_KEY_RECONCILIATION, JSON.stringify(report));
@@ -718,6 +903,27 @@ export class InterestService {
     // Fetch transactions
     let allIncomes: any[] = [];
     let allExpenses: any[] = [];
+
+    // Resolve user's primary bank account so bank_account_id is always assigned
+    let primaryBankId: string | null = null;
+    if (userId) {
+      try {
+        const { data: bankData } = await supabase
+          .from('user_bank_accounts')
+          .select('id')
+          .eq('user_id', userId)
+          .order('is_primary', { ascending: false })
+          .limit(1);
+        if (bankData && bankData.length > 0) {
+          primaryBankId = bankData[0].id;
+        }
+      } catch (e) {
+        console.warn('Could not fetch bank accounts:', e);
+      }
+    }
+    if (!primaryBankId && typeof localStorage !== 'undefined') {
+      primaryBankId = localStorage.getItem('currentBankAccountId');
+    }
 
     if (userId) {
       try {
@@ -776,14 +982,34 @@ export class InterestService {
       });
     }
 
-    // Persist day records to Supabase interest_days (and local cache)
+    // Persist day records to Supabase interest_days (and local cache) with read-back verification
     if (userId && dayRecords.length > 0) {
-      try {
-        await supabase.from('interest_days').upsert(dayRecords, {
-          onConflict: 'user_id,interest_date,account',
-        });
-      } catch (e) {
-        console.warn('Could not upsert interest_days into Supabase:', e);
+      const { error: upsertErr } = await supabase.from('interest_days').upsert(dayRecords, {
+        onConflict: 'user_id,interest_date,account',
+      });
+      if (upsertErr) {
+        const errMsg = `Failed to persist interest_days: ${upsertErr.message}`;
+        console.error(errMsg);
+        await this.logJobRun(trigger, 0, 'failed', upsertErr.message, userId);
+        toast.error(errMsg);
+        throw new Error(errMsg);
+      }
+
+      // Read-back verification
+      const { data: readBackDays, error: readBackErr } = await supabase
+        .from('interest_days')
+        .select('id')
+        .eq('user_id', userId)
+        .eq('account', 'Slice')
+        .gte('interest_date', fromDate)
+        .lte('interest_date', yesterdayStr);
+
+      if (readBackErr || !readBackDays || readBackDays.length === 0) {
+        const errMsg = 'Failed to verify interest_days persistence via read-back';
+        console.error(errMsg);
+        await this.logJobRun(trigger, 0, 'failed', errMsg, userId);
+        toast.error(errMsg);
+        throw new Error(errMsg);
       }
     }
     localStorage.setItem(this.STORAGE_KEY_DAYS, JSON.stringify(dayRecords));
@@ -827,37 +1053,64 @@ export class InterestService {
         // Unlocked / Current month: update automatically unless manually edited
         if (existingEntry) {
           if (!existingEntry.is_manually_edited && userId) {
-            try {
-              await supabase
-                .from('user_income')
-                .update({
-                  amount: recomputedSum,
-                  auto_interest_status: 'estimated',
-                  updated_at: new Date().toISOString(),
-                })
-                .eq('id', existingEntry.id);
-            } catch (e) {
-              console.warn(`Could not update monthly entry for ${month}:`, e);
+            const { error: updateErr } = await supabase
+              .from('user_income')
+              .update({
+                amount: recomputedSum,
+                auto_interest_status: 'estimated',
+                bank_account_id: primaryBankId || existingEntry.bank_account_id,
+                updated_at: new Date().toISOString(),
+              })
+              .eq('id', existingEntry.id);
+            if (updateErr) {
+              const errMsg = `Could not update monthly entry for ${month}: ${updateErr.message}`;
+              console.error(errMsg);
+              await this.logJobRun(trigger, 0, 'failed', updateErr.message, userId);
+              toast.error(errMsg);
+              throw new Error(errMsg);
             }
           }
         } else if (userId) {
           // Recreate deleted or missing entry (Spec §3)
-          try {
-            await supabase.from('user_income').insert([{
-              user_id: userId,
-              source: 'Slice',
-              category: 'Interest',
-              notes: monthDescription,
-              amount: recomputedSum,
-              date: lastDay,
-              payment_method: 'UPI',
-              is_auto_interest: true,
-              auto_interest_status: 'estimated',
-              wallet_target: 'saving',
-            }]);
-            toast.info(`Auto interest entry for ${month} was recreated with ₹${recomputedSum.toFixed(2)}`);
-          } catch (e) {
-            console.warn(`Could not recreate monthly entry for ${month}:`, e);
+          const { error: insertErr } = await supabase.from('user_income').insert([{
+            user_id: userId,
+            source: 'Slice',
+            category: 'Interest',
+            notes: monthDescription,
+            amount: recomputedSum,
+            date: lastDay,
+            payment_method: 'UPI',
+            is_auto_interest: true,
+            auto_interest_status: 'estimated',
+            wallet_target: 'saving',
+            bank_account_id: primaryBankId,
+          }]);
+          if (insertErr) {
+            const errMsg = `Could not recreate monthly entry for ${month}: ${insertErr.message}`;
+            console.error(errMsg);
+            await this.logJobRun(trigger, 0, 'failed', insertErr.message, userId);
+            toast.error(errMsg);
+            throw new Error(errMsg);
+          }
+          toast.info(`Auto interest entry for ${month} was recreated with ₹${recomputedSum.toFixed(2)}`);
+        }
+
+        // Read-back verification for unlocked month
+        if (userId) {
+          const { data: verifiedMonth, error: vErr } = await supabase
+            .from('user_income')
+            .select('id, amount, bank_account_id')
+            .eq('user_id', userId)
+            .eq('is_auto_interest', true)
+            .like('date', `${month}%`)
+            .maybeSingle();
+
+          if (vErr || !verifiedMonth) {
+            const errMsg = `Failed to verify monthly interest write for ${month}`;
+            console.error(errMsg);
+            await this.logJobRun(trigger, 0, 'failed', errMsg, userId);
+            toast.error(errMsg);
+            throw new Error(errMsg);
           }
         }
       }
@@ -924,10 +1177,16 @@ export class InterestService {
       }
 
       if (from <= yesterdayStr) {
-        const result = await this.recalculateInterest('app-open', userId, from);
-        if (result.daysProcessed > 0) {
-          toast.success('Interest updated (catch-up)');
-          return true;
+        try {
+          const result = await this.recalculateInterest('app-open', userId, from);
+          if (result.daysProcessed > 0) {
+            toast.success('Interest updated (catch-up)');
+            return true;
+          }
+        } catch (e: any) {
+          console.error('Catch-up recomputation error:', e);
+          toast.error(`Interest catch-up failed: ${e?.message || 'Database error'}`);
+          return false;
         }
       }
     }
