@@ -48,7 +48,7 @@ const SummarySection: React.FC<SummarySectionProps> = ({ incomeData, expenseData
   return (
     <div>
       <div className="flex items-center mb-6">
-        <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">Financial Summary</h2>
+        <h2 className="text-2xl font-semibold text-foreground">Financial Summary</h2>
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
@@ -59,7 +59,7 @@ const SummarySection: React.FC<SummarySectionProps> = ({ incomeData, expenseData
           >
             <div className="flex items-start justify-between mb-4">
               <div className="flex-1">
-                <p className="text-xs font-semibold uppercase tracking-wider text-foreground/75 dark:text-foreground/80">{card.title}</p>
+                <p className="text-sm font-medium text-foreground/80 mb-1">{card.title}</p>
               </div>
               <div className={`p-2.5 rounded-xl ${card.iconBg}`}>
                 <card.icon className={`h-5 w-5 ${card.iconColor}`} />
@@ -67,7 +67,7 @@ const SummarySection: React.FC<SummarySectionProps> = ({ incomeData, expenseData
             </div>
             
             <div>
-              <p className={`text-2xl sm:text-3xl font-bold tabular-nums tracking-tight ${card.textColor} leading-tight`}>
+              <p className={`text-2xl sm:text-3xl font-bold ${card.textColor} leading-tight`}>
                 {card.title === 'Net Balance' && card.value < 0 && '-'}
                 ₹{Math.trunc(Math.abs(card.value)).toLocaleString('en-IN')}
               </p>

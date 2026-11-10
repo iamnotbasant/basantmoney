@@ -96,9 +96,9 @@ const RecentTransactions = () => {
                     )}
                   </div>
                   <div className="min-w-0">
-                    <p className="font-semibold text-sm truncate text-foreground">{transaction.description}</p>
-                    <div className="flex items-center space-x-2 mt-0.5">
-                      <Badge variant="outline" className="text-[11px] font-normal border-border/80">
+                    <p className="font-medium text-sm truncate text-foreground">{transaction.description}</p>
+                    <div className="flex items-center space-x-2 mt-1">
+                      <Badge variant="outline" className="text-xs">
                         {transaction.category.charAt(0).toUpperCase() + transaction.category.slice(1)}
                       </Badge>
                       <span className="text-xs text-muted-foreground">
@@ -108,7 +108,7 @@ const RecentTransactions = () => {
                   </div>
                 </div>
                 <div className="text-right shrink-0 pl-3">
-                  <p className={`font-bold tabular-nums tracking-tight text-sm sm:text-base ${
+                  <p className={`font-semibold ${
                     transaction.type === 'income' 
                       ? 'text-emerald-600 dark:text-emerald-400' 
                       : 'text-foreground'
