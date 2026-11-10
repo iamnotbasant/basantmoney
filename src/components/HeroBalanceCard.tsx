@@ -93,7 +93,7 @@ export const HeroBalanceCard: React.FC<HeroBalanceCardProps> = ({
         <button
           type="button"
           onClick={() => onNavigate('/income')}
-          className="group flex flex-col sm:flex-row items-center justify-center gap-1.5 sm:gap-2 rounded-xl border border-emerald-500/20 bg-emerald-500/10 hover:bg-emerald-500/20 px-3 py-2.5 text-xs font-medium text-emerald-200 transition-all duration-200 hover:-translate-y-0.5 active:scale-[0.98]"
+          className="group flex flex-col sm:flex-row items-center justify-center gap-1.5 sm:gap-2 rounded-xl border border-emerald-500/20 bg-emerald-500/10 hover:bg-emerald-500/20 px-3 py-3 min-h-[44px] text-xs font-medium text-emerald-200 transition-all duration-200 hover:-translate-y-0.5 active:scale-[0.98]"
         >
           <div className="p-1 rounded-full bg-emerald-500/20 text-emerald-300 group-hover:scale-110 transition-transform">
             <ArrowUpRight className="h-3.5 w-3.5" />
@@ -104,7 +104,7 @@ export const HeroBalanceCard: React.FC<HeroBalanceCardProps> = ({
         <button
           type="button"
           onClick={() => onNavigate('/expense')}
-          className="group flex flex-col sm:flex-row items-center justify-center gap-1.5 sm:gap-2 rounded-xl border border-rose-500/20 bg-rose-500/10 hover:bg-rose-500/20 px-3 py-2.5 text-xs font-medium text-rose-200 transition-all duration-200 hover:-translate-y-0.5 active:scale-[0.98]"
+          className="group flex flex-col sm:flex-row items-center justify-center gap-1.5 sm:gap-2 rounded-xl border border-rose-500/20 bg-rose-500/10 hover:bg-rose-500/20 px-3 py-3 min-h-[44px] text-xs font-medium text-rose-200 transition-all duration-200 hover:-translate-y-0.5 active:scale-[0.98]"
         >
           <div className="p-1 rounded-full bg-rose-500/20 text-rose-300 group-hover:scale-110 transition-transform">
             <ArrowDownRight className="h-3.5 w-3.5" />
@@ -115,7 +115,7 @@ export const HeroBalanceCard: React.FC<HeroBalanceCardProps> = ({
         <button
           type="button"
           onClick={() => onNavigate('/transactions')}
-          className="group flex flex-col sm:flex-row items-center justify-center gap-1.5 sm:gap-2 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 px-3 py-2.5 text-xs font-medium text-slate-200 transition-all duration-200 hover:-translate-y-0.5 active:scale-[0.98]"
+          className="group flex flex-col sm:flex-row items-center justify-center gap-1.5 sm:gap-2 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 px-3 py-3 min-h-[44px] text-xs font-medium text-slate-200 transition-all duration-200 hover:-translate-y-0.5 active:scale-[0.98]"
         >
           <div className="p-1 rounded-full bg-white/10 text-slate-300 group-hover:scale-110 transition-transform">
             <BookOpen className="h-3.5 w-3.5" />

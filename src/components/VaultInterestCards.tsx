@@ -122,7 +122,7 @@ export const VaultInterestCards: React.FC<VaultInterestCardsProps> = ({ incomeDa
                     <p className="font-semibold text-sky-950 dark:text-sky-200">
                       Account Balance Reconciled
                     </p>
-                    <p className="text-sky-850 dark:text-sky-300/90 text-xs leading-relaxed">
+                    <p className="text-sky-800/90 dark:text-sky-300/90 text-xs leading-relaxed">
                       All balances are verified against active bank accounts. Daily savings interest continues accruing on the total balance automatically.
                     </p>
                   </div>

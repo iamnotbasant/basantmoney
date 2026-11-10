@@ -208,9 +208,9 @@ export const RecentTransactions: React.FC<RecentTransactionsProps> = ({
                 <Receipt className="h-8 w-8 text-muted-foreground/60" />
               </div>
             </div>
-            <p className="text-base font-semibold text-foreground">No transactions yet</p>
-            <p className="text-xs text-muted-foreground mt-1 mb-5 max-w-[28ch]">
-              Your ledger has no records this month. Add an entry to see it here.
+            <p className="text-base font-semibold text-foreground">No recent transactions</p>
+            <p className="text-xs text-muted-foreground mt-1 mb-5 max-w-[32ch]">
+              Your ledger has no recorded transactions yet. Add an entry to get started.
             </p>
             <div className="flex items-center gap-2">
               <Button

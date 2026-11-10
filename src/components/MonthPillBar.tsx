@@ -1,11 +1,12 @@
-import React from 'react';
-import { Calendar } from 'lucide-react';
+import React, { useEffect, useRef } from 'react';
+import { Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface MonthPillBarProps {
   selectedMonth: number; // 0-11
   selectedYear: number;
   monthsWithData?: Set<number>;
   onChange: (month: number) => void;
+  onYearChange?: (year: number) => void;
 }
 
 const MONTHS = [
@@ -18,19 +19,66 @@ export const MonthPillBar: React.FC<MonthPillBarProps> = ({
   selectedYear,
   monthsWithData,
   onChange,
+  onYearChange,
 }) => {
   const currentActualMonth = new Date().getMonth();
   const currentActualYear = new Date().getFullYear();
   const isCurrentYear = selectedYear === currentActualYear;
+  const activePillRef = useRef<HTMLButtonElement | null>(null);
+
+  // Automatically scroll active month pill into view on mount and month change
+  useEffect(() => {
+    if (activePillRef.current) {
+      activePillRef.current.scrollIntoView({
+        behavior: 'smooth',
+        inline: 'center',
+        block: 'nearest',
+      });
+    }
+  }, [selectedMonth]);
+
+  const handlePrevYear = () => {
+    if (onYearChange) onYearChange(selectedYear - 1);
+  };
+
+  const handleNextYear = () => {
+    if (onYearChange) onYearChange(selectedYear + 1);
+  };
 
   return (
-    <section className="sticky top-[73px] z-20 py-2 -mx-4 px-4 sm:mx-0 sm:px-0 bg-background/80 backdrop-blur-md border-y border-border/40 transition-colors">
+    <section className="sticky top-16 z-30 py-2 -mx-4 px-4 sm:mx-0 sm:px-0 bg-background/85 backdrop-blur-md border-y border-border/40 transition-colors">
       <div className="flex items-center gap-2">
-        <div className="hidden sm:flex items-center gap-1.5 text-xs font-medium text-muted-foreground shrink-0 pr-2 border-r border-border/60">
-          <Calendar className="h-3.5 w-3.5 text-primary" />
-          <span>{selectedYear}</span>
+        {/* Year Selector Control (Visible on all screen sizes with prev/next controls) */}
+        <div className="flex items-center gap-1 text-xs font-semibold text-foreground shrink-0 pr-2 border-r border-border/60">
+          <Calendar className="h-3.5 w-3.5 text-primary shrink-0" />
+          {onYearChange ? (
+            <div className="flex items-center">
+              <button
+                type="button"
+                onClick={handlePrevYear}
+                className="p-1 hover:bg-accent rounded text-muted-foreground hover:text-foreground transition-colors"
+                title="Previous Year"
+                aria-label="Previous Year"
+              >
+                <ChevronLeft className="h-3 w-3" />
+              </button>
+              <span className="px-1 tabular-nums">{selectedYear}</span>
+              <button
+                type="button"
+                onClick={handleNextYear}
+                className="p-1 hover:bg-accent rounded text-muted-foreground hover:text-foreground transition-colors"
+                title="Next Year"
+                aria-label="Next Year"
+              >
+                <ChevronRight className="h-3 w-3" />
+              </button>
+            </div>
+          ) : (
+            <span className="tabular-nums">{selectedYear}</span>
+          )}
         </div>
 
+        {/* Scrollable Month Pills */}
         <div
           role="tablist"
           aria-label="Filter by month"
@@ -44,6 +92,7 @@ export const MonthPillBar: React.FC<MonthPillBarProps> = ({
             return (
               <button
                 key={name}
+                ref={isSelected ? activePillRef : null}
                 role="tab"
                 type="button"
                 aria-selected={isSelected}

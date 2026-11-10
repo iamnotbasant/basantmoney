@@ -80,9 +80,13 @@ export const SummarySection: React.FC<SummarySectionProps> = ({
           </div>
 
           <div className="flex items-baseline gap-1">
-            <p className="text-2xl sm:text-3xl font-bold tabular-nums tracking-tight text-rose-600 dark:text-rose-400">
-              -₹{expenseParts.whole}
-              {expenseParts.paise ? (
+            <p className={`text-2xl sm:text-3xl font-bold tabular-nums tracking-tight ${
+              totalExpenses > 0
+                ? 'text-rose-600 dark:text-rose-400'
+                : 'text-muted-foreground'
+            }`}>
+              {totalExpenses > 0 ? `-₹${expenseParts.whole}` : '₹0'}
+              {totalExpenses > 0 && expenseParts.paise ? (
                 <span className="text-[0.6em] font-semibold opacity-75">.{expenseParts.paise}</span>
               ) : null}
             </p>

@@ -179,6 +179,7 @@ const Index: React.FC = () => {
               selectedYear={selectedYear}
               monthsWithData={monthsWithData}
               onChange={(m) => setSelectedMonth(m)}
+              onYearChange={(y) => setSelectedYear(y)}
             />
 
             {/* 3. MONTHLY PERFORMANCE SUMMARY */}
