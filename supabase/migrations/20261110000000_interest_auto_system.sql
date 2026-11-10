@@ -10,8 +10,11 @@ ADD COLUMN IF NOT EXISTS wallet_target TEXT DEFAULT NULL,
 ADD COLUMN IF NOT EXISTS auto_interest_status TEXT DEFAULT NULL;
 
 -- 2. Partial unique index on user_income to enforce one auto-interest entry per calendar month per user
+-- NOTE (applied live 10 Nov 2026): the original to_char(date::date, 'YYYY-MM') expression FAILS with
+-- Postgres 42P17 ("functions in index expression must be marked IMMUTABLE") — to_char on a date is
+-- STABLE (DateStyle-dependent). date_trunc('month', date::timestamp) is IMMUTABLE and keeps the same intent.
 CREATE UNIQUE INDEX IF NOT EXISTS unique_user_monthly_auto_interest
-ON public.user_income (user_id, (to_char(date::date, 'YYYY-MM')))
+ON public.user_income (user_id, (date_trunc('month', date::timestamp)))
 WHERE (is_auto_interest = true);
 
 -- 3. Table: interest_rates (Spec §2a)
