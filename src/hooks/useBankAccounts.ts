@@ -186,17 +186,6 @@ export const useBankAccounts = () => {
         .eq('bank_account_id', accountId)
         .eq('user_id', user.id);
 
-      await supabase
-        .from('user_subwallets')
-        .delete()
-        .eq('bank_account_id', accountId)
-        .eq('user_id', user.id);
-
-      await supabase
-        .from('user_wallets')
-        .delete()
-        .eq('bank_account_id', accountId)
-        .eq('user_id', user.id);
 
       // Finally, delete the bank account
       const { error } = await supabase
