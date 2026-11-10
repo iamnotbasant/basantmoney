@@ -30,19 +30,42 @@ const CategoryManager = () => {
   ];
 
   useEffect(() => {
+    const requiredIncomeCategories: Category[] = [
+      { id: 'cat-interest', name: 'Interest', type: 'income', color: '#10B981' },
+      { id: 'cat-cashback', name: 'Cashback', type: 'income', color: '#06B6D4' },
+      { id: 'cat-freelancing', name: 'Freelancing', type: 'income', color: '#3B82F6' },
+    ];
+
     const storedCategories = localStorage.getItem('categories');
     if (storedCategories) {
-      setCategories(JSON.parse(storedCategories));
+      let currentList: Category[] = JSON.parse(storedCategories);
+      let updated = false;
+
+      // Ensure Interest, Cashback, and Freelancing are present without altering existing ones
+      for (const req of requiredIncomeCategories) {
+        if (!currentList.some(c => c.name.toLowerCase() === req.name.toLowerCase() && c.type === 'income')) {
+          currentList.push(req);
+          updated = true;
+        }
+      }
+
+      setCategories(currentList);
+      if (updated) {
+        localStorage.setItem('categories', JSON.stringify(currentList));
+      }
     } else {
       // Default categories
       const defaultCategories: Category[] = [
         { id: '1', name: 'Salary', type: 'income', color: '#10B981' },
         { id: '2', name: 'Freelance', type: 'income', color: '#3B82F6' },
         { id: '3', name: 'Investment', type: 'income', color: '#8B5CF6' },
-        { id: '4', name: 'Food', type: 'expense', color: '#EF4444' },
-        { id: '5', name: 'Transport', type: 'expense', color: '#F59E0B' },
-        { id: '6', name: 'Entertainment', type: 'expense', color: '#EC4899' },
-        { id: '7', name: 'Bills', type: 'expense', color: '#06B6D4' },
+        { id: '4', name: 'Interest', type: 'income', color: '#10B981' },
+        { id: '5', name: 'Cashback', type: 'income', color: '#06B6D4' },
+        { id: '6', name: 'Freelancing', type: 'income', color: '#6366F1' },
+        { id: '7', name: 'Food', type: 'expense', color: '#EF4444' },
+        { id: '8', name: 'Transport', type: 'expense', color: '#F59E0B' },
+        { id: '9', name: 'Entertainment', type: 'expense', color: '#EC4899' },
+        { id: '10', name: 'Bills', type: 'expense', color: '#06B6D4' },
       ];
       setCategories(defaultCategories);
       localStorage.setItem('categories', JSON.stringify(defaultCategories));

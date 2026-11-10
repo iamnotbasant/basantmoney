@@ -13,6 +13,10 @@ export interface IncomeEntry {
   payment_method?: string | null;
   notes?: string | null;
   bank_account_id?: string | null;
+  is_auto_interest?: boolean | null;
+  is_manually_edited?: boolean | null;
+  wallet_target?: string | null;
+  auto_interest_status?: string | null;
   created_at?: string;
   updated_at?: string;
 }
@@ -63,6 +67,10 @@ export const useIncomeData = (bankAccountId?: string | null) => {
     payment_method?: string | null;
     notes?: string | null;
     bank_account_id?: string | null;
+    is_auto_interest?: boolean | null;
+    is_manually_edited?: boolean | null;
+    wallet_target?: string | null;
+    auto_interest_status?: string | null;
   }) => {
     if (!user) {
       toast.error('Please login to add income');
@@ -81,6 +89,10 @@ export const useIncomeData = (bankAccountId?: string | null) => {
           payment_method: income.payment_method || null,
           notes: income.notes || null,
           bank_account_id: income.bank_account_id || null,
+          is_auto_interest: income.is_auto_interest ?? false,
+          is_manually_edited: income.is_manually_edited ?? false,
+          wallet_target: income.wallet_target || null,
+          auto_interest_status: income.auto_interest_status || null,
         })
         .select()
         .single();

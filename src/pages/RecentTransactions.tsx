@@ -39,7 +39,7 @@ const RecentTransactions = () => {
       ...incomeData.map(income => ({
         id: income.id,
         type: 'income' as const,
-        description: income.source,
+        description: income.notes || income.source,
         amount: income.amount,
         date: income.date,
         category: income.category

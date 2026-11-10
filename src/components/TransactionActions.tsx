@@ -160,6 +160,14 @@ const TransactionActions: React.FC<TransactionActionsProps> = ({ transaction, on
                 distribution = parsed.distribution || distribution;
             }
 
+            // If auto-interest or interest/cashback, bypass 50/30/20 and revert 100% from Saving
+            const isFullSaving = (incomeToDelete as any).is_auto_interest || 
+                                 incomeToDelete.category?.toLowerCase() === 'interest' || 
+                                 incomeToDelete.category?.toLowerCase() === 'cashback';
+            if (isFullSaving) {
+                distribution = { saving: 100, needs: 0, wants: 0 };
+            }
+
             let subWallets: SubWallet[] = JSON.parse(localStorage.getItem(storageKey('subWallets')) || '[]');
             const incomeAmount = incomeToDelete.amount;
 

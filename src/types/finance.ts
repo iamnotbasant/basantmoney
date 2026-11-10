@@ -30,6 +30,11 @@ export interface IncomeData {
   date: string;
   category: string;
   notes?: string;
+  payment_method?: string;
+  is_auto_interest?: boolean;
+  is_manually_edited?: boolean;
+  wallet_target?: string;
+  auto_interest_status?: string;
 }
 
 export interface ExpenseData {

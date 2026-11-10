@@ -42,6 +42,10 @@ import { useIncomeData } from '@/hooks/useIncomeData';
 import { useExpenseData } from '@/hooks/useExpenseData';
 import { useWalletData } from '@/hooks/useWalletData';
 import { useBankAccounts } from '@/hooks/useBankAccounts';
+import InterestBreakdownModal from '@/components/InterestBreakdownModal';
+import { InterestService } from '@/services/interestService';
+import { isMonthLocked } from '@/utils/interestEngine';
+import { RotateCcw, ListFilter } from 'lucide-react';
 
 interface PaymentMethod {
   id: string;
@@ -58,6 +62,9 @@ interface Transaction {
   date: string;
   category: string;
   paymentMethod?: string;
+  is_auto_interest?: boolean;
+  is_manually_edited?: boolean;
+  auto_interest_status?: string;
 }
 
 const Transactions = () => {
@@ -81,6 +88,8 @@ const Transactions = () => {
     paymentMethod: ''
   });
   const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
+  const [selectedBreakdownMonth, setSelectedBreakdownMonth] = useState<string | null>(null);
+  const [selectedBreakdownTotal, setSelectedBreakdownTotal] = useState<number | undefined>(undefined);
 
   // Supabase hooks for real-time data
   const { currentAccount } = useBankAccounts();
@@ -90,16 +99,27 @@ const Transactions = () => {
 
   // Convert Supabase data to Transaction format
   const transactions = useMemo(() => {
-    const incomeTransactions: Transaction[] = supabaseIncome.map(item => ({
-      id: item.id,
-      type: 'income' as const,
-      source: item.source,
-      description: (item as any).notes || '',
-      amount: Number(item.amount),
-      date: item.date,
-      category: item.category,
-      paymentMethod: (item as any).payment_method || 'Not specified'
-    }));
+    const todayStr = new Date().toISOString().slice(0, 7);
+    const incomeTransactions: Transaction[] = supabaseIncome.map(item => {
+      const isAuto = Boolean((item as any).is_auto_interest);
+      const isManualEdit = Boolean((item as any).is_manually_edited);
+      const m = item.date.slice(0, 7);
+      const fallbackStatus = m < todayStr ? 'locked' : 'estimated';
+
+      return {
+        id: item.id,
+        type: 'income' as const,
+        source: item.source,
+        description: (item as any).notes || '',
+        amount: Number(item.amount),
+        date: item.date,
+        category: item.category,
+        paymentMethod: (item as any).payment_method || 'Not specified',
+        is_auto_interest: isAuto,
+        is_manually_edited: isManualEdit,
+        auto_interest_status: (item as any).auto_interest_status || (isAuto ? fallbackStatus : undefined),
+      };
+    });
 
     const expenseTransactions: Transaction[] = supabaseExpenses.map(item => ({
       id: item.id,
@@ -176,6 +196,7 @@ const Transactions = () => {
 
     try {
       if (editingTransaction.type === 'income') {
+        const isAuto = editingTransaction.is_auto_interest;
         await updateIncome(editingTransaction.id, {
           source: editData.source,
           amount: newAmount,
@@ -183,6 +204,10 @@ const Transactions = () => {
           category: editData.category,
           payment_method: editData.paymentMethod || null,
           notes: editData.description || null,
+          ...(isAuto ? {
+            is_manually_edited: true,
+            auto_interest_status: 'manually_edited',
+          } : {})
         } as any);
       } else {
         await updateExpense(editingTransaction.id, {
@@ -216,6 +241,25 @@ const Transactions = () => {
     }
   };
 
+  const handleResumeAutoUpdate = async (t: Transaction, e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      const isLocked = isMonthLocked(t.date.slice(0, 7));
+      await updateIncome(t.id, {
+        is_manually_edited: false,
+        auto_interest_status: isLocked ? 'locked' : 'estimated',
+      } as any);
+      toast({
+        title: "Auto-update Resumed",
+        description: `Auto-updating restored for ${t.description || t.source}`,
+      });
+      refetchIncome();
+      InterestService.recalculateInterest('manual', currentAccount?.id);
+    } catch (err) {
+      console.error('Error resuming auto update:', err);
+    }
+  };
+
   const handleDelete = async () => {
     if (!editingTransaction) return;
 
@@ -225,6 +269,12 @@ const Transactions = () => {
         await deleteIncome(editingTransaction.id);
         if (incomeToDelete) {
           await reverseIncomeDistribution(Number(incomeToDelete.amount) || 0);
+        }
+        if (editingTransaction.is_auto_interest) {
+          toast({
+            title: "Auto interest entry deleted",
+            description: "Notice: The next interest job run will recreate this entry with the correct total from interest_days.",
+          });
         }
       } else {
         // Find the expense to get its deductions before deleting
@@ -531,10 +581,64 @@ const Transactions = () => {
                            {formatDate(transaction.date)}
                          </TableCell>
                          <TableCell className="font-medium text-foreground py-4 text-sm">
-                           {transaction.source}
+                           <div className="flex items-center gap-2">
+                             <span>{transaction.source}</span>
+                             {transaction.is_auto_interest && (
+                               <Badge
+                                 variant={transaction.auto_interest_status === 'locked' ? 'secondary' : 'default'}
+                                 className={`text-[10px] cursor-pointer ${
+                                   transaction.is_manually_edited
+                                     ? 'bg-amber-600 hover:bg-amber-700 text-white'
+                                     : transaction.auto_interest_status === 'locked'
+                                     ? 'bg-slate-700 text-white'
+                                     : 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                                 }`}
+                                 onClick={(e) => {
+                                   e.stopPropagation();
+                                   setSelectedBreakdownMonth(transaction.date.slice(0, 7));
+                                   setSelectedBreakdownTotal(transaction.amount);
+                                 }}
+                                 title="Click to view daily interest breakdown"
+                               >
+                                 {transaction.is_manually_edited
+                                   ? 'Manually edited'
+                                   : transaction.auto_interest_status === 'locked'
+                                   ? 'Auto • Locked'
+                                   : 'Auto • Estimated'}
+                               </Badge>
+                             )}
+                           </div>
                          </TableCell>
                          <TableCell className="text-muted-foreground py-4 text-sm">
-                           {transaction.description || '-'}
+                           <div className="flex items-center justify-between gap-2">
+                             <span>{transaction.description || '-'}</span>
+                             {transaction.is_auto_interest && (
+                               <div className="flex items-center gap-1.5">
+                                 <Button
+                                   variant="ghost"
+                                   size="sm"
+                                   className="h-6 px-1.5 text-xs text-primary hover:underline"
+                                   onClick={(e) => {
+                                     e.stopPropagation();
+                                     setSelectedBreakdownMonth(transaction.date.slice(0, 7));
+                                     setSelectedBreakdownTotal(transaction.amount);
+                                   }}
+                                 >
+                                   Daily breakdown
+                                 </Button>
+                                 {transaction.is_manually_edited && (
+                                   <Button
+                                     variant="outline"
+                                     size="sm"
+                                     className="h-6 px-2 text-[11px] text-amber-600 border-amber-300 hover:bg-amber-50"
+                                     onClick={(e) => handleResumeAutoUpdate(transaction, e)}
+                                   >
+                                     Resume auto-update
+                                   </Button>
+                                 )}
+                                </div>
+                             )}
+                           </div>
                          </TableCell>
                         <TableCell className="py-4">
                           <Badge variant="secondary" className="transition-all duration-200 text-xs">
@@ -601,9 +705,60 @@ const Transactions = () => {
                         {transaction.type === 'income' ? '+' : '-'}₹{transaction.amount.toLocaleString('en-IN')}
                       </span>
                     </div>
-                    <h3 className="font-semibold text-foreground mb-1 text-lg">{transaction.source}</h3>
+                    <div className="flex items-center gap-2 mb-1 flex-wrap">
+                      <h3 className="font-semibold text-foreground text-lg">{transaction.source}</h3>
+                      {transaction.is_auto_interest && (
+                        <Badge
+                          variant={transaction.auto_interest_status === 'locked' ? 'secondary' : 'default'}
+                          className={`text-[10px] cursor-pointer ${
+                            transaction.is_manually_edited
+                              ? 'bg-amber-600 hover:bg-amber-700 text-white'
+                              : transaction.auto_interest_status === 'locked'
+                              ? 'bg-slate-700 text-white'
+                              : 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                          }`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedBreakdownMonth(transaction.date.slice(0, 7));
+                            setSelectedBreakdownTotal(transaction.amount);
+                          }}
+                        >
+                          {transaction.is_manually_edited
+                            ? 'Manually edited'
+                            : transaction.auto_interest_status === 'locked'
+                            ? 'Auto • Locked'
+                            : 'Auto • Estimated'}
+                        </Badge>
+                      )}
+                    </div>
                     {transaction.description && (
                       <p className="text-muted-foreground mb-2 text-sm">{transaction.description}</p>
+                    )}
+                    {transaction.is_auto_interest && (
+                      <div className="flex items-center gap-2 mb-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 px-2 text-xs text-primary"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedBreakdownMonth(transaction.date.slice(0, 7));
+                            setSelectedBreakdownTotal(transaction.amount);
+                          }}
+                        >
+                          Daily breakdown
+                        </Button>
+                        {transaction.is_manually_edited && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-6 px-2 text-[11px] text-amber-600 border-amber-300"
+                            onClick={(e) => handleResumeAutoUpdate(transaction, e)}
+                          >
+                            Resume auto-update
+                          </Button>
+                        )}
+                      </div>
                     )}
                     <div className="flex items-center gap-2 mb-2 flex-wrap">
                       <Badge 
@@ -795,6 +950,15 @@ const Transactions = () => {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+        {/* Daily Interest Breakdown Modal (Spec §2b) */}
+        <InterestBreakdownModal
+          isOpen={Boolean(selectedBreakdownMonth)}
+          onClose={() => setSelectedBreakdownMonth(null)}
+          yearMonth={selectedBreakdownMonth}
+          userId={currentAccount?.id}
+          entryTotal={selectedBreakdownTotal}
+        />
       </main>
     </div>
   );

@@ -19,6 +19,9 @@ import {
 import { Button } from "@/components/ui/button";
 import { Calendar, DollarSign, Scale, ArrowRightLeft, TrendingUp, TrendingDown, PieChart, BarChart3, Filter, SortAsc, SortDesc } from 'lucide-react';
 import { IncomeData, ExpenseData } from '@/types/finance';
+import { useBankAccounts } from '@/hooks/useBankAccounts';
+import { useIncomeData } from '@/hooks/useIncomeData';
+import { useExpenseData } from '@/hooks/useExpenseData';
 import { ChartContainer } from "@/components/ui/chart";
 import {
   LineChart,
@@ -59,69 +62,74 @@ const Reports = () => {
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [amountRange, setAmountRange] = useState<string>('all');
 
+  // Supabase hooks for live data (matching Vault & Transactions)
+  const { currentAccount } = useBankAccounts();
+  const { incomeData: supabaseIncome, loading: incomeLoading } = useIncomeData(currentAccount?.id);
+  const { expenseData: supabaseExpenses, loading: expenseLoading } = useExpenseData(currentAccount?.id);
+
   useEffect(() => {
-    // Load data from localStorage with correct storage keys used by WalletService
-    const loadData = () => {
+    // Populate reports from Supabase tables (user_income & user_expenses)
+    if (supabaseIncome.length > 0 || supabaseExpenses.length > 0) {
+      const formattedIncome: IncomeData[] = supabaseIncome.map(item => ({
+        id: item.id,
+        source: item.source,
+        amount: Number(item.amount),
+        date: item.date,
+        category: item.category,
+        notes: item.notes || undefined,
+        payment_method: item.payment_method || undefined,
+        is_auto_interest: Boolean(item.is_auto_interest),
+      }));
+
+      const formattedExpenses: ExpenseData[] = supabaseExpenses.map(item => ({
+        id: item.id,
+        description: item.description,
+        amount: Number(item.amount),
+        date: item.date,
+        category: item.category,
+        notes: item.notes || undefined,
+        payment_method: item.payment_method || undefined,
+        deductions: (item.deductions as any) || [],
+      }));
+
+      setIncomeData(formattedIncome);
+      setExpenseData(formattedExpenses);
+
+      console.log('Reports loaded from Supabase:', {
+        incomeCount: formattedIncome.length,
+        expenseCount: formattedExpenses.length,
+      });
+    } else {
+      // Fallback to localStorage if Supabase returns empty
       try {
         const bankId = localStorage.getItem('currentBankAccountId') || '';
         const incomeKey = bankId ? `incomeData:${bankId}` : 'incomeData';
         const expenseKey = bankId ? `expenseData:${bankId}` : 'expenseData';
-        
-        // Try the correctly formatted keys first, then fallback to simple keys
         const storedIncome = localStorage.getItem(incomeKey) || localStorage.getItem('incomeData');
         const storedExpenses = localStorage.getItem(expenseKey) || localStorage.getItem('expenseData');
-        
         const income = storedIncome ? JSON.parse(storedIncome) : [];
         const expenses = storedExpenses ? JSON.parse(storedExpenses) : [];
-        
+
         setIncomeData(income);
-        setFilteredIncomeData(income);
         setExpenseData(expenses);
-        setFilteredExpenseData(expenses);
-        
-        console.log('Reports data loaded successfully:', { 
-          incomeKey,
-          expenseKey,
-          income: income.length, 
-          expenses: expenses.length,
-          incomeTotal: income.reduce((s: number, i: any) => s + i.amount, 0),
-          expenseTotal: expenses.reduce((s: number, e: any) => s + e.amount, 0)
-        });
       } catch (error) {
-        console.error('Error loading financial data for reports:', error);
+        console.error('Error loading fallback financial data for reports:', error);
         setIncomeData([]);
-        setFilteredIncomeData([]);
         setExpenseData([]);
-        setFilteredExpenseData([]);
       }
-    };
+    }
+  }, [supabaseIncome, supabaseExpenses]);
 
-    loadData();
-    
-    // Add event listeners for data changes to update reports in real-time
-    const handleDataChange = (e: Event) => {
-      console.log('Financial data changed, reloading reports...');
-      loadData();
+  // Keep event listeners for instant refreshes
+  useEffect(() => {
+    const handleDataChange = () => {
+      // triggers re-evaluation if needed
     };
-
-    // Listen for custom events that indicate data changes
     window.addEventListener('walletDataChanged', handleDataChange);
     window.addEventListener('bankAccountChanged', handleDataChange);
-    
-    // Add storage event listener for changes from other tabs
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key?.includes('incomeData') || e.key?.includes('expenseData')) {
-        console.log('Storage changed for financial data, reloading...');
-        loadData();
-      }
-    };
-
-    window.addEventListener('storage', handleStorageChange);
-
     return () => {
       window.removeEventListener('walletDataChanged', handleDataChange);
       window.removeEventListener('bankAccountChanged', handleDataChange);
-      window.removeEventListener('storage', handleStorageChange);
     };
   }, []);
 

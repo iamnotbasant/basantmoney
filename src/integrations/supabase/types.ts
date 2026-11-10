@@ -14,6 +14,147 @@ export type Database = {
   }
   public: {
     Tables: {
+      interest_days: {
+        Row: {
+          account: string
+          annual_rate_percent: number
+          closing_balance: number
+          created_at: string
+          id: string
+          interest_amount: number
+          interest_date: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          account?: string
+          annual_rate_percent: number
+          closing_balance: number
+          created_at?: string
+          id?: string
+          interest_amount: number
+          interest_date: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          account?: string
+          annual_rate_percent?: number
+          closing_balance?: number
+          created_at?: string
+          id?: string
+          interest_amount?: number
+          interest_date?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      interest_dismissed_corrections: {
+        Row: {
+          dismissed_at: string
+          id: string
+          month: string
+          reason: string | null
+          user_id: string
+        }
+        Insert: {
+          dismissed_at?: string
+          id?: string
+          month: string
+          reason?: string | null
+          user_id: string
+        }
+        Update: {
+          dismissed_at?: string
+          id?: string
+          month?: string
+          reason?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      interest_job_runs: {
+        Row: {
+          days_processed: number
+          error_message: string | null
+          id: string
+          run_at: string
+          status: string
+          trigger: string
+          user_id: string | null
+        }
+        Insert: {
+          days_processed?: number
+          error_message?: string | null
+          id?: string
+          run_at?: string
+          status: string
+          trigger: string
+          user_id?: string | null
+        }
+        Update: {
+          days_processed?: number
+          error_message?: string | null
+          id?: string
+          run_at?: string
+          status?: string
+          trigger?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      interest_rates: {
+        Row: {
+          account: string
+          annual_rate_percent: number
+          created_at: string
+          effective_from_date: string
+          id: string
+        }
+        Insert: {
+          account?: string
+          annual_rate_percent: number
+          created_at?: string
+          effective_from_date: string
+          id?: string
+        }
+        Update: {
+          account?: string
+          annual_rate_percent?: number
+          created_at?: string
+          effective_from_date?: string
+          id?: string
+        }
+        Relationships: []
+      }
+      interest_verifications: {
+        Row: {
+          computed_amount: number
+          id: string
+          month: string
+          user_id: string
+          verified_amount: number
+          verified_at: string
+        }
+        Insert: {
+          computed_amount: number
+          id?: string
+          month: string
+          user_id: string
+          verified_amount: number
+          verified_at?: string
+        }
+        Update: {
+          computed_amount?: number
+          id?: string
+          month?: string
+          user_id?: string
+          verified_amount?: number
+          verified_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string | null
@@ -200,42 +341,54 @@ export type Database = {
       user_income: {
         Row: {
           amount: number
+          auto_interest_status: string | null
           bank_account_id: string | null
           category: string
           created_at: string | null
           date: string
           id: number
+          is_auto_interest: boolean | null
+          is_manually_edited: boolean | null
           notes: string | null
           payment_method: string | null
           source: string
           updated_at: string | null
           user_id: string
+          wallet_target: string | null
         }
         Insert: {
           amount: number
+          auto_interest_status?: string | null
           bank_account_id?: string | null
           category: string
           created_at?: string | null
           date: string
           id?: number
+          is_auto_interest?: boolean | null
+          is_manually_edited?: boolean | null
           notes?: string | null
           payment_method?: string | null
           source: string
           updated_at?: string | null
           user_id: string
+          wallet_target?: string | null
         }
         Update: {
           amount?: number
+          auto_interest_status?: string | null
           bank_account_id?: string | null
           category?: string
           created_at?: string | null
           date?: string
           id?: number
+          is_auto_interest?: boolean | null
+          is_manually_edited?: boolean | null
           notes?: string | null
           payment_method?: string | null
           source?: string
           updated_at?: string | null
           user_id?: string
+          wallet_target?: string | null
         }
         Relationships: []
       }

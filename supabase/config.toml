@@ -2,3 +2,7 @@ project_id = "vobkfalffhihixfmaezo"
 
 [functions.keep-alive]
 verify_jwt = false
+
+[functions.interest-cron]
+verify_jwt = false
+

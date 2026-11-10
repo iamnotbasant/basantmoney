@@ -84,22 +84,44 @@ const IncomeEntry = () => {
   });
 
   useEffect(() => {
+    const requiredIncomeCategories: Category[] = [
+      { id: 'cat-interest', name: 'Interest', type: 'income', color: '#10B981' },
+      { id: 'cat-cashback', name: 'Cashback', type: 'income', color: '#06B6D4' },
+      { id: 'cat-freelancing', name: 'Freelancing', type: 'income', color: '#3B82F6' },
+    ];
+
     // Load categories from localStorage
     const storedCategories = localStorage.getItem('categories');
     if (storedCategories) {
-      const allCategories = JSON.parse(storedCategories);
+      let allCategories: Category[] = JSON.parse(storedCategories);
+      let updated = false;
+
+      for (const req of requiredIncomeCategories) {
+        if (!allCategories.some(c => c.name.toLowerCase() === req.name.toLowerCase() && c.type === 'income')) {
+          allCategories.push(req);
+          updated = true;
+        }
+      }
+
+      if (updated) {
+        localStorage.setItem('categories', JSON.stringify(allCategories));
+      }
+
       const incomeCategories = allCategories.filter((cat: Category) => cat.type === 'income');
       setCategories(incomeCategories);
     } else {
       // Initialize default categories if none exist
-      const defaultCategories = [
-        { id: '1', name: 'Salary', type: 'income' as const, color: '#10B981' },
-        { id: '2', name: 'Freelance', type: 'income' as const, color: '#3B82F6' },
-        { id: '3', name: 'Investment', type: 'income' as const, color: '#8B5CF6' },
-        { id: '4', name: 'Food', type: 'expense' as const, color: '#EF4444' },
-        { id: '5', name: 'Transport', type: 'expense' as const, color: '#F59E0B' },
-        { id: '6', name: 'Entertainment', type: 'expense' as const, color: '#EC4899' },
-        { id: '7', name: 'Bills', type: 'expense' as const, color: '#06B6D4' },
+      const defaultCategories: Category[] = [
+        { id: '1', name: 'Salary', type: 'income', color: '#10B981' },
+        { id: '2', name: 'Freelance', type: 'income', color: '#3B82F6' },
+        { id: '3', name: 'Investment', type: 'income', color: '#8B5CF6' },
+        { id: '4', name: 'Interest', type: 'income', color: '#10B981' },
+        { id: '5', name: 'Cashback', type: 'income', color: '#06B6D4' },
+        { id: '6', name: 'Freelancing', type: 'income', color: '#6366F1' },
+        { id: '7', name: 'Food', type: 'expense', color: '#EF4444' },
+        { id: '8', name: 'Transport', type: 'expense', color: '#F59E0B' },
+        { id: '9', name: 'Entertainment', type: 'expense', color: '#EC4899' },
+        { id: '10', name: 'Bills', type: 'expense', color: '#06B6D4' },
       ];
       localStorage.setItem('categories', JSON.stringify(defaultCategories));
       const incomeCategories = defaultCategories.filter(cat => cat.type === 'income');
@@ -216,22 +238,28 @@ const IncomeEntry = () => {
         return;
       }
 
-      // Process income distribution to subwallets in Supabase
-      await processIncomeDistribution(incomeAmount, settings.distribution);
+      const isFullSavingCategory = selectedCategory.toLowerCase() === 'interest' || selectedCategory.toLowerCase() === 'cashback';
+      const effectiveDistribution = isFullSavingCategory
+        ? { saving: 100, needs: 0, wants: 0 }
+        : settings.distribution;
+
+      // Process income distribution to subwallets in Supabase (100% to Saving if Interest/Cashback)
+      await processIncomeDistribution(incomeAmount, effectiveDistribution);
 
       // Also update localStorage for backward compatibility with WalletService
-      const { walletUpdates, subWalletUpdates } = WalletService.processIncome(incomeAmount);
+      const { walletUpdates, subWalletUpdates } = WalletService.processIncome(incomeAmount, effectiveDistribution);
       WalletService.applyIncomeUpdates(subWalletUpdates);
 
       // Show detailed breakdown
       const breakdown = walletUpdates.map(update => {
-        const percentage = update.type === 'saving' ? settings.distribution.saving : 
-                          update.type === 'needs' ? settings.distribution.needs : 
-                          settings.distribution.wants;
+        const percentage = update.type === 'saving' ? effectiveDistribution.saving : 
+                          update.type === 'needs' ? effectiveDistribution.needs : 
+                          effectiveDistribution.wants;
         return `${update.type.charAt(0).toUpperCase() + update.type.slice(1)}: ₹${update.amount.toFixed(2)} (${percentage}%)`;
       }).join(', ');
 
-      toast.success(`₹${incomeAmount.toLocaleString('en-IN')} saved to backend and distributed! ${breakdown}`);
+      const bypassNotice = isFullSavingCategory ? ' (100% Saving bypass)' : '';
+      toast.success(`₹${incomeAmount.toLocaleString('en-IN')} saved to backend and distributed!${bypassNotice} ${breakdown}`);
 
       console.log('Income saved to Supabase:', {
         total: incomeAmount,

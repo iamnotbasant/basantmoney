@@ -45,11 +45,14 @@ export class WalletService {
   // REMOVED: No longer auto-generates subwallets - only user-created ones persist
 
   // Process income and distribute across wallets and sub-wallets
-  static processIncome(incomeAmount: number): {
+  static processIncome(
+    incomeAmount: number,
+    customDistribution?: { saving: number; needs: number; wants: number }
+  ): {
     walletUpdates: { type: 'saving' | 'needs' | 'wants', amount: number }[],
     subWalletUpdates: { id: number, amount: number }[]
   } {
-    const distribution = this.getCurrentDistribution();
+    const distribution = customDistribution || this.getCurrentDistribution();
     
     // Calculate main wallet distributions
     const savingAmount = (incomeAmount * distribution.saving) / 100;

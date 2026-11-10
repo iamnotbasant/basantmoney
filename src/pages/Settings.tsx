@@ -29,6 +29,7 @@ import CategoryManager from '@/components/CategoryManager';
 import PaymentMethodManager from '@/components/PaymentMethodManager';
 import FileManagement from '@/components/FileManagement';
 import BankAccountManager from '@/components/BankAccountManager';
+import InterestSettingsSection from '@/components/InterestSettingsSection';
 import { Wallet, IncomeData, ExpenseData } from '@/types/finance';
 
 interface UserSettings {
@@ -322,6 +323,11 @@ const Settings = () => {
         {/* Bank Account Management Section */}
         <section className="bg-card rounded-lg border p-6">
           <BankAccountManager />
+        </section>
+
+        {/* Savings Interest System Section (Spec §2a, §2c, §4) */}
+        <section className="bg-card rounded-lg border p-6">
+          <InterestSettingsSection />
         </section>
 
         {/* Category Management Section */}

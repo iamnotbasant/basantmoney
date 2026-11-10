@@ -24,6 +24,7 @@ import { useIncomeData } from '@/hooks/useIncomeData';
 import { useExpenseData } from '@/hooks/useExpenseData';
 import { useWalletData } from '@/hooks/useWalletData';
 import { useBankAccounts } from '@/hooks/useBankAccounts';
+import VaultInterestCards from '@/components/VaultInterestCards';
 
 const Index = () => {
   const navigate = useNavigate();
@@ -124,6 +125,9 @@ const Index = () => {
       <Header />
       
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Interest Alerts & Verification Cards (Spec §4, §5, §6, §9) */}
+        <VaultInterestCards incomeData={incomeData} />
+
         {/* Net Balance Display Section */}
         <section className="mb-8 animate-fade-in">
           <NetBalanceDisplay netBalance={netBalance} />
