@@ -40,7 +40,9 @@ export const useIncomeData = (bankAccountId?: string | null) => {
         .order('date', { ascending: false });
 
       if (bankAccountId) {
-        query = query.eq('bank_account_id', bankAccountId);
+        // Include entries for this bank account OR auto-interest entries for the user
+        // (prevents auto-interest vanishing if bank_account_id is null/mismatched)
+        query = query.or(`bank_account_id.eq.${bankAccountId},is_auto_interest.eq.true`);
       }
 
       const { data, error } = await query;

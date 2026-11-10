@@ -14,7 +14,7 @@ import { InterestRate, InterestDayRecord, getKolkataDateString } from '@/utils/i
 import { toast } from 'sonner';
 
 export const useInterest = () => {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [rates, setRates] = useState<InterestRate[]>([]);
   const [lastJobRun, setLastJobRun] = useState<JobRunInfo | null>(null);
   const [reconciliationReport, setReconciliationReport] = useState<ReconciliationReport | null>(null);
@@ -44,23 +44,36 @@ export const useInterest = () => {
   // Run on mount or user change: check first-run migration & catch-up
   useEffect(() => {
     const initialize = async () => {
+      // Do not attempt user-scoped first-run or catch-up while auth is still loading
+      if (authLoading) return;
+
+      if (!user) {
+        setLoading(false);
+        return;
+      }
+
       setLoading(true);
 
       const hasRunFirstRun = localStorage.getItem('interest_first_run_completed');
       if (!hasRunFirstRun) {
         try {
-          const result = await InterestService.runFirstRunMigration(user?.id);
+          const result = await InterestService.runFirstRunMigration(user.id);
           setReconciliationReport(result.reconciliationReport);
+          if (result.warnings && result.warnings.length > 0) {
+            console.warn('First run migration warnings:', result.warnings);
+          }
           console.log('Interest first run migration completed:', result);
-        } catch (e) {
-          console.warn('First run migration error:', e);
+        } catch (e: any) {
+          console.error('First run migration error:', e);
+          toast.error(`First-run interest setup failed: ${e?.message || 'Database error'}`);
         }
       } else {
         // App-open catch up (Spec §4 Backup 1)
         try {
-          await InterestService.checkAndRunCatchUp(user?.id);
-        } catch (e) {
-          console.warn('Catch-up check error:', e);
+          await InterestService.checkAndRunCatchUp(user.id);
+        } catch (e: any) {
+          console.error('Catch-up check error:', e);
+          toast.error(`Interest catch-up failed: ${e?.message || 'Database error'}`);
         }
       }
 
@@ -68,7 +81,7 @@ export const useInterest = () => {
     };
 
     initialize();
-  }, [user, refreshData]);
+  }, [user, authLoading, refreshData]);
 
   const recalculateNow = async (fromDate?: string) => {
     setIsRecalculating(true);

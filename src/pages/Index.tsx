@@ -33,7 +33,7 @@ const Index = () => {
   const [showMonthFilter, setShowMonthFilter] = useState(false);
 
   // Supabase hooks for real-time data
-  const { currentAccount } = useBankAccounts();
+  const { currentAccount, loading: bankLoading } = useBankAccounts();
   const { incomeData: supabaseIncome, loading: incomeLoading, getTotalIncome } = useIncomeData(currentAccount?.id);
   const { expenseData: supabaseExpenses, loading: expenseLoading, getTotalExpenses } = useExpenseData(currentAccount?.id);
   const { wallets: supabaseWallets, subWallets, loading: walletsLoading } = useWalletData(currentAccount?.id);
@@ -70,11 +70,14 @@ const Index = () => {
     color: w.color,
   }));
 
-  // Calculate wallet balances including subwallets
+  // Calculate wallet balances including subwallets (with fallback to main wallet balance if no subwallets exist)
   const getWalletBalance = (walletType: string) => {
     const walletSubWallets = subWallets.filter(sw => sw.parent_wallet_type === walletType);
-    const subWalletTotal = walletSubWallets.reduce((sum, sw) => sum + Number(sw.balance || 0), 0);
-    return subWalletTotal;
+    if (walletSubWallets.length > 0) {
+      return walletSubWallets.reduce((sum, sw) => sum + Number(sw.balance || 0), 0);
+    }
+    const w = supabaseWallets.find(w => w.type === walletType);
+    return Number(w?.balance || 0);
   };
 
   // Create dynamic wallets with calculated balances from Supabase
@@ -83,10 +86,10 @@ const Index = () => {
   const totalExpensesAllTime = getTotalExpenses();
   const netBalance = totalIncomeAllTime - totalExpensesAllTime;
 
-  // For now, Saving wallet shows the same as Total Balance
+  // Vault Saving wallet agrees with Wallets page (same stored balance)
   const dynamicWallets = wallets.map(wallet => ({
     ...wallet,
-    balance: wallet.type === 'saving' ? netBalance : getWalletBalance(wallet.type)
+    balance: getWalletBalance(wallet.type)
   }));
 
   // Filter data by selected month and year (ONLY for summary cards)
@@ -104,7 +107,7 @@ const Index = () => {
     return itemMonth === selectedMonth && itemYear === selectedYear;
   });
 
-  const isLoading = incomeLoading || expenseLoading || walletsLoading;
+  const isLoading = incomeLoading || expenseLoading || walletsLoading || bankLoading;
 
   if (isLoading) {
     return (

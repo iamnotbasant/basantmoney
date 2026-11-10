@@ -20,6 +20,8 @@ import {
   EXPECTED_PRE_RECONCILIATION,
   extractWalletBalances,
   matchesPreReconciliationState,
+  computeUnallocated,
+  evaluateReconciliation,
 } from '../src/utils/interestEngine.ts';
 
 let totalTests = 0;
@@ -213,6 +215,122 @@ assert(
   !matchesPreReconciliationState({ savingMain: 10131.95, needs: 598.91, wants: 399.27 }),
   'Difference exceeding ₹0.05 tolerance (+0.07) fails guard'
 );
+
+// 12. Backfill 01-09 Nov (₹15.12) vs 01-10 Nov (₹16.80) & Monthly Entry = Sum of Days
+console.log('\n12. Verifying Backfill 01-09 Nov vs 01-10 Nov & Dynamic Monthly Sum:');
+const nov09Range = getDateRange('2026-11-01', '2026-11-09');
+assertEqual(nov09Range.length, 9, 'November 01 to 09 has 9 days');
+const nov09Balances = nov09Range.map(date => ({ date, balance: 11130.05 }));
+const nov09Records = calculateDailyInterestRecords(nov09Balances, rates);
+const nov09Sum = roundToTwoDecimals(nov09Records.reduce((sum, r) => sum + r.interest_amount, 0));
+assertEqual(nov09Sum, 15.12, 'Backfill 01-09 Nov = ₹15.12 (9 x ₹1.68)');
+const nov09Monthly = aggregateMonthlyInterest(nov09Records);
+assertEqual(nov09Monthly['2026-11'], 15.12, 'Nov monthly entry equals sum of persisted day rows (₹15.12 for 9 days)');
+
+const nov10Range = getDateRange('2026-11-01', '2026-11-10');
+assertEqual(nov10Range.length, 10, 'November 01 to 10 has 10 days');
+const nov10Balances = nov10Range.map(date => ({ date, balance: 11130.05 }));
+const nov10Records = calculateDailyInterestRecords(nov10Balances, rates);
+const nov10Sum = roundToTwoDecimals(nov10Records.reduce((sum, r) => sum + r.interest_amount, 0));
+assertEqual(nov10Sum, 16.80, 'Backfill 01-10 Nov = ₹16.80 (10 x ₹1.68)');
+const nov10Monthly = aggregateMonthlyInterest(nov10Records);
+assertEqual(nov10Monthly['2026-11'], 16.80, 'Nov monthly entry equals sum of persisted day rows (₹16.80 for 10 days)');
+
+// 13. Reconciliation from ACTUAL Live State (Main 10131.88, Needs 0, Wants 0, Ledger 11130.05)
+console.log('\n13. Verifying Reconciliation from ACTUAL Live State:');
+const actualLiveState = { savingMain: 10131.88, needs: 0.00, wants: 0.00 };
+const ledgerTotal = 11130.05;
+const unallocated = computeUnallocated(ledgerTotal, actualLiveState);
+assertEqual(unallocated, 998.17, 'Unallocated computation finds exactly ₹998.17 (11130.05 - 10131.88)');
+
+const actualEval = evaluateReconciliation(actualLiveState, ledgerTotal, 0.05);
+assert(actualEval.canReconcile, 'Actual live state passes reconciliation evaluation');
+assertEqual(actualEval.action, 'apply_unallocated', 'Action is apply_unallocated');
+assertEqual(actualEval.savingMoved, 998.17, 'Moves exactly ₹998.17 to Main');
+assertEqual(actualEval.needsMoved, 0, 'Needs moved is ₹0');
+assertEqual(actualEval.wantsMoved, 0, 'Wants moved is ₹0');
+assertEqual(actualEval.resultingBalances.savingMain, 11130.05, 'Resulting Main balance is ₹11,130.05');
+assertEqual(actualEval.resultingBalances.needs, 0, 'Resulting Needs balance is ₹0');
+assertEqual(actualEval.resultingBalances.wants, 0, 'Resulting Wants balance is ₹0');
+assertEqual(actualEval.resultingBalances.total, 11130.05, 'Resulting total balance is ₹11,130.05');
+
+// 14. Idempotence: Second Reconciliation Run & Repeated Runs
+console.log('\n14. Verifying Reconciliation Idempotence & No Duplicate Entries:');
+const secondRunBalances = { ...actualEval.resultingBalances };
+const secondEval = evaluateReconciliation(secondRunBalances, ledgerTotal, 0.05);
+assert(secondEval.canReconcile, 'Second run passes reconciliation evaluation');
+assertEqual(secondEval.action, 'already_reconciled', 'Second run recognized as already_reconciled');
+assertEqual(secondEval.savingMoved, 0, 'Second run moves ₹0.00 to Main');
+assertEqual(secondEval.needsMoved, 0, 'Second run moves ₹0.00 to Needs');
+assertEqual(secondEval.wantsMoved, 0, 'Second run moves ₹0.00 to Wants');
+assertEqual(secondEval.resultingBalances.savingMain, 11130.05, 'Main remains ₹11,130.05 on second run');
+
+// Monthly entry idempotence: re-running aggregation produces same amount without duplicates
+const existingEntries = [{ id: 'inc-nov-1', date: '2026-11-30', amount: 16.80, is_auto_interest: true }];
+const rerunMonthlySum = nov10Monthly['2026-11'];
+assertEqual(rerunMonthlySum, existingEntries[0].amount, 'Recomputed monthly sum matches existing entry amount exactly');
+
+// 15. First-Run with Missing userId Guard
+console.log('\n15. Verifying Missing userId Guard (Do NOT mark done, must retry):');
+function simulateFirstRun(userId, storage) {
+  if (!userId) {
+    // Missing userId: postpone, do NOT write completion flag
+    return { status: 'postponed', firstRunFlag: storage['interest_first_run_completed'] || null };
+  }
+  // Authenticated user: persist and mark done
+  storage['interest_first_run_completed'] = 'true';
+  return { status: 'completed', firstRunFlag: storage['interest_first_run_completed'] };
+}
+
+const mockStorage = {};
+const unauthRun = simulateFirstRun(undefined, mockStorage);
+assertEqual(unauthRun.status, 'postponed', 'First-run without userId is postponed');
+assertEqual(mockStorage['interest_first_run_completed'], undefined, 'interest_first_run_completed is NOT set when userId is missing');
+
+const authRetryRun = simulateFirstRun('user_slice_abc123', mockStorage);
+assertEqual(authRetryRun.status, 'completed', 'Retry with valid userId completes');
+assertEqual(mockStorage['interest_first_run_completed'], 'true', 'interest_first_run_completed is set only after valid user completes');
+
+// 16. Inserts Always Carry bank_account_id Guard (No NULL-bank auto-interest rows)
+console.log('\n16. Verifying bank_account_id Assignment on Inserts:');
+function createAutoInterestEntry(userId, amount, date, primaryBankId) {
+  if (!primaryBankId) {
+    throw new Error('Safety check failed: insert must carry bank_account_id');
+  }
+  return {
+    user_id: userId,
+    source: 'Slice',
+    category: 'Interest',
+    amount,
+    date,
+    is_auto_interest: true,
+    bank_account_id: primaryBankId,
+  };
+}
+
+const validPrimaryBankId = 'bank_acc_primary_999';
+const newEntry = createAutoInterestEntry('user_slice_abc123', 16.80, '2026-11-30', validPrimaryBankId);
+assert(newEntry.bank_account_id !== null && newEntry.bank_account_id !== undefined, 'Auto-interest entry carries non-null bank_account_id');
+assertEqual(newEntry.bank_account_id, validPrimaryBankId, 'Entry carries correct primary bank account ID');
+
+let threwOnMissingBank = false;
+try {
+  createAutoInterestEntry('user_slice_abc123', 16.80, '2026-11-30', null);
+} catch {
+  threwOnMissingBank = true;
+}
+assert(threwOnMissingBank, 'Inserting auto-interest with NULL bank_account_id is disallowed');
+
+// 17. Null / NaN ledgerTotal Guard (Skip safely without crashing or stale values)
+console.log('\n17. Verifying Null / NaN ledgerTotal Guard:');
+const nullLedgerEval = evaluateReconciliation(actualLiveState, null);
+assert(!nullLedgerEval.canReconcile, 'evaluateReconciliation safely returns canReconcile=false when ledgerTotal is null');
+assertEqual(nullLedgerEval.action, 'skip', 'Action is skip when ledgerTotal is null');
+assertEqual(nullLedgerEval.savingMoved, 0, 'No funds moved when ledgerTotal is null');
+
+const nanLedgerEval = evaluateReconciliation(actualLiveState, NaN);
+assert(!nanLedgerEval.canReconcile, 'evaluateReconciliation safely returns canReconcile=false when ledgerTotal is NaN');
+assertEqual(nanLedgerEval.action, 'skip', 'Action is skip when ledgerTotal is NaN');
 
 console.log('\n----------------------------------------');
 console.log(`Results: ${passedTests} passed, ${failedTests} failed, ${totalTests} total tests.`);

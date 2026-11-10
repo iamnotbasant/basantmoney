@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthProvider';
 import { toast } from 'sonner';
+import { roundToTwoDecimals } from '@/utils/interestEngine';
 
 export interface WalletEntry {
   id: number;
@@ -214,38 +215,87 @@ export const useWalletData = (bankAccountId?: string | null) => {
     }
   };
 
-  // Process income distribution to subwallets in backend
+  // Process income distribution to subwallets and main wallets in backend (Bug 2 Fix - Forward Leak Prevention)
   const processIncomeDistribution = async (
     incomeAmount: number,
     distribution: { saving: number; needs: number; wants: number }
   ) => {
-    if (!user || subWallets.length === 0) return;
+    if (!user) return;
 
     try {
-      const savingAmount = (incomeAmount * distribution.saving) / 100;
-      const needsAmount = (incomeAmount * distribution.needs) / 100;
-      const wantsAmount = (incomeAmount * distribution.wants) / 100;
+      const savingShare = (incomeAmount * distribution.saving) / 100;
+      const needsShare = (incomeAmount * distribution.needs) / 100;
+      const wantsShare = (incomeAmount * distribution.wants) / 100;
 
-      const updates = subWallets.map(sw => {
-        let walletAllocation = 0;
-        if (sw.parent_wallet_type === 'saving') walletAllocation = savingAmount;
-        else if (sw.parent_wallet_type === 'needs') walletAllocation = needsAmount;
-        else if (sw.parent_wallet_type === 'wants') walletAllocation = wantsAmount;
+      const shares: Record<'saving' | 'needs' | 'wants', number> = {
+        saving: savingShare,
+        needs: needsShare,
+        wants: wantsShare,
+      };
 
-        const addAmount = (walletAllocation * sw.allocation_percentage) / 100;
-        return {
-          id: sw.id,
-          newBalance: (sw.balance || 0) + addAmount,
-        };
-      });
+      // Query latest wallets & subwallets for accurate balances
+      const [swRes, wRes] = await Promise.all([
+        supabase.from('user_subwallets').select('*').eq('user_id', user.id),
+        supabase.from('user_wallets').select('*').eq('user_id', user.id),
+      ]);
+      const currentSubs = swRes.data || subWallets;
+      const currentWals = wRes.data || wallets;
 
-      // Update all subwallets
-      for (const update of updates) {
-        await supabase
-          .from('user_subwallets')
-          .update({ balance: update.newBalance, updated_at: new Date().toISOString() })
-          .eq('id', update.id)
-          .eq('user_id', user.id);
+      for (const walletType of ['saving', 'needs', 'wants'] as const) {
+        const typeShare = shares[walletType];
+        if (typeShare <= 0) continue;
+
+        const typeSubwallets = currentSubs.filter(sw => sw.parent_wallet_type === walletType);
+
+        if (typeSubwallets.length > 0) {
+          const totalAllocatedPct = typeSubwallets.reduce((s, sw) => s + (sw.allocation_percentage || 0), 0);
+          for (const sw of typeSubwallets) {
+            const addAmount = (typeShare * (sw.allocation_percentage || 0)) / 100;
+            const newBal = roundToTwoDecimals((sw.balance || 0) + addAmount);
+            await supabase
+              .from('user_subwallets')
+              .update({ balance: newBal, updated_at: new Date().toISOString() })
+              .eq('id', sw.id)
+              .eq('user_id', user.id);
+          }
+
+          // If subwallets don't cover 100%, credit remainder to main wallet in user_wallets
+          if (totalAllocatedPct < 100) {
+            const remainder = (typeShare * (100 - totalAllocatedPct)) / 100;
+            const w = currentWals.find(wallet => wallet.type === walletType);
+            if (w) {
+              const newBal = roundToTwoDecimals((w.balance || 0) + remainder);
+              await supabase
+                .from('user_wallets')
+                .update({ balance: newBal, updated_at: new Date().toISOString() })
+                .eq('id', w.id)
+                .eq('user_id', user.id);
+            }
+          }
+        } else {
+          // No subwallets exist for this wallet type: credit directly to user_wallets!
+          const w = currentWals.find(wallet => wallet.type === walletType);
+          if (w) {
+            const newBal = roundToTwoDecimals((w.balance || 0) + typeShare);
+            await supabase
+              .from('user_wallets')
+              .update({ balance: newBal, updated_at: new Date().toISOString() })
+              .eq('id', w.id)
+              .eq('user_id', user.id);
+          } else {
+            // If wallet row doesn't exist, create it
+            await supabase
+              .from('user_wallets')
+              .insert([{
+                user_id: user.id,
+                name: `${walletType.charAt(0).toUpperCase() + walletType.slice(1)} Wallet`,
+                balance: roundToTwoDecimals(typeShare),
+                type: walletType,
+                color: walletType === 'saving' ? 'green' : walletType === 'needs' ? 'blue' : 'purple',
+                bank_account_id: bankAccountId || null,
+              }]);
+          }
+        }
       }
 
       // Refresh data
@@ -296,21 +346,55 @@ export const useWalletData = (bankAccountId?: string | null) => {
         if (s?.distribution) distribution = { ...distribution, ...s.distribution };
       } catch {}
 
-      const { data: fresh } = await supabase
-        .from('user_subwallets')
-        .select('id, balance, parent_wallet_type, allocation_percentage')
-        .eq('user_id', user.id);
+      const [swRes, wRes] = await Promise.all([
+        supabase.from('user_subwallets').select('*').eq('user_id', user.id),
+        supabase.from('user_wallets').select('*').eq('user_id', user.id),
+      ]);
+      const currentSubs = swRes.data || [];
+      const currentWals = wRes.data || [];
 
-      for (const sw of fresh || []) {
-        const pct = (distribution as any)[sw.parent_wallet_type] || 0;
-        const remove = (((incomeAmount * pct) / 100) * sw.allocation_percentage) / 100;
-        if (!remove) continue;
-        await supabase
-          .from('user_subwallets')
-          .update({ balance: (sw.balance || 0) - remove, updated_at: new Date().toISOString() })
-          .eq('id', sw.id)
-          .eq('user_id', user.id);
+      for (const walletType of ['saving', 'needs', 'wants'] as const) {
+        const pct = (distribution as any)[walletType] || 0;
+        const typeShare = (incomeAmount * pct) / 100;
+        if (typeShare <= 0) continue;
+
+        const subs = currentSubs.filter(sw => sw.parent_wallet_type === walletType);
+        if (subs.length > 0) {
+          const totalAllocatedPct = subs.reduce((s, sw) => s + (sw.allocation_percentage || 0), 0);
+          for (const sw of subs) {
+            const remove = (typeShare * (sw.allocation_percentage || 0)) / 100;
+            const newBal = Math.max(0, roundToTwoDecimals((sw.balance || 0) - remove));
+            await supabase
+              .from('user_subwallets')
+              .update({ balance: newBal, updated_at: new Date().toISOString() })
+              .eq('id', sw.id)
+              .eq('user_id', user.id);
+          }
+          if (totalAllocatedPct < 100) {
+            const remainder = (typeShare * (100 - totalAllocatedPct)) / 100;
+            const w = currentWals.find(w => w.type === walletType);
+            if (w) {
+              const newBal = Math.max(0, roundToTwoDecimals((w.balance || 0) - remainder));
+              await supabase
+                .from('user_wallets')
+                .update({ balance: newBal, updated_at: new Date().toISOString() })
+                .eq('id', w.id)
+                .eq('user_id', user.id);
+            }
+          }
+        } else {
+          const w = currentWals.find(w => w.type === walletType);
+          if (w) {
+            const newBal = Math.max(0, roundToTwoDecimals((w.balance || 0) - typeShare));
+            await supabase
+              .from('user_wallets')
+              .update({ balance: newBal, updated_at: new Date().toISOString() })
+              .eq('id', w.id)
+              .eq('user_id', user.id);
+          }
+        }
       }
+
       await fetchWallets();
       window.dispatchEvent(new CustomEvent('walletDataChanged'));
       return true;

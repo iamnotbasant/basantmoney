@@ -297,3 +297,162 @@ export function matchesPreReconciliationState(
 
   return mainMatches && needsMatches && wantsMatches && totalMatches;
 }
+
+/**
+ * Computes unallocated funds: ledger total minus the sum of all wallet balances.
+ */
+export function computeUnallocated(
+  ledgerTotal: number,
+  walletBalances: { savingMain?: number; main?: number; needs?: number; wants?: number }
+): number {
+  const main = walletBalances.savingMain !== undefined ? walletBalances.savingMain : (walletBalances.main ?? 0);
+  const needs = walletBalances.needs ?? 0;
+  const wants = walletBalances.wants ?? 0;
+  return roundToTwoDecimals(ledgerTotal - (main + needs + wants));
+}
+
+export interface ReconcileBalancesResult {
+  canReconcile: boolean;
+  unallocated: number;
+  reason?: string;
+  action: 'apply_unallocated' | 'apply_legacy_transfer' | 'already_reconciled' | 'skip';
+  savingMoved: number;
+  needsMoved: number;
+  wantsMoved: number;
+  resultingBalances: {
+    savingMain: number;
+    needs: number;
+    wants: number;
+    total: number;
+  };
+}
+
+/**
+ * Evaluates whether wallet reconciliation can be performed.
+ * Handles:
+ * 1. Already reconciled state (Main = ledgerTotal, Needs = 0, Wants = 0) -> Idempotent, moved = 0.
+ * 2. ACTUAL live state (Needs = 0, Wants = 0, unallocated ≈ ₹998.17) -> Move unallocated to Main.
+ * 3. Legacy planned pre-state (Main ≈ 10131.88, Needs ≈ 598.91, Wants ≈ 399.27) -> Move Needs+Wants to Main.
+ * 4. Mismatch / Changed balances guard -> Safe skip without touching balances.
+ */
+export function evaluateReconciliation(
+  currentBalances: { savingMain?: number; main?: number; needs?: number; wants?: number; total?: number },
+  ledgerTotal: number | null | undefined,
+  tolerance: number = 0.05
+): ReconcileBalancesResult {
+  const main = currentBalances.savingMain !== undefined ? currentBalances.savingMain : (currentBalances.main ?? 0);
+  const needs = currentBalances.needs ?? 0;
+  const wants = currentBalances.wants ?? 0;
+  const walletSum = roundToTwoDecimals(main + needs + wants);
+
+  if (ledgerTotal === null || ledgerTotal === undefined || isNaN(ledgerTotal)) {
+    return {
+      canReconcile: false,
+      unallocated: 0,
+      action: 'skip',
+      savingMoved: 0,
+      needsMoved: 0,
+      wantsMoved: 0,
+      reason: 'Ledger total unavailable (null or NaN). Reconciliation skipped safely.',
+      resultingBalances: {
+        savingMain: roundToTwoDecimals(main),
+        needs: roundToTwoDecimals(needs),
+        wants: roundToTwoDecimals(wants),
+        total: walletSum,
+      },
+    };
+  }
+
+  const unallocated = roundToTwoDecimals(ledgerTotal - walletSum);
+
+  // 1. Check if already reconciled:
+  // Main ≈ ledgerTotal, Needs ≈ 0, Wants ≈ 0, unallocated ≈ 0 (idempotent, second run moves ₹0)
+  if (
+    Math.abs(main - ledgerTotal) <= tolerance &&
+    Math.abs(needs) <= tolerance &&
+    Math.abs(wants) <= tolerance &&
+    Math.abs(unallocated) <= tolerance
+  ) {
+    return {
+      canReconcile: true,
+      unallocated: 0,
+      action: 'already_reconciled',
+      savingMoved: 0,
+      needsMoved: 0,
+      wantsMoved: 0,
+      resultingBalances: {
+        savingMain: ledgerTotal,
+        needs: 0,
+        wants: 0,
+        total: ledgerTotal,
+      },
+    };
+  }
+
+  // 2. ACTUAL live state (10 Nov 2026):
+  // Needs = 0, Wants = 0, unallocated ≈ 998.17 (within 0.05)
+  // (Main is ~10,131.88, Ledger is ~11,130.05 -> move unallocated 998.17 to Main)
+  if (
+    Math.abs(needs) <= tolerance &&
+    Math.abs(wants) <= tolerance &&
+    Math.abs(unallocated - 998.17) <= tolerance
+  ) {
+    const resultingMain = roundToTwoDecimals(main + unallocated);
+    return {
+      canReconcile: true,
+      unallocated,
+      action: 'apply_unallocated',
+      savingMoved: unallocated,
+      needsMoved: 0,
+      wantsMoved: 0,
+      resultingBalances: {
+        savingMain: resultingMain,
+        needs: 0,
+        wants: 0,
+        total: resultingMain,
+      },
+    };
+  }
+
+  // 3. LEGACY planned pre-reconciliation state:
+  // Main ≈ 10,131.88, Needs ≈ 598.91, Wants ≈ 399.27
+  if (
+    Math.abs(main - EXPECTED_PRE_RECONCILIATION.savingMain) <= tolerance &&
+    Math.abs(needs - EXPECTED_PRE_RECONCILIATION.needs) <= tolerance &&
+    Math.abs(wants - EXPECTED_PRE_RECONCILIATION.wants) <= tolerance &&
+    (Math.abs(walletSum - EXPECTED_PRE_RECONCILIATION.total) <= tolerance + 0.01 ||
+      Math.abs(walletSum - 11130.06) <= tolerance)
+  ) {
+    return {
+      canReconcile: true,
+      unallocated: 0,
+      action: 'apply_legacy_transfer',
+      savingMoved: roundToTwoDecimals(needs + wants),
+      needsMoved: needs,
+      wantsMoved: wants,
+      resultingBalances: {
+        savingMain: 11130.05,
+        needs: 0,
+        wants: 0,
+        total: 11130.05,
+      },
+    };
+  }
+
+  // 4. Mismatch / Changed balances guard:
+  return {
+    canReconcile: false,
+    unallocated,
+    action: 'skip',
+    savingMoved: 0,
+    needsMoved: 0,
+    wantsMoved: 0,
+    reason: `Balances do not reconcile within ₹${tolerance.toFixed(2)} tolerance (Main: ₹${main.toFixed(2)}, Needs: ₹${needs.toFixed(2)}, Wants: ₹${wants.toFixed(2)}, Unallocated: ₹${unallocated.toFixed(2)}, Ledger: ₹${ledgerTotal.toFixed(2)}).`,
+    resultingBalances: {
+      savingMain: roundToTwoDecimals(main),
+      needs: roundToTwoDecimals(needs),
+      wants: roundToTwoDecimals(wants),
+      total: walletSum,
+    },
+  };
+}

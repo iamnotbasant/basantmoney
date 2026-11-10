@@ -248,7 +248,7 @@ const IncomeEntry = () => {
 
       // Also update localStorage for backward compatibility with WalletService
       const { walletUpdates, subWalletUpdates } = WalletService.processIncome(incomeAmount, effectiveDistribution);
-      WalletService.applyIncomeUpdates(subWalletUpdates);
+      WalletService.applyIncomeUpdates(subWalletUpdates, walletUpdates);
 
       // Show detailed breakdown
       const breakdown = walletUpdates.map(update => {

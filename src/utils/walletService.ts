@@ -228,19 +228,42 @@ export class WalletService {
     localStorage.setItem(this.storageKey('subWallets'), JSON.stringify(updatedSubWallets));
   }
 
-  // Apply income updates to balances
-  static applyIncomeUpdates(subWalletUpdates: { id: number, amount: number }[]): void {
-    const currentSubWallets = JSON.parse(localStorage.getItem(this.storageKey('subWallets')) || '[]');
+  // Apply income updates to balances (both subwallets and unallocated main wallets)
+  static applyIncomeUpdates(
+    subWalletUpdates: { id: number, amount: number }[],
+    walletUpdates?: { type: 'saving' | 'needs' | 'wants', amount: number }[]
+  ): void {
+    const subWalletsKey = this.storageKey('subWallets');
+    const currentSubWallets = JSON.parse(localStorage.getItem(subWalletsKey) || '[]');
     
     const updatedSubWallets = currentSubWallets.map((sw: SubWallet) => {
       const update = subWalletUpdates.find(u => u.id === sw.id);
       if (update) {
-        return { ...sw, balance: sw.balance + update.amount };
+        return { ...sw, balance: Math.round(((sw.balance + update.amount) + Number.EPSILON) * 100) / 100 };
       }
       return sw;
     });
 
-    localStorage.setItem(this.storageKey('subWallets'), JSON.stringify(updatedSubWallets));
+    localStorage.setItem(subWalletsKey, JSON.stringify(updatedSubWallets));
+
+    if (walletUpdates && walletUpdates.length > 0) {
+      const walletsKey = this.storageKey('wallets');
+      const currentWallets = JSON.parse(localStorage.getItem(walletsKey) || '[]');
+      const updatedWallets = currentWallets.map((w: Wallet) => {
+        const subs = currentSubWallets.filter((sw: SubWallet) => sw.parentWalletType === w.type);
+        const totalPct = subs.reduce((sum: number, sw: SubWallet) => sum + (sw.allocationPercentage || 0), 0);
+        const wu = walletUpdates.find(u => u.type === w.type);
+        if (wu) {
+          const unallocatedShare = subs.length === 0 ? wu.amount : (wu.amount * (100 - totalPct)) / 100;
+          if (unallocatedShare > 0) {
+            return { ...w, balance: Math.round(((w.balance + unallocatedShare) + Number.EPSILON) * 100) / 100 };
+          }
+        }
+        return w;
+      });
+      localStorage.setItem(walletsKey, JSON.stringify(updatedWallets));
+    }
+
     // Trigger wallet data refresh across the app
     window.dispatchEvent(new CustomEvent('walletDataChanged'));
   }
