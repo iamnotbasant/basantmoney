@@ -25,17 +25,23 @@ export const MonthPillBar: React.FC<MonthPillBarProps> = ({
   const currentActualYear = new Date().getFullYear();
   const isCurrentYear = selectedYear === currentActualYear;
   const activePillRef = useRef<HTMLButtonElement | null>(null);
+  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
 
   // Automatically scroll active month pill into view on mount and month change
   useEffect(() => {
-    if (activePillRef.current) {
-      activePillRef.current.scrollIntoView({
-        behavior: 'smooth',
-        inline: 'center',
-        block: 'nearest',
-      });
-    }
-  }, [selectedMonth]);
+    const timer = setTimeout(() => {
+      if (activePillRef.current && scrollContainerRef.current) {
+        const container = scrollContainerRef.current;
+        const pill = activePillRef.current;
+        const pillLeft = pill.offsetLeft;
+        const pillWidth = pill.offsetWidth;
+        const containerWidth = container.offsetWidth;
+        const targetScroll = pillLeft - (containerWidth / 2) + (pillWidth / 2);
+        container.scrollTo({ left: Math.max(0, targetScroll), behavior: 'smooth' });
+      }
+    }, 100);
+    return () => clearTimeout(timer);
+  }, [selectedMonth, selectedYear]);
 
   const handlePrevYear = () => {
     if (onYearChange) onYearChange(selectedYear - 1);
@@ -80,6 +86,7 @@ export const MonthPillBar: React.FC<MonthPillBarProps> = ({
 
         {/* Scrollable Month Pills */}
         <div
+          ref={scrollContainerRef}
           role="tablist"
           aria-label="Filter by month"
           className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5 w-full scroll-smooth"

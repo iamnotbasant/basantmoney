@@ -20,7 +20,7 @@ const MONTH_NAMES = [
 const Index: React.FC = () => {
   const navigate = useNavigate();
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
-  const [selectedYear] = useState(new Date().getFullYear());
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
 
   // Privacy toggle (persisted in localStorage)
   const [balanceHidden, setBalanceHidden] = useState<boolean>(() => {
