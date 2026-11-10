@@ -15,7 +15,7 @@ const NetBalanceDisplay: React.FC<NetBalanceDisplayProps> = ({ netBalance }) => 
   }
 
   return (
-    <div className="relative bg-card py-10 sm:py-14 px-6 sm:px-12 rounded-2xl shadow-sm border border-border/80 transition-colors">
+    <div className="relative bg-card/90 backdrop-blur-sm py-10 sm:py-14 px-6 sm:px-12 rounded-2xl shadow-sm border border-border/80 transition-colors">
       <div className="text-center">
         <p className="text-2xl text-muted-foreground mb-4">Total Balance</p>
         <p className={`text-6xl sm:text-8xl font-extrabold ${
