@@ -19,56 +19,58 @@ const SummarySection: React.FC<SummarySectionProps> = ({ incomeData, expenseData
       value: netBalance,
       icon: DollarSign,
       color: netBalance >= 0 ? 'green' : 'red',
-      bgColor: netBalance >= 0 ? 'bg-gradient-to-br from-green-50 to-green-100/50 border-green-200' : 'bg-gradient-to-br from-red-50 to-red-100/50 border-red-200',
-      iconColor: netBalance >= 0 ? 'text-green-600' : 'text-red-600',
-      textColor: netBalance >= 0 ? 'text-green-700' : 'text-red-700',
-      iconBg: netBalance >= 0 ? 'bg-green-100' : 'bg-red-100'
+      bgColor: netBalance >= 0 
+        ? 'bg-emerald-500/10 border-emerald-500/20 dark:bg-emerald-950/20' 
+        : 'bg-rose-500/10 border-rose-500/20 dark:bg-rose-950/20',
+      iconColor: netBalance >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400',
+      textColor: netBalance >= 0 ? 'text-emerald-700 dark:text-emerald-300' : 'text-rose-700 dark:text-rose-300',
+      iconBg: netBalance >= 0 ? 'bg-emerald-500/20 text-emerald-600' : 'bg-rose-500/20 text-rose-600'
     },
     {
       title: 'Total Income',
       value: totalIncome,
       icon: TrendingUp,
       color: 'green',
-      bgColor: 'bg-gradient-to-br from-green-50 to-green-100/50 border-green-200',
-      iconColor: 'text-green-600',
-      textColor: 'text-green-700',
-      iconBg: 'bg-green-100'
+      bgColor: 'bg-emerald-500/10 border-emerald-500/20 dark:bg-emerald-950/20',
+      iconColor: 'text-emerald-600 dark:text-emerald-400',
+      textColor: 'text-emerald-700 dark:text-emerald-300',
+      iconBg: 'bg-emerald-500/20 text-emerald-600'
     },
     {
       title: 'Total Expenses',
       value: totalExpenses,
       icon: TrendingDown,
       color: 'red',
-      bgColor: 'bg-gradient-to-br from-red-50 to-red-100/50 border-red-200',
-      iconColor: 'text-red-600',
-      textColor: 'text-red-700',
-      iconBg: 'bg-red-100'
+      bgColor: 'bg-rose-500/10 border-rose-500/20 dark:bg-rose-950/20',
+      iconColor: 'text-rose-600 dark:text-rose-400',
+      textColor: 'text-rose-700 dark:text-rose-300',
+      iconBg: 'bg-rose-500/20 text-rose-600'
     }
   ];
 
   return (
     <div>
       <div className="flex items-center mb-6">
-        <h2 className="text-2xl font-semibold text-foreground">Financial Summary</h2>
+        <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">Financial Summary</h2>
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
         {summaryCards.map((card, index) => (
           <div
             key={index}
-            className={`${card.bgColor} rounded-2xl p-6 border-2 hover:shadow-xl hover:scale-[1.02] transition-all duration-300 cursor-pointer group`}
+            className={`${card.bgColor} rounded-2xl p-6 border shadow-sm transition-all duration-300`}
           >
             <div className="flex items-start justify-between mb-4">
               <div className="flex-1">
-                <p className="text-sm font-medium text-muted-foreground/80 mb-1">{card.title}</p>
+                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{card.title}</p>
               </div>
-              <div className={`p-3 rounded-xl ${card.iconBg} group-hover:scale-110 transition-transform duration-300`}>
-                <card.icon className={`h-6 w-6 ${card.iconColor}`} />
+              <div className={`p-2.5 rounded-xl ${card.iconBg}`}>
+                <card.icon className={`h-5 w-5 ${card.iconColor}`} />
               </div>
             </div>
             
             <div>
-              <p className={`text-2xl sm:text-3xl font-bold ${card.textColor} leading-tight`}>
+              <p className={`text-2xl sm:text-3xl font-bold tabular-nums tracking-tight ${card.textColor} leading-tight`}>
                 {card.title === 'Net Balance' && card.value < 0 && '-'}
                 ₹{Math.trunc(Math.abs(card.value)).toLocaleString('en-IN')}
               </p>

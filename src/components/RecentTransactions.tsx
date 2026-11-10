@@ -77,17 +77,17 @@ const RecentTransactions = () => {
             <p>Loading transactions...</p>
           </div>
         ) : recentTransactions.length > 0 ? (
-          <div className="space-y-3">
+          <div className="space-y-2.5">
             {recentTransactions.map((transaction) => (
               <div
                 key={`${transaction.type}-${transaction.id}`}
-                className="flex items-center justify-between p-3 rounded-lg border border-border/50 hover:bg-accent/50 transition-colors"
+                className="flex items-center justify-between p-3.5 rounded-xl border border-border/60 hover:bg-accent/40 transition-colors"
               >
-                <div className="flex items-center space-x-3">
-                  <div className={`p-2 rounded-full ${
+                <div className="flex items-center space-x-3 min-w-0">
+                  <div className={`p-2.5 rounded-xl shrink-0 ${
                     transaction.type === 'income' 
-                      ? 'bg-green-100 text-green-600' 
-                      : 'bg-red-100 text-red-600'
+                      ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20' 
+                      : 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20'
                   }`}>
                     {transaction.type === 'income' ? (
                       <TrendingUp className="h-4 w-4" />
@@ -95,10 +95,10 @@ const RecentTransactions = () => {
                       <TrendingDown className="h-4 w-4" />
                     )}
                   </div>
-                  <div>
-                    <p className="font-medium text-sm">{transaction.description}</p>
-                    <div className="flex items-center space-x-2 mt-1">
-                      <Badge variant="outline" className="text-xs">
+                  <div className="min-w-0">
+                    <p className="font-semibold text-sm truncate text-foreground">{transaction.description}</p>
+                    <div className="flex items-center space-x-2 mt-0.5">
+                      <Badge variant="outline" className="text-[11px] font-normal border-border/80">
                         {transaction.category.charAt(0).toUpperCase() + transaction.category.slice(1)}
                       </Badge>
                       <span className="text-xs text-muted-foreground">
@@ -107,9 +107,11 @@ const RecentTransactions = () => {
                     </div>
                   </div>
                 </div>
-                <div className="text-right">
-                  <p className={`font-semibold ${
-                    transaction.type === 'income' ? 'text-green-600' : 'text-red-600'
+                <div className="text-right shrink-0 pl-3">
+                  <p className={`font-bold tabular-nums tracking-tight text-sm sm:text-base ${
+                    transaction.type === 'income' 
+                      ? 'text-emerald-600 dark:text-emerald-400' 
+                      : 'text-foreground'
                   }`}>
                     {transaction.type === 'income' ? '+' : '-'}₹{transaction.amount.toLocaleString('en-IN')}
                   </p>
