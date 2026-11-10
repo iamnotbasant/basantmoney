@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Plus, AlertCircle, Calendar } from 'lucide-react';
+import { ArrowLeft, Plus, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -23,33 +23,9 @@ import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { Category } from '@/types/finance';
-import { WalletService } from '@/utils/walletService';
 import CollapsibleSection from '@/components/CollapsibleSection';
 import { useIncomeData } from '@/hooks/useIncomeData';
-import { useWalletData } from '@/hooks/useWalletData';
 import { useBankAccounts } from '@/hooks/useBankAccounts';
-
-interface IncomeEntry {
-  id: number;
-  source: string;
-  amount: number;
-  date: string;
-  category: string;
-  paymentMethod: string;
-  notes?: string;
-  attachment?: string;
-}
-
-interface UserSettings {
-  distribution: {
-    saving: number;
-    needs: number;
-    wants: number;
-  };
-  defaultWallet: 'saving' | 'needs' | 'wants';
-  currency: string;
-  appTheme: 'light' | 'dark' | 'system';
-}
 
 interface PaymentMethod {
   id: string;
@@ -73,15 +49,6 @@ const IncomeEntry = () => {
   // Supabase hooks for data persistence
   const { currentAccount } = useBankAccounts();
   const { incomeData, addIncome } = useIncomeData(currentAccount?.id);
-  const { processIncomeDistribution } = useWalletData(currentAccount?.id);
-  
-  // Distribution settings state
-  const [settings, setSettings] = useState<UserSettings>({
-    distribution: { saving: 50, needs: 30, wants: 20 },
-    defaultWallet: 'saving',
-    currency: '₹',
-    appTheme: 'system'
-  });
 
   useEffect(() => {
     const requiredIncomeCategories: Category[] = [
@@ -118,10 +85,6 @@ const IncomeEntry = () => {
         { id: '4', name: 'Interest', type: 'income', color: '#10B981' },
         { id: '5', name: 'Cashback', type: 'income', color: '#06B6D4' },
         { id: '6', name: 'Freelancing', type: 'income', color: '#6366F1' },
-        { id: '7', name: 'Food', type: 'expense', color: '#EF4444' },
-        { id: '8', name: 'Transport', type: 'expense', color: '#F59E0B' },
-        { id: '9', name: 'Entertainment', type: 'expense', color: '#EC4899' },
-        { id: '10', name: 'Bills', type: 'expense', color: '#06B6D4' },
       ];
       localStorage.setItem('categories', JSON.stringify(defaultCategories));
       const incomeCategories = defaultCategories.filter(cat => cat.type === 'income');
@@ -133,59 +96,17 @@ const IncomeEntry = () => {
     if (storedMethods) {
       setPaymentMethods(JSON.parse(storedMethods));
     } else {
-      // Initialize default payment methods if none exist
       const defaultMethods = [
         { id: '1', name: 'Cash', color: '#10B981' },
         { id: '2', name: 'UPI', color: '#3B82F6' },
         { id: '3', name: 'Bank Transfer', color: '#8B5CF6' },
         { id: '4', name: 'Credit Card', color: '#EF4444' },
-        { id: '5', name: 'Wallet', color: '#F59E0B' },
-        { id: '6', name: 'Cheque', color: '#EC4899' },
+        { id: '5', name: 'Cheque', color: '#EC4899' },
       ];
       localStorage.setItem('paymentMethods', JSON.stringify(defaultMethods));
       setPaymentMethods(defaultMethods);
     }
-
-    // Income history is now fetched from Supabase via useIncomeData hook
-
-    // Load user settings
-    const storedSettings = localStorage.getItem('userSettings');
-    if (storedSettings) {
-      const parsed = JSON.parse(storedSettings);
-      setSettings(parsed);
-    }
   }, []);
-
-  const getTotalPercentage = () => {
-    return settings.distribution.saving + settings.distribution.needs + settings.distribution.wants;
-  };
-
-  const isValidDistribution = () => {
-    return getTotalPercentage() === 100;
-  };
-
-  const handleDistributionChange = (walletType: 'saving' | 'needs' | 'wants', value: string) => {
-    const numValue = parseInt(value) || 0;
-    const updatedSettings = {
-      ...settings,
-      distribution: {
-        ...settings.distribution,
-        [walletType]: numValue
-      }
-    };
-    setSettings(updatedSettings);
-    localStorage.setItem('userSettings', JSON.stringify(updatedSettings));
-  };
-
-  const resetToDefault = () => {
-    const defaultSettings = {
-      ...settings,
-      distribution: { saving: 50, needs: 30, wants: 20 }
-    };
-    setSettings(defaultSettings);
-    localStorage.setItem('userSettings', JSON.stringify(defaultSettings));
-    toast.success('Distribution reset to default (50/30/20)');
-  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -202,11 +123,6 @@ const IncomeEntry = () => {
       return;
     }
 
-    if (!isValidDistribution()) {
-      toast.error('Distribution percentages must add up to 100%');
-      return;
-    }
-
     const incomeAmount = parseFloat(amount);
     if (incomeAmount <= 0) {
       toast.error('Amount must be greater than 0');
@@ -216,8 +132,6 @@ const IncomeEntry = () => {
     setIsSubmitting(true);
 
     try {
-      // Save income to Supabase with payment method and notes
-      // Use local date format to avoid timezone issues
       const year = date.getFullYear();
       const month = String(date.getMonth() + 1).padStart(2, '0');
       const day = String(date.getDate()).padStart(2, '0');
@@ -238,34 +152,7 @@ const IncomeEntry = () => {
         return;
       }
 
-      const isFullSavingCategory = selectedCategory.toLowerCase() === 'interest' || selectedCategory.toLowerCase() === 'cashback';
-      const effectiveDistribution = isFullSavingCategory
-        ? { saving: 100, needs: 0, wants: 0 }
-        : settings.distribution;
-
-      // Process income distribution to subwallets in Supabase (100% to Saving if Interest/Cashback)
-      await processIncomeDistribution(incomeAmount, effectiveDistribution);
-
-      // Also update localStorage for backward compatibility with WalletService
-      const { walletUpdates, subWalletUpdates } = WalletService.processIncome(incomeAmount, effectiveDistribution);
-      WalletService.applyIncomeUpdates(subWalletUpdates, walletUpdates);
-
-      // Show detailed breakdown
-      const breakdown = walletUpdates.map(update => {
-        const percentage = update.type === 'saving' ? effectiveDistribution.saving : 
-                          update.type === 'needs' ? effectiveDistribution.needs : 
-                          effectiveDistribution.wants;
-        return `${update.type.charAt(0).toUpperCase() + update.type.slice(1)}: ₹${update.amount.toFixed(2)} (${percentage}%)`;
-      }).join(', ');
-
-      const bypassNotice = isFullSavingCategory ? ' (100% Saving bypass)' : '';
-      toast.success(`₹${incomeAmount.toLocaleString('en-IN')} saved to backend and distributed!${bypassNotice} ${breakdown}`);
-
-      console.log('Income saved to Supabase:', {
-        total: incomeAmount,
-        breakdown: walletUpdates,
-        subWalletUpdates
-      });
+      toast.success(`₹${incomeAmount.toLocaleString('en-IN')} income added to account balance!`);
 
       // Reset form
       setSource('');
@@ -276,10 +163,9 @@ const IncomeEntry = () => {
       setNotes('');
       setAttachment(null);
 
-      // Navigate back to dashboard after a short delay
       setTimeout(() => {
         navigate('/');
-      }, 1500);
+      }, 1000);
     } catch (error) {
       console.error('Error saving income:', error);
       toast.error('Failed to save income');
@@ -308,257 +194,153 @@ const IncomeEntry = () => {
         </div>
       </header>
 
-      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Income Form */}
-          <Card className="animate-fade-in">
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                 <Plus className="h-5 w-5 mr-2 text-primary" />
-                Income Details
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-6">
-                <div className="space-y-2">
-                  <Label htmlFor="amount">Amount (₹) *</Label>
-                  <Input
-                    id="amount"
-                    type="number"
-                    value={amount}
-                    onChange={(e) => setAmount(e.target.value)}
-                    placeholder="0"
-                    min="0"
-                    step="0.01"
-                    className="transition-all duration-200 focus:ring-2 focus:ring-primary/20"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="source">Source *</Label>
-                  <Input
-                    id="source"
-                    type="text"
-                    value={source}
-                    onChange={(e) => setSource(e.target.value)}
-                    placeholder="e.g., Salary, Freelance, Investment"
-                    className="transition-all duration-200 focus:ring-2 focus:ring-primary/20"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Date Received *</Label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className={cn(
-                          "w-full justify-start text-left font-normal",
-                          !date && "text-muted-foreground"
-                        )}
-                      >
-                        <Calendar className="mr-2 h-4 w-4" />
-                        {date ? format(date, "PPP") : <span>Pick a date</span>}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <CalendarComponent
-                        mode="single"
-                        selected={date}
-                        onSelect={(newDate) => newDate && setDate(newDate)}
-                        initialFocus
-                        className={cn("p-3 pointer-events-auto")}
-                      />
-                    </PopoverContent>
-                  </Popover>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="category">Category *</Label>
-                  <Select 
-                    value={selectedCategory} 
-                    onValueChange={(value) => setSelectedCategory(value)}
-                  >
-                    <SelectTrigger className="transition-all duration-200 focus:ring-2 focus:ring-primary/20">
-                      <SelectValue placeholder="Select a category" />
-                    </SelectTrigger>
-                    <SelectContent className="z-[100] bg-background border border-border shadow-lg">
-                      {categories.length > 0 ? (
-                        categories.map((category) => (
-                          <SelectItem key={category.id} value={category.name}>
-                            <div className="flex items-center gap-2">
-                              <div 
-                                className="w-3 h-3 rounded-full" 
-                                style={{ backgroundColor: category.color }}
-                              />
-                              {category.name}
-                            </div>
-                          </SelectItem>
-                        ))
-                      ) : (
-                        <SelectItem value="default" disabled>
-                          No categories available
-                        </SelectItem>
-                      )}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="paymentMethod">Payment Method *</Label>
-                  <Select 
-                    value={selectedPaymentMethod} 
-                    onValueChange={(value) => setSelectedPaymentMethod(value)}
-                  >
-                    <SelectTrigger className="transition-all duration-200 focus:ring-2 focus:ring-primary/20">
-                      <SelectValue placeholder="Select payment method" />
-                    </SelectTrigger>
-                    <SelectContent className="z-[100] bg-background border border-border shadow-lg">
-                      {paymentMethods.length > 0 ? (
-                        paymentMethods.map((method) => (
-                          <SelectItem key={method.id} value={method.name}>
-                            <div className="flex items-center gap-2">
-                              <div 
-                                className="w-3 h-3 rounded-full" 
-                                style={{ backgroundColor: method.color }}
-                              />
-                              {method.name}
-                            </div>
-                          </SelectItem>
-                        ))
-                      ) : (
-                        <SelectItem value="default" disabled>
-                          No payment methods available
-                        </SelectItem>
-                      )}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="notes">Description *</Label>
-                  <Textarea
-                    id="notes"
-                    value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
-                    placeholder="e.g., Thumbnail, Rent, Editing, etc."
-                    className="min-h-[80px]"
-                    required
-                  />
-                </div>
-
-                <CollapsibleSection title="▶ More Options">
-                  <div className="space-y-4">
-
-                    <div className="space-y-2">
-                      <Label htmlFor="attachment">Attachment (Optional)</Label>
-                      <Input
-                        id="attachment"
-                        type="file"
-                        onChange={handleFileChange}
-                        accept="image/*,.pdf,.doc,.docx"
-                        className="file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/80"
-                      />
-                      {attachment && (
-                        <p className="text-sm text-muted-foreground">
-                          Selected: {attachment.name}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                </CollapsibleSection>
-
-                <Button 
-                  type="submit" 
-                  className="w-full transition-all duration-200 hover:scale-[1.02]"
-                  disabled={!isValidDistribution()}
-                >
-                  Add Income
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
-
-          {/* Distribution Settings */}
-          <Card className="animate-fade-in" style={{ animationDelay: '0.1s' }}>
-            <CardHeader>
-              <CardTitle>Distribution Settings</CardTitle>
-              <p className="text-sm text-muted-foreground">
-                Total: {getTotalPercentage()}%
-              </p>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-6">
-                <div className="space-y-4">
-                  <div>
-                    <Label htmlFor="saving" className="text-sm font-medium mb-2 block">
-                      Saving Wallet (%)
-                    </Label>
-                    <Input
-                      id="saving"
-                      type="number"
-                      value={settings.distribution.saving}
-                      onChange={(e) => handleDistributionChange('saving', e.target.value)}
-                      placeholder="50"
-                      min="0"
-                      max="100"
-                      className="w-full"
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="needs" className="text-sm font-medium mb-2 block">
-                      Needs Wallet (%)
-                    </Label>
-                    <Input
-                      id="needs"
-                      type="number"
-                      value={settings.distribution.needs}
-                      onChange={(e) => handleDistributionChange('needs', e.target.value)}
-                      placeholder="30"
-                      min="0"
-                      max="100"
-                      className="w-full"
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="wants" className="text-sm font-medium mb-2 block">
-                      Wants Wallet (%)
-                    </Label>
-                    <Input
-                      id="wants"
-                      type="number"
-                      value={settings.distribution.wants}
-                      onChange={(e) => handleDistributionChange('wants', e.target.value)}
-                      placeholder="20"
-                      min="0"
-                      max="100"
-                      className="w-full"
-                    />
-                  </div>
-                </div>
-
-                <Button 
-                  onClick={resetToDefault}
-                  variant="outline" 
-                  className="w-full"
-                >
-                  Reset to Default (50/30/20)
-                </Button>
-
-                {!isValidDistribution() && (
-                  <div className="flex items-center gap-2 p-3 bg-destructive/10 rounded-lg">
-                    <AlertCircle className="h-4 w-4 text-destructive" />
-                    <p className="text-sm text-destructive">
-                      Total must equal 100%. Current: {getTotalPercentage()}%
-                    </p>
-                  </div>
-                )}
+      <main className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <Card className="animate-fade-in">
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <Plus className="h-5 w-5 mr-2 text-primary" />
+              Income Details
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="space-y-2">
+                <Label htmlFor="amount">Amount (₹) *</Label>
+                <Input
+                  id="amount"
+                  type="number"
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                  placeholder="0"
+                  min="0"
+                  step="0.01"
+                  required
+                />
               </div>
-            </CardContent>
-          </Card>
-        </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="source">Source / Payer *</Label>
+                <Input
+                  id="source"
+                  value={source}
+                  onChange={(e) => setSource(e.target.value)}
+                  placeholder="e.g., Client name, Employer, Slice, etc."
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Date *</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !date && "text-muted-foreground"
+                      )}
+                    >
+                      <Calendar className="mr-2 h-4 w-4" />
+                      {date ? format(date, "PPP") : <span>Pick a date</span>}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <CalendarComponent
+                      mode="single"
+                      selected={date}
+                      onSelect={(newDate) => newDate && setDate(newDate)}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="category">Category *</Label>
+                <Select value={selectedCategory} onValueChange={setSelectedCategory} required>
+                  <SelectTrigger id="category">
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categories.map((cat) => (
+                      <SelectItem key={cat.id} value={cat.name}>
+                        <div className="flex items-center gap-2">
+                          <div
+                            className="w-3 h-3 rounded-full"
+                            style={{ backgroundColor: cat.color }}
+                          />
+                          {cat.name}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="paymentMethod">Payment Method *</Label>
+                <Select value={selectedPaymentMethod} onValueChange={setSelectedPaymentMethod} required>
+                  <SelectTrigger id="paymentMethod">
+                    <SelectValue placeholder="Select payment method" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {paymentMethods.map((method) => (
+                      <SelectItem key={method.id} value={method.name}>
+                        <div className="flex items-center gap-2">
+                          <div
+                            className="w-3 h-3 rounded-full"
+                            style={{ backgroundColor: method.color }}
+                          />
+                          {method.name}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="notes">Description / Notes *</Label>
+                <Textarea
+                  id="notes"
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  placeholder="e.g., Monthly salary, Freelance project, etc."
+                  className="min-h-[80px]"
+                  required
+                />
+              </div>
+
+              <CollapsibleSection title="▶ More Options">
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="attachment">Attachment (Optional)</Label>
+                    <Input
+                      id="attachment"
+                      type="file"
+                      onChange={handleFileChange}
+                      accept="image/*,.pdf,.doc,.docx"
+                      className="file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/80"
+                    />
+                    {attachment && (
+                      <p className="text-sm text-muted-foreground">
+                        Selected: {attachment.name}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </CollapsibleSection>
+
+              <Button
+                type="submit"
+                className="w-full transition-all duration-200 hover:scale-[1.02]"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? "Adding..." : "Add Income"}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
 
         {/* Recent Income History */}
         {incomeData.length > 0 && (

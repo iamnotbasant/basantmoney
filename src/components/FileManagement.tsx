@@ -8,16 +8,16 @@ import { toast } from '@/hooks/use-toast';
 import { Wallet, IncomeData, ExpenseData, FileData } from '@/types/finance';
 
 interface FileManagementProps {
-  wallets: Wallet[];
+  wallets?: Wallet[];
   incomeData: IncomeData[];
   expenseData: ExpenseData[];
-  onWalletsUpdate: (wallets: Wallet[]) => void;
+  onWalletsUpdate?: (wallets: Wallet[]) => void;
   onIncomeUpdate: (income: IncomeData[]) => void;
   onExpenseUpdate: (expenses: ExpenseData[]) => void;
 }
 
 const FileManagement: React.FC<FileManagementProps> = ({
-  wallets,
+  wallets = [],
   incomeData,
   expenseData,
   onWalletsUpdate,

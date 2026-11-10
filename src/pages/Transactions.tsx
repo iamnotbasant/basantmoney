@@ -26,7 +26,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { IncomeData, ExpenseData, Category, SubWallet } from '@/types/finance';
+import { IncomeData, ExpenseData, Category } from '@/types/finance';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import TransactionsFilterBar from '@/components/TransactionsFilterBar';
@@ -37,10 +37,8 @@ import {
   SelectContent,
   SelectItem,
 } from '@/components/ui/select';
-import { WalletService } from '@/utils/walletService';
 import { useIncomeData } from '@/hooks/useIncomeData';
 import { useExpenseData } from '@/hooks/useExpenseData';
-import { useWalletData } from '@/hooks/useWalletData';
 import { useBankAccounts } from '@/hooks/useBankAccounts';
 import { useAuth } from '@/components/AuthProvider';
 import InterestBreakdownModal from '@/components/InterestBreakdownModal';
@@ -97,7 +95,6 @@ const Transactions = () => {
   const { currentAccount } = useBankAccounts();
   const { incomeData: supabaseIncome, loading: incomeLoading, updateIncome, deleteIncome, refetch: refetchIncome } = useIncomeData(currentAccount?.id);
   const { expenseData: supabaseExpenses, loading: expenseLoading, updateExpense, deleteExpense, refetch: refetchExpenses } = useExpenseData(currentAccount?.id);
-  const { subWallets, processExpenseDeductions, restoreExpenseDeductions, reverseIncomeDistribution, refetch: refetchWallets } = useWalletData(currentAccount?.id);
 
   // Convert Supabase data to Transaction format
   const transactions = useMemo(() => {
@@ -222,10 +219,6 @@ const Transactions = () => {
         } as any);
       }
 
-      // Trigger wallet data refresh
-      window.dispatchEvent(new Event('walletDataChanged'));
-      refetchWallets();
-      
       toast({
         title: "Success",
         description: "Transaction updated in backend",
@@ -267,7 +260,6 @@ const Transactions = () => {
 
     try {
       if (editingTransaction.type === 'income') {
-        const incomeToDelete = supabaseIncome.find(i => i.id === editingTransaction.id);
         const success = await deleteIncome(editingTransaction.id);
         if (!success) {
           toast({
@@ -278,10 +270,6 @@ const Transactions = () => {
           return;
         }
 
-        // Auto-interest is never distributed to subwallets on insert, so skip reverseIncomeDistribution
-        if (incomeToDelete && !incomeToDelete.is_auto_interest && !editingTransaction.is_auto_interest) {
-          await reverseIncomeDistribution(Number(incomeToDelete.amount) || 0);
-        }
         if (editingTransaction.is_auto_interest) {
           toast({
             title: "Auto interest entry deleted",
@@ -289,9 +277,6 @@ const Transactions = () => {
           });
         }
       } else {
-        // Find the expense to get its deductions before deleting
-        const expenseToDelete = supabaseExpenses.find(e => e.id === editingTransaction.id);
-        
         const success = await deleteExpense(editingTransaction.id);
         if (!success) {
           toast({
@@ -301,24 +286,11 @@ const Transactions = () => {
           });
           return;
         }
-
-        if (expenseToDelete?.deductions) {
-          // Parse deductions and restore balances
-          const deductions = expenseToDelete.deductions as unknown as { type: 'wallet' | 'subwallet'; id: number; amount: number }[];
-          if (Array.isArray(deductions) && deductions.length > 0) {
-            console.log('Restoring deductions:', deductions);
-            await restoreExpenseDeductions(deductions);
-          }
-        }
       }
 
-      // Trigger wallet data refresh
-      window.dispatchEvent(new Event('walletDataChanged'));
-      refetchWallets();
-      
       toast({
         title: "Success",
-        description: "Transaction deleted and balances restored",
+        description: "Transaction deleted successfully",
       });
       
       setIsEditOpen(false);
@@ -959,7 +931,7 @@ const Transactions = () => {
               <AlertDialogTitle>Are you sure?</AlertDialogTitle>
               <AlertDialogDescription>
                 This action cannot be undone. This will permanently delete this transaction
-                and revert any wallet balance changes it caused.
+                from your account ledger.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>

@@ -2,16 +2,14 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '@/components/Header';
-import WalletCard from '@/components/WalletCard';
 import SummarySection from '@/components/SummarySection';
 import RecentTransactions from '@/components/RecentTransactions';
 import NetBalanceDisplay from '@/components/NetBalanceDisplay';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent } from '@/components/ui/card';
-import { Plus, TrendingUp, TrendingDown, Calendar, ChevronDown, ChevronUp, Eye, EyeOff, Wallet as WalletIcon, Loader2 } from 'lucide-react';
-import { Wallet, IncomeData, ExpenseData } from '@/types/finance';
-import { WalletService } from '@/utils/walletService';
+import { Plus, TrendingUp, TrendingDown, Calendar, ChevronDown, ChevronUp, Eye, EyeOff, Loader2 } from 'lucide-react';
+import { IncomeData, ExpenseData } from '@/types/finance';
 import {
   Sheet,
   SheetContent,
@@ -22,7 +20,6 @@ import {
 } from "@/components/ui/sheet";
 import { useIncomeData } from '@/hooks/useIncomeData';
 import { useExpenseData } from '@/hooks/useExpenseData';
-import { useWalletData } from '@/hooks/useWalletData';
 import { useBankAccounts } from '@/hooks/useBankAccounts';
 import VaultInterestCards from '@/components/VaultInterestCards';
 
@@ -36,7 +33,6 @@ const Index = () => {
   const { currentAccount, loading: bankLoading } = useBankAccounts();
   const { incomeData: supabaseIncome, loading: incomeLoading, getTotalIncome } = useIncomeData(currentAccount?.id);
   const { expenseData: supabaseExpenses, loading: expenseLoading, getTotalExpenses } = useExpenseData(currentAccount?.id);
-  const { wallets: supabaseWallets, subWallets, loading: walletsLoading } = useWalletData(currentAccount?.id);
 
   const months = [
     'January', 'February', 'March', 'April', 'May', 'June',
@@ -61,36 +57,10 @@ const Index = () => {
     deductions: (item.deductions as any) || [],
   }));
 
-  // Convert Supabase wallets to local format
-  const wallets: Wallet[] = supabaseWallets.map(w => ({
-    id: w.id,
-    name: w.name,
-    balance: Number(w.balance) || 0,
-    type: w.type as 'saving' | 'needs' | 'wants',
-    color: w.color,
-  }));
-
-  // Calculate wallet balances including subwallets (with fallback to main wallet balance if no subwallets exist)
-  const getWalletBalance = (walletType: string) => {
-    const walletSubWallets = subWallets.filter(sw => sw.parent_wallet_type === walletType);
-    if (walletSubWallets.length > 0) {
-      return walletSubWallets.reduce((sum, sw) => sum + Number(sw.balance || 0), 0);
-    }
-    const w = supabaseWallets.find(w => w.type === walletType);
-    return Number(w?.balance || 0);
-  };
-
-  // Create dynamic wallets with calculated balances from Supabase
   // Calculate totals from all transactions
   const totalIncomeAllTime = getTotalIncome();
   const totalExpensesAllTime = getTotalExpenses();
   const netBalance = totalIncomeAllTime - totalExpensesAllTime;
-
-  // Vault Saving wallet agrees with Wallets page (same stored balance)
-  const dynamicWallets = wallets.map(wallet => ({
-    ...wallet,
-    balance: getWalletBalance(wallet.type)
-  }));
 
   // Filter data by selected month and year (ONLY for summary cards)
   const filteredIncomeData = incomeData.filter(item => {
@@ -107,7 +77,7 @@ const Index = () => {
     return itemMonth === selectedMonth && itemYear === selectedYear;
   });
 
-  const isLoading = incomeLoading || expenseLoading || walletsLoading || bankLoading;
+  const isLoading = incomeLoading || expenseLoading || bankLoading;
 
   if (isLoading) {
     return (
@@ -143,27 +113,6 @@ const Index = () => {
               incomeData={filteredIncomeData} 
               expenseData={filteredExpenseData}
             />
-          </div>
-        </section>
-
-        {/* Wallet Overview Section */}
-        <section className="mb-8">
-          <div className="flex items-center mb-6 animate-fade-in" style={{ animationDelay: '0.2s' }}>
-            <h2 className="text-2xl font-semibold text-foreground flex items-center gap-3">
-              <WalletIcon className="h-6 w-6 text-primary transition-colors duration-300 hover:text-primary/80" />
-              Smart Wallet System
-            </h2>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {dynamicWallets.map((wallet, index) => (
-              <div 
-                key={wallet.id} 
-                className="animate-fade-in transition-all duration-300 hover:scale-105 hover:shadow-lg"
-                style={{ animationDelay: `${(index * 0.1) + 0.3}s` }}
-              >
-                <WalletCard wallet={wallet} />
-              </div>
-            ))}
           </div>
         </section>
 

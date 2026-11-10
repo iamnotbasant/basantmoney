@@ -1,18 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Slider } from '@/components/ui/slider';
+import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from '@/components/ui/select';
-import { 
+import { useToast } from '@/hooks/use-toast';
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -23,22 +16,15 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { ArrowLeft, Save, Trash2, Palette, Wallet as WalletIcon, FileText } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
 import CategoryManager from '@/components/CategoryManager';
 import PaymentMethodManager from '@/components/PaymentMethodManager';
 import FileManagement from '@/components/FileManagement';
 import BankAccountManager from '@/components/BankAccountManager';
 import InterestSettingsSection from '@/components/InterestSettingsSection';
-import { Wallet, IncomeData, ExpenseData } from '@/types/finance';
+import { IncomeData, ExpenseData } from '@/types/finance';
+import { ArrowLeft, Trash2, Palette, FileText } from 'lucide-react';
 
 interface UserSettings {
-  distribution: {
-    saving: number;
-    needs: number;
-    wants: number;
-  };
-  defaultWallet: 'saving' | 'needs' | 'wants';
   currency: string;
   appTheme: 'light' | 'dark' | 'system';
 }
@@ -48,18 +34,10 @@ const Settings = () => {
   const { toast } = useToast();
   
   const [settings, setSettings] = useState<UserSettings>({
-    distribution: { saving: 50, needs: 30, wants: 20 },
-    defaultWallet: 'saving',
     currency: '₹',
     appTheme: 'system'
   });
 
-  const [savingPercentage, setSavingPercentage] = useState([50]);
-  const [needsPercentage, setNeedsPercentage] = useState([30]);
-  const [wantsPercentage, setWantsPercentage] = useState([20]);
-
-  // State for file management
-  const [wallets, setWallets] = useState<Wallet[]>([]);
   const [incomeData, setIncomeData] = useState<IncomeData[]>([]);
   const [expenseData, setExpenseData] = useState<ExpenseData[]>([]);
 
@@ -67,86 +45,20 @@ const Settings = () => {
     const storedSettings = localStorage.getItem('userSettings');
     if (storedSettings) {
       const parsed = JSON.parse(storedSettings);
-      setSettings(parsed);
-      setSavingPercentage([parsed.distribution.saving]);
-      setNeedsPercentage([parsed.distribution.needs]);
-      setWantsPercentage([parsed.distribution.wants]);
+      setSettings(prev => ({
+        ...prev,
+        currency: parsed.currency || '₹',
+        appTheme: parsed.appTheme || 'system'
+      }));
     }
     
     // Load data for file management
-    const storedWallets = localStorage.getItem('wallets');
     const storedIncome = localStorage.getItem('incomeData');
     const storedExpenses = localStorage.getItem('expenseData');
 
-    if (storedWallets) setWallets(JSON.parse(storedWallets));
     if (storedIncome) setIncomeData(JSON.parse(storedIncome));
     if (storedExpenses) setExpenseData(JSON.parse(storedExpenses));
   }, []);
-
-  const getTotalPercentage = () => {
-    return savingPercentage[0] + needsPercentage[0] + wantsPercentage[0];
-  };
-
-  const isValidDistribution = () => {
-    return getTotalPercentage() === 100;
-  };
-
-  const handleSavingChange = (value: number[]) => {
-    setSavingPercentage(value);
-    const remaining = 100 - value[0];
-    const currentNeedsWants = needsPercentage[0] + wantsPercentage[0];
-    
-    if (currentNeedsWants > remaining) {
-      const needsRatio = needsPercentage[0] / currentNeedsWants;
-      const wantsRatio = wantsPercentage[0] / currentNeedsWants;
-      setNeedsPercentage([Math.round(remaining * needsRatio)]);
-      setWantsPercentage([remaining - Math.round(remaining * needsRatio)]);
-    }
-  };
-
-  const handleNeedsChange = (value: number[]) => {
-    setNeedsPercentage(value);
-    const remaining = 100 - savingPercentage[0] - value[0];
-    if (remaining >= 0) {
-      setWantsPercentage([remaining]);
-    }
-  };
-
-  const handleWantsChange = (value: number[]) => {
-    setWantsPercentage(value);
-    const remaining = 100 - savingPercentage[0] - value[0];
-    if (remaining >= 0) {
-      setNeedsPercentage([remaining]);
-    }
-  };
-
-  const handleSaveSettings = () => {
-    if (!isValidDistribution()) {
-      toast({
-        title: "Invalid Distribution",
-        description: "Wallet percentages must add up to 100%",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    const updatedSettings = {
-      ...settings,
-      distribution: {
-        saving: savingPercentage[0],
-        needs: needsPercentage[0],
-        wants: wantsPercentage[0]
-      }
-    };
-
-    localStorage.setItem('userSettings', JSON.stringify(updatedSettings));
-    setSettings(updatedSettings);
-    
-    toast({
-      title: "Settings Saved",
-      description: "Your preferences have been updated successfully",
-    });
-  };
 
   const handleResetData = () => {
     localStorage.clear();
@@ -161,23 +73,12 @@ const Settings = () => {
     const currentBankId = localStorage.getItem('currentBankId');
     const storagePrefix = currentBankId ? `${currentBankId}_` : '';
     
-    // Clear all transaction data and reset balances
+    // Clear all transaction data
     localStorage.removeItem(`${storagePrefix}incomeData`);
     localStorage.removeItem(`${storagePrefix}expenseData`);
     localStorage.removeItem(`${storagePrefix}totalBalance`);
     
-    // Reset wallet balances to 0 but keep wallet configurations
-    const wallets = JSON.parse(localStorage.getItem(`${storagePrefix}wallets`) || '[]');
-    const resetWallets = wallets.map((wallet: any) => ({ ...wallet, balance: 0 }));
-    localStorage.setItem(`${storagePrefix}wallets`, JSON.stringify(resetWallets));
-    
-    // Reset sub-wallet balances to 0 but keep configurations
-    const subWallets = JSON.parse(localStorage.getItem(`${storagePrefix}subWallets`) || '[]');
-    const resetSubWallets = subWallets.map((subWallet: any) => ({ ...subWallet, balance: 0 }));
-    localStorage.setItem(`${storagePrefix}subWallets`, JSON.stringify(resetSubWallets));
-    
-    // Dispatch events to update UI
-    window.dispatchEvent(new Event('walletDataChanged'));
+    // Dispatch event to update UI
     window.dispatchEvent(new Event('transactionUpdated'));
     
     toast({
@@ -192,23 +93,11 @@ const Settings = () => {
     localStorage.setItem('userSettings', JSON.stringify(updatedSettings));
   };
 
-  const handleDefaultWalletChange = (value: 'saving' | 'needs' | 'wants') => {
-    const updatedSettings = { ...settings, defaultWallet: value };
-    setSettings(updatedSettings);
-    localStorage.setItem('userSettings', JSON.stringify(updatedSettings));
-  };
-
   const handleThemeChange = (checked: boolean) => {
     const theme: 'light' | 'dark' = checked ? 'dark' : 'light';
     const updatedSettings = { ...settings, appTheme: theme };
     setSettings(updatedSettings);
     localStorage.setItem('userSettings', JSON.stringify(updatedSettings));
-  };
-
-  // Handlers for file management
-  const updateWallets = (newWallets: Wallet[]) => {
-    setWallets(newWallets);
-    localStorage.setItem('wallets', JSON.stringify(newWallets));
   };
 
   const updateIncomeData = (newIncome: IncomeData[]) => {
@@ -224,7 +113,7 @@ const Settings = () => {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="bg-background border-b border-border">
+      <header className="bg-background border-b border-border sticky top-0 z-50">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center h-16">
             <Button
@@ -241,85 +130,6 @@ const Settings = () => {
       </header>
 
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-        {/* Income Distribution Settings */}
-        <section className="bg-card rounded-lg border p-6">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="p-2 bg-primary/10 rounded-lg">
-              <WalletIcon className="h-5 w-5 text-primary" />
-            </div>
-            <h2 className="text-lg font-semibold text-foreground">Income Distribution Settings</h2>
-          </div>
-
-          <div className="space-y-6">
-            {/* Saving Wallet */}
-            <div>
-              <div className="flex justify-between items-center mb-2">
-                <Label className="text-sm font-medium">Saving Wallet</Label>
-                <span className="text-sm font-medium text-green-600">{savingPercentage[0]}%</span>
-              </div>
-              <Slider
-                value={savingPercentage}
-                onValueChange={handleSavingChange}
-                max={100}
-                step={1}
-                className="w-full"
-              />
-            </div>
-
-            {/* Needs Wallet */}
-            <div>
-              <div className="flex justify-between items-center mb-2">
-                <Label className="text-sm font-medium">Needs Wallet</Label>
-                <span className="text-sm font-medium text-blue-600">{needsPercentage[0]}%</span>
-              </div>
-              <Slider
-                value={needsPercentage}
-                onValueChange={handleNeedsChange}
-                max={100}
-                step={1}
-                className="w-full"
-              />
-            </div>
-
-            {/* Wants Wallet */}
-            <div>
-              <div className="flex justify-between items-center mb-2">
-                <Label className="text-sm font-medium">Wants Wallet</Label>
-                <span className="text-sm font-medium text-purple-600">{wantsPercentage[0]}%</span>
-              </div>
-              <Slider
-                value={wantsPercentage}
-                onValueChange={handleWantsChange}
-                max={100}
-                step={1}
-                className="w-full"
-              />
-            </div>
-
-            {/* Total Percentage */}
-            <div className="bg-muted/50 rounded-lg p-4">
-              <div className="flex justify-between items-center">
-                <span className="text-sm font-medium">Total Distribution:</span>
-                <span className={`text-lg font-bold ${isValidDistribution() ? 'text-green-600' : 'text-red-600'}`}>
-                  {getTotalPercentage()}%
-                </span>
-              </div>
-              {!isValidDistribution() && (
-                <p className="text-sm text-red-600 mt-1">Must equal 100%</p>
-              )}
-            </div>
-
-            <Button 
-              onClick={handleSaveSettings} 
-              disabled={!isValidDistribution()}
-              className="w-full sm:w-auto"
-            >
-              <Save className="h-4 w-4 mr-2" />
-              Save Distribution
-            </Button>
-          </div>
-        </section>
-
         {/* Bank Account Management Section */}
         <section className="bg-card rounded-lg border p-6">
           <BankAccountManager />
@@ -349,10 +159,8 @@ const Settings = () => {
             <h2 className="text-lg font-semibold text-foreground">Data Management</h2>
           </div>
           <FileManagement
-            wallets={wallets}
             incomeData={incomeData}
             expenseData={expenseData}
-            onWalletsUpdate={updateWallets}
             onIncomeUpdate={updateIncomeData}
             onExpenseUpdate={updateExpenseData}
           />
@@ -382,23 +190,6 @@ const Settings = () => {
               />
             </div>
 
-            {/* Default Wallet */}
-            <div>
-              <Label className="text-sm font-medium mb-2 block">
-                Default Wallet
-              </Label>
-              <Select value={settings.defaultWallet} onValueChange={handleDefaultWalletChange}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select default wallet" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="saving">Saving Wallet</SelectItem>
-                  <SelectItem value="needs">Needs Wallet</SelectItem>
-                  <SelectItem value="wants">Wants Wallet</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
             {/* Dark Mode Toggle */}
             <div className="flex items-center justify-between md:col-span-2">
               <div>
@@ -409,17 +200,6 @@ const Settings = () => {
                 checked={settings.appTheme === 'dark'}
                 onCheckedChange={handleThemeChange}
               />
-            </div>
-
-            {/* Future Feature Placeholder */}
-            <div className="md:col-span-2 bg-muted/50 rounded-lg p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <Label className="text-sm font-medium text-muted-foreground">Enable Reminders</Label>
-                  <p className="text-xs text-muted-foreground">Get notified about budget limits (Coming Soon)</p>
-                </div>
-                <Switch disabled />
-              </div>
             </div>
           </div>
         </section>
@@ -435,7 +215,7 @@ const Settings = () => {
 
           <div className="bg-orange-50 dark:bg-orange-950/20 rounded-lg p-4 mb-4">
             <p className="text-sm text-muted-foreground">
-              This will clear all transactions and reset all wallet balances to ₹0. Your wallet cards and sub-wallet cards will remain but their balances will be reset.
+              This will clear all transactions and reset your total ledger balance to ₹0.
             </p>
           </div>
 
@@ -452,12 +232,10 @@ const Settings = () => {
                 <AlertDialogDescription>
                   This action will permanently delete all transactions and reset balances to ₹0, including:
                   <ul className="list-disc list-inside mt-2 space-y-1">
-                    <li>All income and expense records</li>
-                    <li>All wallet balances (reset to ₹0)</li>
-                    <li>All sub-wallet balances (reset to ₹0)</li>
-                    <li>Total balance (reset to ₹0)</li>
+                    <li>All income records</li>
+                    <li>All expense records</li>
+                    <li>Total account balance (reset to ₹0)</li>
                   </ul>
-                  <p className="mt-2 font-medium">Your wallet cards and sub-wallet cards will NOT be deleted.</p>
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
@@ -481,7 +259,7 @@ const Settings = () => {
 
           <div className="bg-destructive/5 rounded-lg p-4 mb-4">
             <p className="text-sm text-muted-foreground">
-              This will permanently delete all your financial data, including wallets, transactions, and settings. This action cannot be undone.
+              This will permanently delete all your financial data, including bank accounts, transactions, and settings. This action cannot be undone.
             </p>
           </div>
 
@@ -498,10 +276,9 @@ const Settings = () => {
                 <AlertDialogDescription>
                   This action cannot be undone. This will permanently delete all your financial data, including:
                   <ul className="list-disc list-inside mt-2 space-y-1">
-                    <li>All wallet balances</li>
+                    <li>Bank account configurations</li>
                     <li>Income and expense records</li>
-                    <li>Budget settings</li>
-                    <li>User preferences</li>
+                    <li>User preferences and settings</li>
                   </ul>
                 </AlertDialogDescription>
               </AlertDialogHeader>
