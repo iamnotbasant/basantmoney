@@ -2,20 +2,15 @@ import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
 import {
   AlertTriangle,
   CheckCircle2,
   AlertCircle,
-  TrendingUp,
-  FileText,
   X,
-  ChevronRight,
   Info,
   Check,
 } from 'lucide-react';
 import { useInterest } from '@/hooks/useInterest';
-import { PendingCorrection } from '@/services/interestService';
 import { getKolkataDateString } from '@/utils/interestEngine';
 import { toast } from 'sonner';
 
@@ -43,7 +38,6 @@ export const VaultInterestCards: React.FC<VaultInterestCardsProps> = ({ incomeDa
   const currentMonth = todayStr.slice(0, 7);
 
   // Closed months that have an auto interest entry but are not yet verified
-  // E.g. October 2026 (2026-10) is closed
   const unverifiedClosedEntries = incomeData.filter(inc => {
     if (!inc.is_auto_interest) return false;
     const m = inc.date.slice(0, 7);
@@ -53,27 +47,30 @@ export const VaultInterestCards: React.FC<VaultInterestCardsProps> = ({ incomeDa
   });
 
   return (
-    <div className="space-y-4 mb-6">
+    <div className="space-y-3.5 mb-6">
       {/* 1. CRITICAL FAILURE BANNER: last run > 36 hours (Spec §4) */}
       {lastJobRun?.isOverdue && (
-        <div className="bg-red-600 text-white p-4 rounded-lg shadow-md flex items-center justify-between animate-pulse">
-          <div className="flex items-center gap-3">
-            <AlertTriangle className="h-6 w-6 text-white shrink-0" />
+        <div className="rounded-2xl bg-destructive text-destructive-foreground p-4 sm:p-5 shadow-[var(--elev-2)] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border border-destructive/30">
+          <div className="flex items-start gap-3">
+            <div className="p-2 rounded-xl bg-white/10 text-white shrink-0">
+              <AlertTriangle className="h-5 w-5 text-white" />
+            </div>
             <div>
-              <p className="font-bold text-sm sm:text-base">Interest update missed</p>
-              <p className="text-xs sm:text-sm text-red-100">
-                Last run: {lastJobRun.lastRunAt ? new Date(lastJobRun.lastRunAt).toLocaleString('en-IN') : 'Never'}.
-                Your interest calculation may be out of date.
+              <p className="font-bold text-sm sm:text-base text-white">Daily interest update missed</p>
+              <p className="text-xs text-white/80 mt-0.5">
+                Last calculated run:{' '}
+                {lastJobRun.lastRunAt ? new Date(lastJobRun.lastRunAt).toLocaleString('en-IN') : 'Never'}.
+                Ledger auto-interest may be out of date.
               </p>
             </div>
           </div>
           <Button
             size="sm"
             variant="secondary"
-            className="text-red-700 bg-white hover:bg-red-50 font-semibold shrink-0"
+            className="text-destructive font-semibold bg-white hover:bg-white/90 text-xs h-9 shrink-0 shadow-sm"
             onClick={() => recalculateNow()}
           >
-            Tap to recalculate now
+            Recalculate Now
           </Button>
         </div>
       )}
@@ -81,29 +78,32 @@ export const VaultInterestCards: React.FC<VaultInterestCardsProps> = ({ incomeDa
       {/* 2. RECONCILIATION NOTICE (Spec §6) */}
       {reconciliationReport && !dismissedReconBanner && (
         reconciliationReport.status === 'skipped' ? (
-          <Card className="border-amber-300 bg-amber-50/80 dark:bg-amber-950/40 dark:border-amber-700">
-            <CardContent className="p-4">
-              <div className="flex items-start justify-between gap-2">
+          <Card className="rounded-2xl border-amber-500/30 bg-amber-500/10 dark:bg-amber-950/40 shadow-[var(--elev-1)]">
+            <CardContent className="p-4 sm:p-5">
+              <div className="flex items-start justify-between gap-3">
                 <div className="flex items-start gap-3">
-                  <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
+                  <div className="p-2 rounded-xl bg-amber-500/20 text-amber-700 dark:text-amber-400 shrink-0">
+                    <AlertTriangle className="h-4 w-4" />
+                  </div>
                   <div className="space-y-1 text-sm">
                     <p className="font-semibold text-amber-900 dark:text-amber-200">
-                      Automatic Reconciliation Skipped
+                      Bank Ledger Reconciliation Notice
                     </p>
-                    <p className="text-amber-800 dark:text-amber-300 text-xs">
-                      Wallet balances have changed since 10 Nov 2026
+                    <p className="text-amber-800/90 dark:text-amber-300/90 text-xs leading-relaxed">
+                      Bank ledger records have updated.
                       {reconciliationReport.currentBalances
-                        ? ` (Current: Main ₹${reconciliationReport.currentBalances.savingMain.toFixed(2)}, Needs ₹${reconciliationReport.currentBalances.needs.toFixed(2)}, Wants ₹${reconciliationReport.currentBalances.wants.toFixed(2)})`
-                        : ''}.
-                      Automatic reconciliation was skipped to protect your balances. Please verify your wallets and sub-wallets manually.
+                        ? ` (Current balances: ₹${reconciliationReport.currentBalances.savingMain.toFixed(2)})`
+                        : ''}
+                      {' '}Automated adjustment was paused to safeguard your active ledger. Review your accounts manually if numbers differ.
                     </p>
                   </div>
                 </div>
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-6 w-6 text-amber-600 hover:text-amber-800 dark:text-amber-400"
+                  className="h-8 w-8 text-amber-700 hover:text-amber-900 dark:text-amber-300 hover:bg-amber-500/20 rounded-lg shrink-0"
                   onClick={() => setDismissedReconBanner(true)}
+                  aria-label="Dismiss banner"
                 >
                   <X className="h-4 w-4" />
                 </Button>
@@ -111,26 +111,28 @@ export const VaultInterestCards: React.FC<VaultInterestCardsProps> = ({ incomeDa
             </CardContent>
           </Card>
         ) : (
-          <Card className="border-blue-200 bg-blue-50/70 dark:bg-blue-950/30 dark:border-blue-800">
-            <CardContent className="p-4">
-              <div className="flex items-start justify-between gap-2">
+          <Card className="rounded-2xl border-sky-500/30 bg-sky-500/10 dark:bg-sky-950/40 shadow-[var(--elev-1)]">
+            <CardContent className="p-4 sm:p-5">
+              <div className="flex items-start justify-between gap-3">
                 <div className="flex items-start gap-3">
-                  <Info className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5 shrink-0" />
+                  <div className="p-2 rounded-xl bg-sky-500/20 text-sky-700 dark:text-sky-400 shrink-0">
+                    <Info className="h-4 w-4" />
+                  </div>
                   <div className="space-y-1 text-sm">
-                    <p className="font-semibold text-blue-900 dark:text-blue-200">
-                      Slice Balance Reconciled (₹11,130.05)
+                    <p className="font-semibold text-sky-950 dark:text-sky-200">
+                      Account Balance Reconciled
                     </p>
-                    <p className="text-blue-800 dark:text-blue-300 text-xs">
-                      Moved full ₹998.18 from Needs (₹598.91) + Wants (₹399.27) to Saving (sub-wallet "Main").
-                      Saving/Main is now ₹11,130.05 (Needs: ₹0, Wants: ₹0). Interest calculates on total ₹11,130.05.
+                    <p className="text-sky-850 dark:text-sky-300/90 text-xs leading-relaxed">
+                      All balances are verified against active bank accounts. Daily savings interest continues accruing on the total balance automatically.
                     </p>
                   </div>
                 </div>
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-6 w-6 text-blue-600 hover:text-blue-800 dark:text-blue-400"
+                  className="h-8 w-8 text-sky-700 hover:text-sky-900 dark:text-sky-300 hover:bg-sky-500/20 rounded-lg shrink-0"
                   onClick={() => setDismissedReconBanner(true)}
+                  aria-label="Dismiss banner"
                 >
                   <X className="h-4 w-4" />
                 </Button>
@@ -142,25 +144,27 @@ export const VaultInterestCards: React.FC<VaultInterestCardsProps> = ({ incomeDa
 
       {/* 3. PENDING CORRECTION CARDS for LOCKED months (Spec §5) */}
       {pendingCorrections.map((corr) => (
-        <Card key={corr.month} className="border-amber-300 bg-amber-50/80 dark:bg-amber-950/40 dark:border-amber-700">
-          <CardContent className="p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <AlertCircle className="h-5 w-5 text-amber-600 dark:text-amber-400 shrink-0" />
+        <Card key={corr.month} className="rounded-2xl border-amber-500/30 bg-amber-500/10 dark:bg-amber-950/40 shadow-[var(--elev-1)]">
+          <CardContent className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div className="flex items-start sm:items-center gap-3">
+              <div className="p-2 rounded-xl bg-amber-500/20 text-amber-700 dark:text-amber-400 shrink-0">
+                <AlertCircle className="h-4 w-4" />
+              </div>
               <div className="text-sm">
-                <p className="font-semibold text-amber-900 dark:text-amber-200">
+                <p className="font-semibold text-amber-950 dark:text-amber-200">
                   {corr.monthName} interest needs a ₹{Math.abs(corr.diff).toFixed(2)} correction
                 </p>
-                <p className="text-xs text-amber-800 dark:text-amber-300">
-                  Because of a backdated entry affecting {corr.monthName}.
+                <p className="text-xs text-amber-800/90 dark:text-amber-300/90 mt-0.5">
+                  Backdated transaction changed {corr.monthName} totals.
                   Existing locked: ₹{corr.existingAmount.toFixed(2)} • Recomputed: ₹{corr.recomputedAmount.toFixed(2)}.
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-2 self-end sm:self-center">
+            <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
               <Button
                 size="sm"
                 variant="outline"
-                className="text-xs h-8 border-amber-300 hover:bg-amber-100"
+                className="text-xs h-8 border-amber-500/30 text-amber-900 dark:text-amber-200 hover:bg-amber-500/20"
                 onClick={() => dismissCorrection(corr.month)}
               >
                 Dismiss
@@ -186,27 +190,29 @@ export const VaultInterestCards: React.FC<VaultInterestCardsProps> = ({ incomeDa
         const enteredVal = verificationInput[m] ?? computedAmt.toString();
 
         return (
-          <Card key={entry.id} className="border-emerald-200 bg-emerald-50/70 dark:bg-emerald-950/30 dark:border-emerald-800">
-            <CardContent className="p-4">
+          <Card key={entry.id} className="rounded-2xl border-emerald-500/30 bg-emerald-500/10 dark:bg-emerald-950/40 shadow-[var(--elev-1)]">
+            <CardContent className="p-4 sm:p-5">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                <div className="flex items-center gap-3">
-                  <CheckCircle2 className="h-5 w-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                <div className="flex items-start sm:items-center gap-3">
+                  <div className="p-2 rounded-xl bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 shrink-0">
+                    <CheckCircle2 className="h-4 w-4" />
+                  </div>
                   <div className="text-sm">
                     <p className="font-semibold text-emerald-950 dark:text-emerald-100">
-                      {monthName} interest: app ₹{computedAmt.toFixed(2)}
+                      {monthName} interest: ₹{computedAmt.toFixed(2)}
                     </p>
-                    <p className="text-xs text-emerald-800 dark:text-emerald-300">
-                      Match it with your Slice statement and verify
+                    <p className="text-xs text-emerald-800/90 dark:text-emerald-300/90 mt-0.5">
+                      Verify against your official bank statement
                     </p>
                   </div>
                 </div>
 
                 {!isOpen ? (
-                  <div className="flex items-center gap-2 self-end sm:self-center">
+                  <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
                     <Button
                       size="sm"
                       variant="outline"
-                      className="text-xs h-8 border-emerald-300 text-emerald-800 hover:bg-emerald-100"
+                      className="text-xs h-8 border-emerald-500/30 text-emerald-800 dark:text-emerald-200 hover:bg-emerald-500/20"
                       onClick={() => setShowVerifyInput({ ...showVerifyInput, [m]: true })}
                     >
                       Enter Statement Amount
@@ -217,17 +223,17 @@ export const VaultInterestCards: React.FC<VaultInterestCardsProps> = ({ incomeDa
                       onClick={() => verifyMonth(m, computedAmt, computedAmt)}
                     >
                       <Check className="h-3.5 w-3.5" />
-                      ✓ Verified
+                      <span>Verified</span>
                     </Button>
                   </div>
                 ) : (
-                  <div className="flex items-center gap-2 self-end sm:self-center">
+                  <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
                     <Input
                       type="number"
                       step="0.01"
                       value={enteredVal}
                       onChange={(e) => setVerificationInput({ ...verificationInput, [m]: e.target.value })}
-                      className="w-24 h-8 text-xs bg-white dark:bg-background"
+                      className="w-24 h-8 text-xs bg-background"
                       placeholder="Amount"
                     />
                     <Button
@@ -263,4 +269,5 @@ export const VaultInterestCards: React.FC<VaultInterestCardsProps> = ({ incomeDa
     </div>
   );
 };
+
 export default VaultInterestCards;

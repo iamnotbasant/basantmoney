@@ -1,217 +1,210 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '@/components/Header';
+import HeroBalanceCard from '@/components/HeroBalanceCard';
+import MonthPillBar from '@/components/MonthPillBar';
 import SummarySection from '@/components/SummarySection';
-import RecentTransactions from '@/components/RecentTransactions';
-import NetBalanceDisplay from '@/components/NetBalanceDisplay';
-import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Card, CardContent } from '@/components/ui/card';
-import { Plus, TrendingUp, TrendingDown, Calendar, ChevronDown, ChevronUp, Eye, EyeOff, Loader2 } from 'lucide-react';
+import RecentTransactions, { DashboardTransaction } from '@/components/RecentTransactions';
+import VaultInterestCards from '@/components/VaultInterestCards';
+import { Skeleton } from '@/components/ui/skeleton';
 import { IncomeData, ExpenseData } from '@/types/finance';
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
 import { useIncomeData } from '@/hooks/useIncomeData';
 import { useExpenseData } from '@/hooks/useExpenseData';
 import { useBankAccounts } from '@/hooks/useBankAccounts';
-import VaultInterestCards from '@/components/VaultInterestCards';
 
-const Index = () => {
+const MONTH_NAMES = [
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December'
+];
+
+const Index: React.FC = () => {
   const navigate = useNavigate();
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
   const [selectedYear] = useState(new Date().getFullYear());
-  const [showMonthFilter, setShowMonthFilter] = useState(false);
 
-  // Supabase hooks for real-time data
-  const { currentAccount, loading: bankLoading } = useBankAccounts();
-  const { incomeData: supabaseIncome, loading: incomeLoading, getTotalIncome } = useIncomeData(currentAccount?.id);
-  const { expenseData: supabaseExpenses, loading: expenseLoading, getTotalExpenses } = useExpenseData(currentAccount?.id);
+  // Privacy toggle (persisted in localStorage)
+  const [balanceHidden, setBalanceHidden] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('balanceHidden') === '1';
+    } catch {
+      return false;
+    }
+  });
 
-  const months = [
-    'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December'
-  ];
+  const toggleBalanceHidden = () => {
+    setBalanceHidden(prev => {
+      const next = !prev;
+      try {
+        localStorage.setItem('balanceHidden', next ? '1' : '0');
+      } catch {
+        // ignore
+      }
+      return next;
+    });
+  };
 
-  // Convert Supabase data to local format
-  const incomeData: IncomeData[] = supabaseIncome.map(item => ({
-    id: item.id,
-    source: item.source,
-    amount: Number(item.amount),
-    date: item.date,
-    category: item.category,
-  }));
+  // Supabase hooks for real-time ledger data
+  const { currentAccount, bankAccounts, loading: bankLoading } = useBankAccounts();
+  const {
+    incomeData: supabaseIncome,
+    loading: incomeLoading,
+    getTotalIncome
+  } = useIncomeData(currentAccount?.id);
+  const {
+    expenseData: supabaseExpenses,
+    loading: expenseLoading,
+    getTotalExpenses
+  } = useExpenseData(currentAccount?.id);
 
-  const expenseData: ExpenseData[] = supabaseExpenses.map(item => ({
-    id: item.id,
-    description: item.description,
-    amount: Number(item.amount),
-    date: item.date,
-    category: item.category,
-    deductions: (item.deductions as any) || [],
-  }));
+  // Convert Supabase rows to typed finance domain objects
+  const incomeData: IncomeData[] = useMemo(() => {
+    return supabaseIncome.map(item => ({
+      id: item.id,
+      source: item.source,
+      amount: Number(item.amount),
+      date: item.date,
+      category: item.category,
+      notes: item.notes || undefined,
+      is_auto_interest: Boolean(item.is_auto_interest),
+    }));
+  }, [supabaseIncome]);
 
-  // Calculate totals from all transactions
+  const expenseData: ExpenseData[] = useMemo(() => {
+    return supabaseExpenses.map(item => ({
+      id: item.id,
+      description: item.description,
+      amount: Number(item.amount),
+      date: item.date,
+      category: item.category,
+      notes: item.notes || undefined,
+      deductions: (item.deductions as any) || [],
+    }));
+  }, [supabaseExpenses]);
+
+  // All-time totals for the HeroBalanceCard
   const totalIncomeAllTime = getTotalIncome();
   const totalExpensesAllTime = getTotalExpenses();
   const netBalance = totalIncomeAllTime - totalExpensesAllTime;
 
-  // Filter data by selected month and year (ONLY for summary cards)
-  const filteredIncomeData = incomeData.filter(item => {
-    const itemDate = new Date(item.date);
-    const itemMonth = itemDate.getMonth();
-    const itemYear = itemDate.getFullYear();
-    return itemMonth === selectedMonth && itemYear === selectedYear;
-  });
+  // Filter data by selected month and year for monthly performance
+  const filteredIncomeData = useMemo(() => {
+    return incomeData.filter(item => {
+      const itemDate = new Date(item.date);
+      return itemDate.getMonth() === selectedMonth && itemDate.getFullYear() === selectedYear;
+    });
+  }, [incomeData, selectedMonth, selectedYear]);
 
-  const filteredExpenseData = expenseData.filter(item => {
-    const itemDate = new Date(item.date);
-    const itemMonth = itemDate.getMonth();
-    const itemYear = itemDate.getFullYear();
-    return itemMonth === selectedMonth && itemYear === selectedYear;
-  });
+  const filteredExpenseData = useMemo(() => {
+    return expenseData.filter(item => {
+      const itemDate = new Date(item.date);
+      return itemDate.getMonth() === selectedMonth && itemDate.getFullYear() === selectedYear;
+    });
+  }, [expenseData, selectedMonth, selectedYear]);
+
+  // Compute which months have transactions in selected year for MonthPillBar activity dots
+  const monthsWithData = useMemo(() => {
+    const set = new Set<number>();
+    incomeData.forEach(item => {
+      const d = new Date(item.date);
+      if (d.getFullYear() === selectedYear) set.add(d.getMonth());
+    });
+    expenseData.forEach(item => {
+      const d = new Date(item.date);
+      if (d.getFullYear() === selectedYear) set.add(d.getMonth());
+    });
+    return set;
+  }, [incomeData, expenseData, selectedYear]);
+
+  // Recent 5 transactions combined from income & expenses
+  const recentTransactions: DashboardTransaction[] = useMemo(() => {
+    const incomeItems: DashboardTransaction[] = incomeData.map(item => ({
+      id: item.id,
+      type: 'income',
+      description: item.notes || item.source,
+      amount: item.amount,
+      date: item.date,
+      category: item.category,
+      isAutoInterest: item.is_auto_interest,
+    }));
+
+    const expenseItems: DashboardTransaction[] = expenseData.map(item => ({
+      id: item.id,
+      type: 'expense',
+      description: item.description,
+      amount: item.amount,
+      date: item.date,
+      category: item.category,
+    }));
+
+    return [...incomeItems, ...expenseItems]
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+      .slice(0, 5);
+  }, [incomeData, expenseData]);
 
   const isLoading = incomeLoading || expenseLoading || bankLoading;
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-background">
-        <Header />
-        <div className="flex items-center justify-center h-[60vh]">
-          <div className="text-center space-y-4">
-            <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
-            <p className="text-muted-foreground">Loading your financial data...</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const selectedMonthLabel = `${MONTH_NAMES[selectedMonth]} ${selectedYear}`;
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background text-foreground transition-colors selection:bg-primary selection:text-primary-foreground">
       <Header />
-      
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Interest Alerts & Verification Cards (Spec §4, §5, §6, §9) */}
-        <VaultInterestCards incomeData={incomeData} />
 
-        {/* Net Balance Display Section */}
-        <section className="mb-8 animate-fade-in">
-          <NetBalanceDisplay netBalance={netBalance} />
-        </section>
-
-        {/* Financial Summary Section */}
-        <section className="mb-8">
-          <div className="animate-fade-in" style={{ animationDelay: '0.1s' }}>
-            <SummarySection 
-              incomeData={filteredIncomeData} 
-              expenseData={filteredExpenseData}
-            />
-          </div>
-        </section>
-
-        {/* Recent Transactions Section */}
-        <section className="mb-8">
-          <div className="animate-fade-in" style={{ animationDelay: '0.6s' }}>
-            <RecentTransactions />
-          </div>
-        </section>
-
-        {/* Month Filter Section - Moved to Bottom */}
-        <section className="mb-8">
-          <div className="flex items-center gap-4 mb-4 animate-fade-in" style={{ animationDelay: '0.7s' }}>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowMonthFilter(!showMonthFilter)}
-              className="flex items-center gap-2 transition-all duration-300 hover:scale-105 hover:shadow-md"
-            >
-              {showMonthFilter ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              {showMonthFilter ? 'Hide' : 'Show'} Month Filter
-              {showMonthFilter ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-            </Button>
-          </div>
-          
-          {showMonthFilter && (
-            <Card className="animate-fade-in border-2 border-dashed border-muted">
-              <CardContent className="pt-6">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <Calendar className="h-5 w-5 text-primary transition-colors duration-300 hover:text-primary/80" />
-                    <div>
-                      <h3 className="font-semibold text-foreground">View Month</h3>
-                      <p className="text-sm text-muted-foreground">Select month to view monthly income/expense summary</p>
-                    </div>
-                  </div>
-                  <Select value={selectedMonth.toString()} onValueChange={(value) => {
-                    setSelectedMonth(parseInt(value));
-                  }}>
-                    <SelectTrigger className="w-48 transition-all duration-300 hover:shadow-md">
-                      <SelectValue placeholder="Select month" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {months.map((month, index) => (
-                        <SelectItem key={index} value={index.toString()}>
-                          {month} {selectedYear}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-        </section>
-      </main>
-
-      {/* Floating Action Button - Enhanced Design */}
-      <div className="fixed bottom-6 right-6 z-50 animate-fade-in" style={{ animationDelay: '0.8s' }}>
-        <Sheet>
-          <SheetTrigger asChild>
-            <Button 
-              size="lg"
-              className="h-16 w-16 rounded-full shadow-xl hover:shadow-2xl transition-all duration-500 hover:scale-110 group bg-gradient-to-br from-primary via-primary/90 to-primary/80 hover:from-primary/90 hover:to-primary"
-            >
-              <Plus className="h-7 w-7 transition-all duration-300 group-hover:rotate-180 group-hover:scale-110" />
-            </Button>
-          </SheetTrigger>
-          <SheetContent side="bottom" className="h-auto">
-            <SheetHeader>
-              <SheetTitle className="flex items-center gap-2">
-                <Plus className="h-5 w-5" />
-                Quick Actions
-              </SheetTitle>
-              <SheetDescription>
-                Add income or expense with smart distribution
-              </SheetDescription>
-            </SheetHeader>
-            <div className="grid grid-cols-2 gap-4 mt-6 pb-6">
-              <Button 
-                onClick={() => navigate('/income')}
-                className="flex items-center justify-center gap-2 h-16 text-lg hover-scale"
-                variant="default"
-              >
-                <TrendingUp className="h-6 w-6" />
-                Add Income
-              </Button>
-              <Button 
-                onClick={() => navigate('/expense')}
-                className="flex items-center justify-center gap-2 h-16 text-lg hover-scale"
-                variant="outline"
-              >
-                <TrendingDown className="h-6 w-6" />
-                Add Expense
-              </Button>
+      <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6 sm:space-y-7">
+        {isLoading ? (
+          <div className="space-y-6 animate-pulse">
+            <Skeleton className="h-56 sm:h-64 w-full rounded-3xl" />
+            <Skeleton className="h-10 w-full rounded-full" />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Skeleton className="h-32 w-full rounded-2xl" />
+              <Skeleton className="h-32 w-full rounded-2xl" />
             </div>
-          </SheetContent>
-        </Sheet>
-      </div>
+            <Skeleton className="h-64 w-full rounded-2xl" />
+          </div>
+        ) : (
+          <>
+            {/* 1. HERO BALANCE CARD (Answers Q1: What do I have?) */}
+            <section aria-label="Account Net Balance">
+              <HeroBalanceCard
+                netBalance={netBalance}
+                currentAccount={currentAccount}
+                totalAccountsCount={bankAccounts.length || 1}
+                hidden={balanceHidden}
+                onToggleHidden={toggleBalanceHidden}
+                onNavigate={(path) => navigate(path)}
+              />
+            </section>
+
+            {/* 2. MONTH PILL BAR (Zero-friction control right above monthly stats) */}
+            <MonthPillBar
+              selectedMonth={selectedMonth}
+              selectedYear={selectedYear}
+              monthsWithData={monthsWithData}
+              onChange={(m) => setSelectedMonth(m)}
+            />
+
+            {/* 3. MONTHLY PERFORMANCE SUMMARY */}
+            <section aria-label="Monthly Performance Summary">
+              <SummarySection
+                incomeData={filteredIncomeData}
+                expenseData={filteredExpenseData}
+                selectedMonthLabel={selectedMonthLabel}
+              />
+            </section>
+
+            {/* 4. VAULT INTEREST & RECONCILIATION BANNERS */}
+            <section aria-label="Vault Notifications">
+              <VaultInterestCards incomeData={incomeData} />
+            </section>
+
+            {/* 5. RECENT TRANSACTIONS LEDGER */}
+            <section aria-label="Recent Transactions">
+              <RecentTransactions
+                transactions={recentTransactions}
+                isLoading={false}
+              />
+            </section>
+          </>
+        )}
+      </main>
     </div>
   );
 };
