@@ -42,6 +42,7 @@ import { useIncomeData } from '@/hooks/useIncomeData';
 import { useExpenseData } from '@/hooks/useExpenseData';
 import { useWalletData } from '@/hooks/useWalletData';
 import { useBankAccounts } from '@/hooks/useBankAccounts';
+import { useAuth } from '@/components/AuthProvider';
 import InterestBreakdownModal from '@/components/InterestBreakdownModal';
 import { InterestService } from '@/services/interestService';
 import { isMonthLocked } from '@/utils/interestEngine';
@@ -70,6 +71,7 @@ interface Transaction {
 const Transactions = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user } = useAuth();
   const [filteredTransactions, setFilteredTransactions] = useState<Transaction[]>([]);
   const [filterType, setFilterType] = useState<string>('all');
   const [filterCategory, setFilterCategory] = useState<string>('all');
@@ -254,7 +256,7 @@ const Transactions = () => {
         description: `Auto-updating restored for ${t.description || t.source}`,
       });
       refetchIncome();
-      InterestService.recalculateInterest('manual', currentAccount?.id);
+      InterestService.recalculateInterest('manual', user?.id);
     } catch (err) {
       console.error('Error resuming auto update:', err);
     }
@@ -266,20 +268,40 @@ const Transactions = () => {
     try {
       if (editingTransaction.type === 'income') {
         const incomeToDelete = supabaseIncome.find(i => i.id === editingTransaction.id);
-        await deleteIncome(editingTransaction.id);
-        if (incomeToDelete) {
+        const success = await deleteIncome(editingTransaction.id);
+        if (!success) {
+          toast({
+            title: "Error",
+            description: "Failed to delete income transaction",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        // Auto-interest is never distributed to subwallets on insert, so skip reverseIncomeDistribution
+        if (incomeToDelete && !incomeToDelete.is_auto_interest && !editingTransaction.is_auto_interest) {
           await reverseIncomeDistribution(Number(incomeToDelete.amount) || 0);
         }
         if (editingTransaction.is_auto_interest) {
           toast({
             title: "Auto interest entry deleted",
-            description: "Notice: The next interest job run will recreate this entry with the correct total from interest_days.",
+            description: "Notice: The next interest job run will re-estimate or recreate this entry for unlocked months.",
           });
         }
       } else {
         // Find the expense to get its deductions before deleting
         const expenseToDelete = supabaseExpenses.find(e => e.id === editingTransaction.id);
         
+        const success = await deleteExpense(editingTransaction.id);
+        if (!success) {
+          toast({
+            title: "Error",
+            description: "Failed to delete expense transaction",
+            variant: "destructive",
+          });
+          return;
+        }
+
         if (expenseToDelete?.deductions) {
           // Parse deductions and restore balances
           const deductions = expenseToDelete.deductions as unknown as { type: 'wallet' | 'subwallet'; id: number; amount: number }[];
@@ -288,8 +310,6 @@ const Transactions = () => {
             await restoreExpenseDeductions(deductions);
           }
         }
-        
-        await deleteExpense(editingTransaction.id);
       }
 
       // Trigger wallet data refresh
@@ -956,7 +976,7 @@ const Transactions = () => {
           isOpen={Boolean(selectedBreakdownMonth)}
           onClose={() => setSelectedBreakdownMonth(null)}
           yearMonth={selectedBreakdownMonth}
-          userId={currentAccount?.id}
+          userId={user?.id}
           entryTotal={selectedBreakdownTotal}
         />
       </main>

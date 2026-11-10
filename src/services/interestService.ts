@@ -495,19 +495,43 @@ export class InterestService {
 
   /**
    * Helper to compute total ledger balance (totalIncome - totalExpenses).
+   * Uses paginated range fetching to avoid silent 1000-row PostgREST truncation.
    */
   static async getLedgerTotal(userId?: string): Promise<number | null> {
     if (userId) {
       try {
-        const [incRes, expRes] = await Promise.all([
-          supabase.from('user_income').select('amount').eq('user_id', userId),
-          supabase.from('user_expenses').select('amount').eq('user_id', userId),
+        const fetchAllAmounts = async (table: 'user_income' | 'user_expenses') => {
+          const allAmounts: number[] = [];
+          let from = 0;
+          const pageSize = 1000;
+          while (true) {
+            const { data, error } = await supabase
+              .from(table)
+              .select('amount')
+              .eq('user_id', userId)
+              .order('created_at', { ascending: true })
+              .range(from, from + pageSize - 1);
+            if (error) {
+              throw new Error(`Database error querying ${table}: ${error.message}`);
+            }
+            if (!data || data.length === 0) break;
+            for (const item of data) {
+              allAmounts.push(Number(item.amount) || 0);
+            }
+            if (data.length < pageSize) break;
+            from += pageSize;
+          }
+          return allAmounts;
+        };
+
+        const [incAmounts, expAmounts] = await Promise.all([
+          fetchAllAmounts('user_income'),
+          fetchAllAmounts('user_expenses'),
         ]);
-        if (!incRes.error && !expRes.error && incRes.data) {
-          const inc = incRes.data.reduce((sum, item) => sum + Number(item.amount), 0);
-          const exp = (expRes.data || []).reduce((sum, item) => sum + Number(item.amount), 0);
-          return roundToTwoDecimals(inc - exp);
-        }
+
+        const inc = incAmounts.reduce((sum, amt) => sum + amt, 0);
+        const exp = expAmounts.reduce((sum, amt) => sum + amt, 0);
+        return roundToTwoDecimals(inc - exp);
       } catch (e) {
         console.warn('Error computing ledger total from Supabase:', e);
       }
@@ -927,14 +951,41 @@ export class InterestService {
 
     if (userId) {
       try {
-        const [incRes, expRes] = await Promise.all([
-          supabase.from('user_income').select('*').eq('user_id', userId).order('date', { ascending: true }),
-          supabase.from('user_expenses').select('*').eq('user_id', userId).order('date', { ascending: true }),
+        const fetchAllUserRecords = async (table: 'user_income' | 'user_expenses') => {
+          const records: any[] = [];
+          let from = 0;
+          const pageSize = 1000;
+          while (true) {
+            const { data, error } = await supabase
+              .from(table)
+              .select('*')
+              .eq('user_id', userId)
+              .order('date', { ascending: true })
+              .order('id', { ascending: true })
+              .range(from, from + pageSize - 1);
+            if (error) {
+              throw new Error(`Database error querying ${table}: ${error.message}`);
+            }
+            if (!data || data.length === 0) break;
+            records.push(...data);
+            if (data.length < pageSize) break;
+            from += pageSize;
+          }
+          return records;
+        };
+
+        const [incData, expData] = await Promise.all([
+          fetchAllUserRecords('user_income'),
+          fetchAllUserRecords('user_expenses'),
         ]);
-        allIncomes = incRes.data || [];
-        allExpenses = expRes.data || [];
+        allIncomes = incData;
+        allExpenses = expData;
       } catch (e) {
-        console.warn('Failed to fetch transactions from Supabase for recalculation:', e);
+        const errMsg = `Failed to fetch transactions from Supabase for recalculation: ${(e as Error).message}`;
+        console.error(errMsg);
+        await this.logJobRun(trigger, 0, 'failed', errMsg, userId);
+        toast.error(errMsg);
+        throw e;
       }
     }
 
@@ -1012,7 +1063,22 @@ export class InterestService {
         throw new Error(errMsg);
       }
     }
-    localStorage.setItem(this.STORAGE_KEY_DAYS, JSON.stringify(dayRecords));
+    // Merge dayRecords into local cache so earlier days are not lost
+    try {
+      const cachedDaysRaw = localStorage.getItem(this.STORAGE_KEY_DAYS);
+      const cachedDays: InterestDayRecord[] = cachedDaysRaw ? JSON.parse(cachedDaysRaw) : [];
+      const dayMap = new Map<string, InterestDayRecord>();
+      for (const d of cachedDays) {
+        if (d.interest_date) dayMap.set(d.interest_date, d);
+      }
+      for (const d of dayRecords) {
+        if (d.interest_date) dayMap.set(d.interest_date, d);
+      }
+      const mergedDays = Array.from(dayMap.values()).sort((a, b) => a.interest_date.localeCompare(b.interest_date));
+      localStorage.setItem(this.STORAGE_KEY_DAYS, JSON.stringify(mergedDays));
+    } catch {
+      localStorage.setItem(this.STORAGE_KEY_DAYS, JSON.stringify(dayRecords));
+    }
 
     // Aggregate by month
     const monthlySums: Record<string, number> = {};
@@ -1023,12 +1089,47 @@ export class InterestService {
 
     const pendingCorrections: PendingCorrection[] = [];
     const dismissedCorrections = this.getDismissedCorrections();
+    const resolvedMonthlySums: Record<string, number> = {};
 
     // Check each month's entry
-    for (const [month, recomputedSum] of Object.entries(monthlySums)) {
+    for (const [month, runSliceSum] of Object.entries(monthlySums)) {
       const isLocked = isMonthLocked(month, todayStr);
       const monthDescription = getInterestDescription(month);
       const lastDay = getLastDayOfMonth(month);
+
+      // CRITICAL FIX: Fetch full month sum from persisted interest_days so catch-up runs
+      // (which only process a 1-day slice) do NOT overwrite the full month sum with a partial sum!
+      let recomputedSum = runSliceSum;
+      let monthFetchFailed = false;
+      if (userId) {
+        try {
+          const maxDateInMonth = yesterdayStr < lastDay ? yesterdayStr : lastDay;
+          const { data: monthDayRows, error: monthErr } = await supabase
+            .from('interest_days')
+            .select('interest_amount')
+            .eq('user_id', userId)
+            .eq('account', 'Slice')
+            .gte('interest_date', `${month}-01`)
+            .lte('interest_date', maxDateInMonth);
+          if (monthErr) {
+            console.error(`Error fetching full month interest_days for ${month}:`, monthErr);
+            monthFetchFailed = true;
+          } else if (monthDayRows && monthDayRows.length > 0) {
+            recomputedSum = roundToTwoDecimals(
+              monthDayRows.reduce((sum, r) => sum + (Number(r.interest_amount) || 0), 0)
+            );
+          }
+        } catch (fetchErr) {
+          console.error(`Exception fetching full month interest_days for ${month}:`, fetchErr);
+          monthFetchFailed = true;
+        }
+      }
+
+      if (monthFetchFailed) {
+        console.warn(`Skipping month ${month} auto-interest write because full-month query failed.`);
+        continue;
+      }
+      resolvedMonthlySums[month] = recomputedSum;
 
       // Find existing auto-interest entry for this month
       const existingEntry = allIncomes.find(
@@ -1121,7 +1222,7 @@ export class InterestService {
     return {
       daysProcessed: dayRecords.length,
       pendingCorrections,
-      currentMonthTotal: monthlySums[currentMonth] || 0,
+      currentMonthTotal: resolvedMonthlySums[currentMonth] ?? (monthlySums[currentMonth] || 0),
     };
   }
 
@@ -1349,7 +1450,7 @@ export class InterestService {
           .select('*')
           .eq('user_id', userId)
           .gte('interest_date', `${yearMonth}-01`)
-          .lte('interest_date', `${yearMonth}-31`)
+          .lte('interest_date', getLastDayOfMonth(yearMonth))
           .order('interest_date', { ascending: true });
 
         if (!error && data && data.length > 0) {

@@ -151,7 +151,8 @@ const TransactionActions: React.FC<TransactionActionsProps> = ({ transaction, on
         const incomes: IncomeData[] = JSON.parse(localStorage.getItem(storageKey('incomeData')) || '[]');
         const incomeToDelete = incomes.find((i) => i.id === transaction.id);
 
-        if (incomeToDelete) {
+        // Auto-interest is never distributed into subwallets, so only revert manual incomes
+        if (incomeToDelete && !(incomeToDelete as any).is_auto_interest) {
             // Get current distribution settings
             const userSettings = localStorage.getItem('userSettings');
             let distribution = { saving: 50, needs: 30, wants: 20 };
@@ -160,9 +161,8 @@ const TransactionActions: React.FC<TransactionActionsProps> = ({ transaction, on
                 distribution = parsed.distribution || distribution;
             }
 
-            // If auto-interest or interest/cashback, bypass 50/30/20 and revert 100% from Saving
-            const isFullSaving = (incomeToDelete as any).is_auto_interest || 
-                                 incomeToDelete.category?.toLowerCase() === 'interest' || 
+            // If manual interest/cashback, bypass 50/30/20 and revert 100% from Saving
+            const isFullSaving = incomeToDelete.category?.toLowerCase() === 'interest' ||
                                  incomeToDelete.category?.toLowerCase() === 'cashback';
             if (isFullSaving) {
                 distribution = { saving: 100, needs: 0, wants: 0 };
