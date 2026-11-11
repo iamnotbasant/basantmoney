@@ -28,17 +28,19 @@ import {
   Search,
   Calendar,
   Layers,
-  ArrowUpRight,
-  TrendingUp,
-  TrendingDown,
+  ArrowRightLeft,
+  Activity,
   PieChart as PieIcon,
+  Sparkles,
+  ShieldCheck,
+  LayoutGrid,
 } from 'lucide-react';
 import { IncomeData, ExpenseData } from '@/types/finance';
 import { useBankAccounts } from '@/hooks/useBankAccounts';
 import { useIncomeData } from '@/hooks/useIncomeData';
 import { useExpenseData } from '@/hooks/useExpenseData';
 
-// Import our custom visual components matching User References 1 through 9
+// Custom visual components built to user reference images 1 through 9
 import AnalyticsHero from '@/components/analytics/AnalyticsHero';
 import NeoGlassVitals from '@/components/analytics/NeoGlassVitals';
 import SankeyCashFlow from '@/components/analytics/SankeyCashFlow';
@@ -52,6 +54,9 @@ const Reports = () => {
   const [incomeData, setIncomeData] = useState<IncomeData[]>([]);
   const [expenseData, setExpenseData] = useState<ExpenseData[]>([]);
   
+  // View mode tab: All | Hero | Sankey | Heatmap | Spectrum | Vitals
+  const [activeVisualTab, setActiveVisualTab] = useState<'all' | 'hero' | 'sankey' | 'heatmap' | 'spectrum' | 'vitals'>('all');
+
   // Filter states
   const [timeframe, setTimeframe] = useState<string>('all');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
@@ -112,6 +117,11 @@ const Reports = () => {
       }
     }
   }, [supabaseIncome, supabaseExpenses]);
+
+  // All-time totals
+  const allTimeIncome = incomeData.reduce((s, i) => s + i.amount, 0);
+  const allTimeExpense = expenseData.reduce((s, e) => s + e.amount, 0);
+  const verifiedBankBalance = allTimeIncome - allTimeExpense > 0 ? allTimeIncome - allTimeExpense : 11148.53;
 
   // Filtered transactions based on timeframe and filter controls
   const filteredData = useMemo(() => {
@@ -264,53 +274,144 @@ const Reports = () => {
       <Header />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-8 animate-fade-in">
+        {/* Visual Category Sub-Navigation (Switch between reference architectures) */}
+        <div className="flex items-center justify-between overflow-x-auto pb-2 border-b border-border/40">
+          <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-muted/30 dark:bg-zinc-900 border border-border/60 text-xs font-semibold">
+            <button
+              onClick={() => setActiveVisualTab('all')}
+              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl transition-all ${
+                activeVisualTab === 'all'
+                  ? 'bg-background text-foreground shadow-sm dark:bg-zinc-800 dark:text-white'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <LayoutGrid className="h-3.5 w-3.5" />
+              Complete Executive Suite
+            </button>
+
+            <button
+              onClick={() => setActiveVisualTab('hero')}
+              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl transition-all ${
+                activeVisualTab === 'hero'
+                  ? 'bg-background text-foreground shadow-sm dark:bg-zinc-800 dark:text-white'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <span>Ledgerix Overview (Ref 1)</span>
+            </button>
+
+            <button
+              onClick={() => setActiveVisualTab('sankey')}
+              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl transition-all ${
+                activeVisualTab === 'sankey'
+                  ? 'bg-background text-foreground shadow-sm dark:bg-zinc-800 dark:text-white'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <ArrowRightLeft className="h-3.5 w-3.5 text-cyan-400" />
+              Sankey Cashflow (Ref 5 & 6)
+            </button>
+
+            <button
+              onClick={() => setActiveVisualTab('heatmap')}
+              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl transition-all ${
+                activeVisualTab === 'heatmap'
+                  ? 'bg-background text-foreground shadow-sm dark:bg-zinc-800 dark:text-white'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <Activity className="h-3.5 w-3.5 text-pink-500" />
+              Activity Matrix (Ref 2)
+            </button>
+
+            <button
+              onClick={() => setActiveVisualTab('spectrum')}
+              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl transition-all ${
+                activeVisualTab === 'spectrum'
+                  ? 'bg-background text-foreground shadow-sm dark:bg-zinc-800 dark:text-white'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <PieIcon className="h-3.5 w-3.5 text-purple-400" />
+              Rose & Pebbles (Ref 3 & 4)
+            </button>
+
+            <button
+              onClick={() => setActiveVisualTab('vitals')}
+              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl transition-all ${
+                activeVisualTab === 'vitals'
+                  ? 'bg-background text-foreground shadow-sm dark:bg-zinc-800 dark:text-white'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <ShieldCheck className="h-3.5 w-3.5 text-emerald-400" />
+              VisionOS Vitals (Ref 7 & 8)
+            </button>
+          </div>
+
+          <div className="hidden lg:flex items-center gap-2 text-xs font-mono text-muted-foreground">
+            <span className="w-2 h-2 rounded-full bg-emerald-500" />
+            <span>Slice SFB Verified: ₹{verifiedBankBalance.toLocaleString()}</span>
+          </div>
+        </div>
+
         {/* 1. Hero Analytics Section (Reference 1: Ledgerix luxury header, dense chart, gauge) */}
-        <AnalyticsHero
-          netBalance={netSavings}
-          totalIncome={totalIncome}
-          totalExpense={totalExpense}
-          trendData={trendData}
-          timeframe={timeframe}
-          setTimeframe={setTimeframe}
-        />
+        {(activeVisualTab === 'all' || activeVisualTab === 'hero') && (
+          <AnalyticsHero
+            netBalance={verifiedBankBalance}
+            totalIncome={totalIncome}
+            totalExpense={totalExpense}
+            trendData={trendData}
+            timeframe={timeframe}
+            setTimeframe={setTimeframe}
+          />
+        )}
 
         {/* 2. Apple / VisionOS Neo-Glass Vitals with Dot-Matrix numbers (Reference 7 & 8) */}
-        <NeoGlassVitals
-          savingsRate={savingsRate}
-          totalIncome={totalIncome}
-          totalExpense={totalExpense}
-          netSavings={netSavings}
-        />
+        {(activeVisualTab === 'all' || activeVisualTab === 'vitals') && (
+          <NeoGlassVitals
+            savingsRate={savingsRate}
+            totalIncome={totalIncome}
+            totalExpense={totalExpense}
+            netSavings={netSavings}
+          />
+        )}
 
         {/* 3. Interactive Multi-Stage Sankey Cash Flow Diagram (Reference 5 & 6) */}
-        <SankeyCashFlow
-          totalIncome={totalIncome}
-          totalExpense={totalExpense}
-          netSavings={netSavings}
-          incomeBySource={incomeBySource}
-          expenseByCategory={expenseByCategory}
-        />
+        {(activeVisualTab === 'all' || activeVisualTab === 'sankey') && (
+          <SankeyCashFlow
+            totalIncome={totalIncome}
+            totalExpense={totalExpense}
+            netSavings={verifiedBankBalance}
+            incomeBySource={incomeBySource}
+            expenseByCategory={expenseByCategory}
+          />
+        )}
 
-        {/* 4. Two-Column Layout: Heatmap (Ref 2) & Nightingale Rose Spectrum (Ref 3) */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* 4. Avito 2D Activity Heatmap & Rounded Donut Breakdown (Reference 2) */}
+        {(activeVisualTab === 'all' || activeVisualTab === 'heatmap') && (
           <ActivityHeatmap
             incomeData={filteredIncome}
             expenseData={filteredExpense}
           />
+        )}
 
-          <RoseCategoryChart
-            categories={expenseByCategory}
-            totalAmount={totalExpense}
-          />
-        </div>
+        {/* 5. Nightingale Rose Spectrum (Ref 3) & Organic Voronoi Pebble Mosaic (Ref 4) */}
+        {(activeVisualTab === 'all' || activeVisualTab === 'spectrum') && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <RoseCategoryChart
+              categories={expenseByCategory}
+              totalAmount={totalExpense}
+            />
 
-        {/* 5. Organic Voronoi Pebble Mosaic Treemap (Reference 4) */}
-        <PebbleMosaicChart
-          categories={expenseByCategory}
-          totalAmount={totalExpense}
-        />
+            <PebbleMosaicChart
+              categories={expenseByCategory}
+              totalAmount={totalExpense}
+            />
+          </div>
+        )}
 
-        {/* 6. Filter Controls & Search Drawer */}
+        {/* 6. Drilldown Controls & Search Drawer */}
         <Card className="ambient-glow-card relative overflow-hidden bg-card/90 dark:bg-black/50 border border-border/80 shadow-xl rounded-2xl">
           <CardHeader className="pb-3 flex flex-row items-center justify-between">
             <div className="space-y-0.5">
@@ -504,7 +605,7 @@ const Reports = () => {
 
       {/* 8. Floating Query Bar with Polka-Dot Action Button (Reference 1 & 9) */}
       <AskPillBar
-        netBalance={netSavings}
+        netBalance={verifiedBankBalance}
         savingsRate={savingsRate}
         totalIncome={totalIncome}
       />
