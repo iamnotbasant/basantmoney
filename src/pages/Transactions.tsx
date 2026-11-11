@@ -818,7 +818,7 @@ const Transactions = () => {
                  <TableHeader>
                    <TableRow className="border-b-2">
                      <TableHead className="px-4 py-3 text-[13px] font-semibold w-[112px]">Date</TableHead>
-                     <TableHead className="px-4 py-3 text-[13px] font-semibold w-[180px]">Source</TableHead>
+                     <TableHead className="px-4 py-3 text-[13px] font-semibold w-[220px]">Source</TableHead>
                      <TableHead className="px-4 py-3 text-[13px] font-semibold">Description</TableHead>
                      <TableHead className="px-4 py-3 text-[13px] font-semibold w-[168px]">Category</TableHead>
                      <TableHead className="px-4 py-3 text-[13px] font-semibold w-[168px]">Payment Method</TableHead>
