@@ -314,8 +314,8 @@ const BankAccountManager = () => {
           <CardHeader>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-blue-50 rounded-lg">
-                  <ArrowRightLeft className="h-5 w-5 text-blue-600" />
+                <div className="p-2 bg-blue-50 dark:bg-blue-500/10 rounded-lg">
+                  <ArrowRightLeft className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                 </div>
                 <div>
                   <CardTitle className="text-base">Transfer Funds</CardTitle>

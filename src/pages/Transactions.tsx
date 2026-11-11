@@ -833,7 +833,7 @@ const Transactions = () => {
                                    <Button
                                      variant="outline"
                                      size="sm"
-                                     className="h-6 px-2 text-[11px] text-amber-600 border-amber-300 hover:bg-amber-50"
+                                     className="h-6 px-2 text-[11px] text-amber-600 border-amber-300 dark:text-amber-400 dark:border-amber-500/40 hover:bg-amber-50 dark:text-amber-400 dark:border-amber-500/40 dark:hover:bg-amber-500/10"
                                      onClick={(e) => handleResumeAutoUpdate(transaction, e)}
                                    >
                                      Resume auto-update
@@ -998,7 +998,7 @@ const Transactions = () => {
                           <Button
                             variant="outline"
                             size="sm"
-                            className="h-6 px-2 text-[11px] text-amber-600 border-amber-300"
+                            className="h-6 px-2 text-[11px] text-amber-600 border-amber-300 dark:text-amber-400 dark:border-amber-500/40"
                             onClick={(e) => handleResumeAutoUpdate(transaction, e)}
                           >
                             Resume auto-update

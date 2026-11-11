@@ -62,7 +62,7 @@ export const InterestBreakdownModal: React.FC<InterestBreakdownModalProps> = ({
         <DialogHeader>
           <div className="flex items-center justify-between pr-6">
             <DialogTitle className="text-xl flex items-center gap-2">
-              <TrendingUp className="h-5 w-5 text-green-600" />
+              <TrendingUp className="h-5 w-5 text-green-600 dark:text-emerald-400" />
               Daily Interest Breakdown
             </DialogTitle>
           </div>
@@ -78,7 +78,7 @@ export const InterestBreakdownModal: React.FC<InterestBreakdownModalProps> = ({
           </div>
           <div>
             <span className="text-muted-foreground">Total Accrued: </span>
-            <span className="font-bold text-green-600">₹{(entryTotal ?? totalSum).toFixed(2)}</span>
+            <span className="font-bold text-green-600 dark:text-emerald-400">₹{(entryTotal ?? totalSum).toFixed(2)}</span>
           </div>
           <div>
             <span className="text-muted-foreground">Days: </span>

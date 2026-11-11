@@ -53,7 +53,7 @@ const CustomPaymentsTab: React.FC<CustomPaymentsTabProps> = ({
                   <TableCell className="text-muted-foreground">{payment.description || '-'}</TableCell>
                   <TableCell>{formatDate(payment.date)}</TableCell>
                   <TableCell>
-                    <Badge variant={payment.status === 'completed' ? 'default' : 'secondary'} className={payment.status === 'completed' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}>
+                    <Badge variant={payment.status === 'completed' ? 'default' : 'secondary'} className={payment.status === 'completed' ? 'bg-green-100 text-green-800 dark:bg-emerald-500/15 dark:text-emerald-300' : 'bg-yellow-100 text-yellow-800 dark:bg-amber-500/15 dark:text-amber-300'}>
                       {payment.status}
                     </Badge>
                   </TableCell>

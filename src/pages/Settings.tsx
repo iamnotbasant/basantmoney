@@ -40,7 +40,7 @@ const Settings = () => {
   
   const [settings, setSettings] = useState<UserSettings>({
     currency: '₹',
-    appTheme: 'system'
+    appTheme: 'dark'
   });
 
   const [incomeData, setIncomeData] = useState<IncomeData[]>([]);

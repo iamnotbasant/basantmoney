@@ -91,11 +91,11 @@ const DefaultHistoryTab: React.FC<DefaultHistoryTabProps> = ({
                   <TableCell className="text-muted-foreground">{item.description || '-'}</TableCell>
                   <TableCell>{formatDate(item.date)}</TableCell>
                   <TableCell>
-                    <Badge variant={item.status === 'paid' ? 'default' : 'secondary'} className={item.status === 'paid' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}>
+                    <Badge variant={item.status === 'paid' ? 'default' : 'secondary'} className={item.status === 'paid' ? 'bg-green-100 text-green-800 dark:bg-emerald-500/15 dark:text-emerald-300' : 'bg-yellow-100 text-yellow-800 dark:bg-amber-500/15 dark:text-amber-300'}>
                       {item.status}
                     </Badge>
                   </TableCell>
-                  <TableCell className={`text-right font-medium ${item.type === 'gave' ? 'text-green-600' : 'text-red-600'}`}>
+                  <TableCell className={`text-right font-medium ${item.type === 'gave' ? 'text-green-600 dark:text-emerald-400' : 'text-red-600 dark:text-rose-400'}`}>
                     {item.type === 'gave' ? '+' : '-'}₹{item.amount.toLocaleString('en-IN')}
                   </TableCell>
                   <TableCell className="text-center">

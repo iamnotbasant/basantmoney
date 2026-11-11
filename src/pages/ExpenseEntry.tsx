@@ -174,8 +174,8 @@ const ExpenseEntry = () => {
               <ArrowLeft className="h-4 w-4" />
             </Button>
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-red-100 rounded-lg">
-                <Receipt className="h-5 w-5 text-red-600" />
+              <div className="p-2 bg-red-100 dark:bg-red-500/10 rounded-lg">
+                <Receipt className="h-5 w-5 text-red-600 dark:text-rose-400" />
               </div>
               <h1 className="text-xl font-semibold text-foreground">Add Expense</h1>
             </div>
@@ -343,7 +343,7 @@ const ExpenseEntry = () => {
                     <div className="font-medium">{exp.description}</div>
                     <div className="text-xs text-muted-foreground">{exp.date} • {exp.category}</div>
                   </div>
-                  <div className="font-semibold text-red-600">
+                  <div className="font-semibold text-red-600 dark:text-rose-400">
                     -₹{Number(exp.amount).toLocaleString('en-IN')}
                   </div>
                 </div>

@@ -55,15 +55,15 @@ const PersonWiseTab: React.FC<PersonWiseTabProps> = ({
           <CardContent className="space-y-3">
             <div className="flex justify-between items-center">
               <span className="text-sm text-muted-foreground">You'll get:</span>
-              <span className="text-green-600 font-medium">₹{person.receivable.toLocaleString('en-IN')}</span>
+              <span className="text-green-600 dark:text-emerald-400 font-medium">₹{person.receivable.toLocaleString('en-IN')}</span>
             </div>
             <div className="flex justify-between items-center">
               <span className="text-sm text-muted-foreground">You'll give:</span>
-              <span className="text-red-600 font-medium">₹{person.payable.toLocaleString('en-IN')}</span>
+              <span className="text-red-600 dark:text-rose-400 font-medium">₹{person.payable.toLocaleString('en-IN')}</span>
             </div>
             <div className="flex justify-between items-center pt-2 border-t">
               <span className="text-sm font-medium">Net Balance:</span>
-              <span className={`font-bold ${person.netBalance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+              <span className={`font-bold ${person.netBalance >= 0 ? 'text-green-600 dark:text-emerald-400' : 'text-red-600 dark:text-rose-400'}`}>
                 ₹{Math.abs(person.netBalance).toLocaleString('en-IN')}
                 {person.netBalance >= 0 ? ' (you get)' : ' (you give)'}
               </span>
@@ -71,7 +71,7 @@ const PersonWiseTab: React.FC<PersonWiseTabProps> = ({
             <div className="text-xs text-muted-foreground">
               {person.entries.length} transaction{person.entries.length !== 1 ? 's' : ''}
             </div>
-            <div className="text-xs text-blue-600 font-medium">
+            <div className="text-xs text-blue-600 dark:text-blue-400 font-medium">
               Click to view details →
             </div>
           </CardContent>

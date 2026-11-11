@@ -35,7 +35,7 @@ const PaymentSummaryCards: React.FC<PaymentSummaryCardsProps> = ({
           <IndianRupee className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold text-green-600">₹{Math.trunc(pendingReceivables).toLocaleString('en-IN')}</div>
+          <div className="text-2xl font-bold text-green-600 dark:text-emerald-400">₹{Math.trunc(pendingReceivables).toLocaleString('en-IN')}</div>
         </CardContent>
       </Card>
       <Card>
@@ -44,7 +44,7 @@ const PaymentSummaryCards: React.FC<PaymentSummaryCardsProps> = ({
           <IndianRupee className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold text-red-600">₹{Math.trunc(pendingPayables).toLocaleString('en-IN')}</div>
+          <div className="text-2xl font-bold text-red-600 dark:text-rose-400">₹{Math.trunc(pendingPayables).toLocaleString('en-IN')}</div>
         </CardContent>
       </Card>
       <Card>
@@ -53,7 +53,7 @@ const PaymentSummaryCards: React.FC<PaymentSummaryCardsProps> = ({
           <IndianRupee className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold text-blue-600">₹{Math.trunc(pendingPayments).toLocaleString('en-IN')}</div>
+          <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">₹{Math.trunc(pendingPayments).toLocaleString('en-IN')}</div>
         </CardContent>
       </Card>
     </div>

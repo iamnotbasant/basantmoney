@@ -118,11 +118,17 @@ export const TotalExpensesCard: React.FC<MebiusProps> = ({ expenseData }) => {
         {hasRows ? (
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={daily} margin={{ top: 5, right: 5, left: 0, bottom: 0 }}>
+              <defs>
+                <linearGradient id="mebiusAreaBlueExp" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#2563eb" stopOpacity={0.28} />
+                  <stop offset="100%" stopColor="#2563eb" stopOpacity={0.02} />
+                </linearGradient>
+              </defs>
               <CartesianGrid {...gridProps} />
               <XAxis dataKey="label" tickLine={false} axisLine={false} tick={axisTick} interval={6} />
               <YAxis tickLine={false} axisLine={false} tick={axisTick} tickFormatter={inrShort} width={52} />
               <Tooltip content={<ChartTip />} />
-              <Area type="monotone" dataKey="expenses" name="Expenses" stroke="#2563eb" fill="#2563eb" fillOpacity={0.12} strokeWidth={2} dot={false} animationDuration={800} />
+              <Area type="monotone" dataKey="expenses" name="Expenses" stroke="#2563eb" fill="url(#mebiusAreaBlueExp)" strokeWidth={2} dot={false} animationDuration={800} />
             </AreaChart>
           </ResponsiveContainer>
         ) : (
@@ -144,7 +150,7 @@ export const CashFlowAreaCard: React.FC<MebiusProps> = ({ incomeData, expenseDat
       <div className="flex flex-wrap gap-6">
         <div>
           <p className="text-[11px] font-medium text-muted-foreground">Net cash flow</p>
-          <p className={cn('text-2xl font-extrabold tracking-tight tabular-nums', totalNet >= 0 ? 'text-emerald-600' : 'text-rose-600')}>
+          <p className={cn('text-2xl font-extrabold tracking-tight tabular-nums', totalNet >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400')}>
             {totalNet >= 0 ? '+' : ''}{inr(totalNet)}
           </p>
         </div>
@@ -160,12 +166,22 @@ export const CashFlowAreaCard: React.FC<MebiusProps> = ({ incomeData, expenseDat
       <div className="h-[240px] mt-4">
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={data} margin={{ top: 5, right: 5, left: 0, bottom: 0 }}>
+            <defs>
+              <linearGradient id="mebiusAreaBlueCF" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#2563eb" stopOpacity={0.3} />
+                <stop offset="100%" stopColor="#2563eb" stopOpacity={0.02} />
+              </linearGradient>
+              <linearGradient id="mebiusAreaRoseCF" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#e11d48" stopOpacity={0.22} />
+                <stop offset="100%" stopColor="#e11d48" stopOpacity={0.02} />
+              </linearGradient>
+            </defs>
             <CartesianGrid {...gridProps} />
             <XAxis dataKey="month" tickLine={false} axisLine={false} tick={axisTick} />
             <YAxis tickLine={false} axisLine={false} tick={axisTick} tickFormatter={inrShort} width={52} />
             <Tooltip content={<ChartTip />} />
-            <Area type="monotone" dataKey="income" name="Income" stroke="#2563eb" fill="#2563eb" fillOpacity={0.14} strokeWidth={2} dot={false} animationDuration={800} />
-            <Area type="monotone" dataKey="expenses" name="Expenses" stroke="#e11d48" fill="#e11d48" fillOpacity={0.08} strokeWidth={2} dot={false} animationDuration={800} />
+            <Area type="monotone" dataKey="income" name="Income" stroke="#2563eb" fill="url(#mebiusAreaBlueCF)" strokeWidth={2} dot={false} animationDuration={800} />
+            <Area type="monotone" dataKey="expenses" name="Expenses" stroke="#e11d48" fill="url(#mebiusAreaRoseCF)" strokeWidth={2} dot={false} animationDuration={800} />
           </AreaChart>
         </ResponsiveContainer>
       </div>
@@ -372,7 +388,7 @@ export const MonthlyIncomeCard: React.FC<MebiusProps> = ({ incomeData }) => {
         </div>
         <div>
           <p className="text-3xl font-extrabold tracking-tight tabular-nums">{inr(nov)}</p>
-          <p className="text-sm font-medium text-emerald-600 mt-1">{pct}% of biggest month ({best.month} {inr(best.income)})</p>
+          <p className="text-sm font-medium text-emerald-600 dark:text-emerald-400 mt-1">{pct}% of biggest month ({best.month} {inr(best.income)})</p>
         </div>
       </div>
       <div className="mt-4">
@@ -628,7 +644,7 @@ export const FinanceOverviewFlowCard: React.FC<MebiusProps> = ({ incomeData, exp
         ].map((c) => (
           <div key={c.label}>
             <p className="text-[11px] font-medium text-muted-foreground">{c.label}</p>
-            <p className={cn('text-xl sm:text-2xl font-extrabold tracking-tight tabular-nums', c.value >= 0 ? 'text-emerald-600' : 'text-rose-600')}>
+            <p className={cn('text-xl sm:text-2xl font-extrabold tracking-tight tabular-nums', c.value >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400')}>
               {c.value >= 0 ? '+' : ''}{inr(c.value)}
             </p>
           </div>
@@ -669,11 +685,11 @@ export const FinancialBreakdownCard: React.FC<MebiusProps> = ({ incomeData, expe
       <div className="flex flex-wrap gap-6">
         <div>
           <p className="text-[11px] font-medium text-muted-foreground">Income · 14 days</p>
-          <p className="text-2xl font-extrabold tracking-tight tabular-nums text-emerald-600">{inr(totInc)}</p>
+          <p className="text-2xl font-extrabold tracking-tight tabular-nums text-emerald-600 dark:text-emerald-400">{inr(totInc)}</p>
         </div>
         <div>
           <p className="text-[11px] font-medium text-muted-foreground">Expenses · 14 days</p>
-          <p className="text-2xl font-extrabold tracking-tight tabular-nums text-rose-600">{inr(totExp)}</p>
+          <p className="text-2xl font-extrabold tracking-tight tabular-nums text-rose-600 dark:text-rose-400">{inr(totExp)}</p>
         </div>
         <div>
           <p className="text-[11px] font-medium text-muted-foreground">Net · 14 days</p>
@@ -788,7 +804,7 @@ export const GrowthTrendsCard: React.FC<MebiusProps> = ({ incomeData, expenseDat
               <div className="flex items-baseline justify-between gap-3">
                 <span className="text-sm font-medium">{r.label}</span>
                 <span className="flex items-baseline gap-2">
-                  <span className={cn('text-2xl font-extrabold tracking-tight tabular-nums', g === null ? 'text-muted-foreground' : g >= 0 ? 'text-emerald-600' : 'text-rose-600')}>
+                  <span className={cn('text-2xl font-extrabold tracking-tight tabular-nums', g === null ? 'text-muted-foreground' : g >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400')}>
                     {g === null ? '—' : `${g >= 0 ? '+' : ''}${g}%`}
                   </span>
                   <span className="text-xs text-muted-foreground tabular-nums">this month {inr(r.current)}</span>
@@ -948,7 +964,7 @@ export const SpendingCylinderCard: React.FC<MebiusProps> = ({ expenseData }) => 
               }}
               title={`${w.day}: ${inr(w.total)} (${w.count} txns)`}
             />
-            <span className={cn('text-xs', i === todayWd ? 'font-bold text-blue-600' : 'text-muted-foreground')}>{w.day}</span>
+            <span className={cn('text-xs', i === todayWd ? 'font-bold text-blue-600 dark:text-blue-400' : 'text-muted-foreground')}>{w.day}</span>
           </div>
         ))}
       </div>
@@ -1087,7 +1103,7 @@ export const BudgetSavingCard: React.FC<MebiusProps> = ({ incomeData, expenseDat
                 </div>
                 <div className="text-right">
                   <p className="text-[11px] text-muted-foreground">Saving rate</p>
-                  <p className="text-2xl font-extrabold tabular-nums text-emerald-600">{savingRate}%</p>
+                  <p className="text-2xl font-extrabold tabular-nums text-emerald-600 dark:text-emerald-400">{savingRate}%</p>
                 </div>
               </div>
               <div className="h-3 w-full rounded-full bg-muted overflow-hidden mt-3">

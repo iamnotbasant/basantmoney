@@ -8,6 +8,7 @@ import {
   Tooltip,
   Bar,
   Line,
+  Area,
   Cell,
 } from 'recharts';
 import { Maximize2, Minimize2 } from 'lucide-react';
@@ -338,6 +339,14 @@ export const AnalyticsHero: React.FC<AnalyticsHeroProps> = ({
     }
   }, [period, chartData]);
 
+  // Latest-point growth for the header delta pill (reference-style "+x% vs last month").
+  // Use the latest point that actually has a comparison — the last calendar
+  // point is often a future/empty period (e.g. December with no income yet),
+  // whose growth is null. The label still describes that point's comparison.
+  const lastPointWithGrowth = [...chartData].reverse().find((p) => p.growth !== null && p.growth !== undefined);
+  const lastGrowth = lastPointWithGrowth ? lastPointWithGrowth.growth : null;
+  const growthLabel = period === 'week' ? 'vs last week' : period === 'quarter' ? 'vs last quarter' : period === 'year' ? 'vs last year' : 'vs last month';
+
   // Split whole rupees and paise matching NetBalanceDisplay
   const abs = Math.abs(displayIncome);
   let whole = Math.trunc(abs);
@@ -413,6 +422,20 @@ export const AnalyticsHero: React.FC<AnalyticsHeroProps> = ({
           <p className="text-xs sm:text-sm font-medium text-muted-foreground tracking-wide mt-1.5">
             {subtitle}
           </p>
+          {lastGrowth !== null && lastGrowth !== undefined && (
+            <p className="mt-2">
+              <span
+                className={cn(
+                  'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold',
+                  lastGrowth >= 0
+                    ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+                    : 'bg-rose-500/10 text-rose-600 dark:text-rose-400'
+                )}
+              >
+                {lastGrowth >= 0 ? `+${lastGrowth}%` : `${lastGrowth}%`} {growthLabel}
+              </span>
+            </p>
+          )}
         </div>
 
         {/* Right Column: Actions & Period Toggle */}
@@ -466,6 +489,12 @@ export const AnalyticsHero: React.FC<AnalyticsHeroProps> = ({
               data={chartData}
               margin={{ top: 20, right: 20, left: 10, bottom: 10 }}
             >
+              <defs>
+                <linearGradient id="heroNetArea" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#a1a1aa" stopOpacity={0.28} />
+                  <stop offset="100%" stopColor="#a1a1aa" stopOpacity={0} />
+                </linearGradient>
+              </defs>
               <CartesianGrid
                 strokeDasharray="3 3"
                 stroke="currentColor"
@@ -568,6 +597,18 @@ export const AnalyticsHero: React.FC<AnalyticsHeroProps> = ({
                   );
                 }}
               />
+
+              {/* Net Area: soft gradient fill under the trend line (reference style) */}
+              {visibleSeries.net && (
+                <Area
+                  type="monotone"
+                  dataKey="net"
+                  name="Net"
+                  stroke="none"
+                  fill="url(#heroNetArea)"
+                  dot={false}
+                />
+              )}
 
               {/* Income Bars: Light grey bars with current period highlighted */}
               {visibleSeries.income && (

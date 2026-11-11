@@ -104,11 +104,11 @@ export const InterestSettingsSection: React.FC = () => {
               <>
                 last run {new Date(lastJobRun.lastRunAt).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })} (IST) —{' '}
                 {lastJobRun.status === 'ok' ? (
-                  <span className="text-green-600 font-semibold inline-flex items-center gap-1">
+                  <span className="text-green-600 dark:text-emerald-400 font-semibold inline-flex items-center gap-1">
                     <CheckCircle2 className="h-3.5 w-3.5 inline" /> OK
                   </span>
                 ) : (
-                  <span className="text-red-600 font-semibold inline-flex items-center gap-1">
+                  <span className="text-red-600 dark:text-rose-400 font-semibold inline-flex items-center gap-1">
                     <AlertCircle className="h-3.5 w-3.5 inline" /> Failed
                   </span>
                 )}

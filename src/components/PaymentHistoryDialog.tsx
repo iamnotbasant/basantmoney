@@ -21,17 +21,17 @@ const PaymentHistoryDialog: React.FC<PaymentHistoryDialogProps> = ({
   const getActionBadgeColor = (action: string) => {
     switch (action) {
       case 'created':
-        return 'bg-blue-100 text-blue-800';
+        return 'bg-blue-100 text-blue-800 dark:bg-blue-500/15 dark:text-blue-300';
       case 'edited':
-        return 'bg-yellow-100 text-yellow-800';
+        return 'bg-yellow-100 text-yellow-800 dark:bg-amber-500/15 dark:text-amber-300';
       case 'partial_payment':
-        return 'bg-orange-100 text-orange-800';
+        return 'bg-orange-100 text-orange-800 dark:bg-orange-500/15 dark:text-orange-300';
       case 'marked_paid':
-        return 'bg-green-100 text-green-800';
+        return 'bg-green-100 text-green-800 dark:bg-emerald-500/15 dark:text-emerald-300';
       case 'settled':
-        return 'bg-purple-100 text-purple-800';
+        return 'bg-purple-100 text-purple-800 dark:bg-purple-500/15 dark:text-purple-300';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-muted text-muted-foreground';
     }
   };
 

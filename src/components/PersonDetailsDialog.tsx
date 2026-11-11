@@ -62,13 +62,13 @@ const PersonDetailsDialog: React.FC<PersonDetailsDialogProps> = ({
               <div className="grid grid-cols-2 gap-4 p-4 bg-muted rounded-lg">
                 <div className="text-center">
                   <div className="text-sm text-muted-foreground">Pending Receivable</div>
-                  <div className="text-lg font-bold text-green-600">
+                  <div className="text-lg font-bold text-green-600 dark:text-emerald-400">
                     ₹{balance?.pendingReceivable.toLocaleString('en-IN') || '0'}
                   </div>
                 </div>
                 <div className="text-center">
                   <div className="text-sm text-muted-foreground">Pending Payable</div>
-                  <div className="text-lg font-bold text-red-600">
+                  <div className="text-lg font-bold text-red-600 dark:text-rose-400">
                     ₹{balance?.pendingPayable.toLocaleString('en-IN') || '0'}
                   </div>
                 </div>
@@ -85,7 +85,7 @@ const PersonDetailsDialog: React.FC<PersonDetailsDialogProps> = ({
                 </div>
                 <div className="text-center">
                   <div className="text-sm text-muted-foreground">Net Balance</div>
-                  <div className={`text-md font-bold ${balance && balance.netBalance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  <div className={`text-md font-bold ${balance && balance.netBalance >= 0 ? 'text-green-600 dark:text-emerald-400' : 'text-red-600 dark:text-rose-400'}`}>
                     ₹{Math.abs(balance?.netBalance || 0).toLocaleString('en-IN')}
                     {balance && (balance.netBalance >= 0 ? ' (you get)' : ' (you give)')}
                   </div>
@@ -140,9 +140,9 @@ const PersonDetailsDialog: React.FC<PersonDetailsDialogProps> = ({
                         <TableCell>
                           <Badge variant={entry.status === 'paid' ? 'default' : 'secondary'} 
                                  className={
-                                   entry.status === 'paid' ? 'bg-green-100 text-green-800' : 
-                                   entry.status === 'partially_paid' ? 'bg-orange-100 text-orange-800' :
-                                   'bg-yellow-100 text-yellow-800'
+                                   entry.status === 'paid' ? 'bg-green-100 text-green-800 dark:bg-emerald-500/15 dark:text-emerald-300' : 
+                                   entry.status === 'partially_paid' ? 'bg-orange-100 text-orange-800 dark:bg-orange-500/15 dark:text-orange-300' :
+                                   'bg-yellow-100 text-yellow-800 dark:bg-amber-500/15 dark:text-amber-300'
                                  }>
                             {entry.status.replace('_', ' ')}
                           </Badge>
@@ -152,7 +152,7 @@ const PersonDetailsDialog: React.FC<PersonDetailsDialogProps> = ({
                             </div>
                           )}
                         </TableCell>
-                        <TableCell className={`text-right font-medium ${entry.type === 'gave' ? 'text-green-600' : 'text-red-600'}`}>
+                        <TableCell className={`text-right font-medium ${entry.type === 'gave' ? 'text-green-600 dark:text-emerald-400' : 'text-red-600 dark:text-rose-400'}`}>
                           {entry.type === 'gave' ? '+' : '-'}₹{entry.amount.toLocaleString('en-IN')}
                         </TableCell>
                         <TableCell className="text-center">
