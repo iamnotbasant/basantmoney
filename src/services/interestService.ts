@@ -351,13 +351,12 @@ export class InterestService {
     }
 
     // 3. BACKFILL & NOVEMBER ENTRY CREATION (Bug 1 Fix)
-    // Catch-up backfill: 01 Nov up to yesterday (Kolkata time, bank D+1 credit)
+    // Catch-up backfill: 01 Nov up to today (Kolkata time, matching Slice bank live credit)
     const todayStr = getKolkataDateString();
-    const yesterdayStr = getKolkataYesterdayString(todayStr);
     const rates = await this.getInterestRates('Slice');
 
-    // On 10 Nov, backfill 01-09 Nov (job computes yesterday only)
-    const novEndDate = yesterdayStr >= '2026-11-01' ? yesterdayStr : '2026-11-01';
+    // On 11 Nov, backfill 01-11 Nov (Slice SFB reflects current day interest live in balance)
+    const novEndDate = todayStr >= '2026-11-01' ? todayStr : '2026-11-01';
     const novDates = getDateRange('2026-11-01', novEndDate);
 
     const novRecords: InterestDayRecord[] = novDates.map(date => {
@@ -890,14 +889,12 @@ export class InterestService {
     currentMonthTotal: number;
   }> {
     const todayStr = getKolkataDateString();
-    const yesterdayStr = getKolkataYesterdayString(todayStr);
-
-    if (fromDate > yesterdayStr) {
+    if (fromDate > todayStr) {
       return { daysProcessed: 0, pendingCorrections: [], currentMonthTotal: 0 };
     }
 
     const rates = await this.getInterestRates('Slice');
-    const dates = getDateRange(fromDate, yesterdayStr);
+    const dates = getDateRange(fromDate, todayStr);
 
     // Fetch transactions
     let allIncomes: any[] = [];
@@ -1028,7 +1025,7 @@ export class InterestService {
         .eq('user_id', userId)
         .eq('account', 'Slice')
         .gte('interest_date', fromDate)
-        .lte('interest_date', yesterdayStr);
+        .lte('interest_date', todayStr);
 
       if (readBackErr) {
         console.warn('Read-back verification query for interest_days returned notice:', readBackErr.message);
@@ -1074,7 +1071,7 @@ export class InterestService {
       let monthFetchFailed = false;
       if (userId) {
         try {
-          const maxDateInMonth = yesterdayStr < lastDay ? yesterdayStr : lastDay;
+          const maxDateInMonth = todayStr < lastDay ? todayStr : lastDay;
           const { data: monthDayRows, error: monthErr } = await supabase
             .from('interest_days')
             .select('interest_amount')
@@ -1200,7 +1197,6 @@ export class InterestService {
 
   static async checkAndRunCatchUp(userId?: string): Promise<boolean> {
     const todayStr = getKolkataDateString();
-    const yesterdayStr = getKolkataYesterdayString(todayStr);
 
     let latestRecordedDate: string | null = null;
 
@@ -1235,8 +1231,8 @@ export class InterestService {
       }
     }
 
-    // If missing days exist between latestRecordedDate and yesterday, run catch-up
-    if (!latestRecordedDate || latestRecordedDate < yesterdayStr) {
+    // If missing days exist between latestRecordedDate and today, run catch-up
+    if (!latestRecordedDate || latestRecordedDate < todayStr) {
       let from = '2026-08-01';
       if (latestRecordedDate) {
         // Subsequent days start the day after latestRecordedDate
@@ -1245,7 +1241,7 @@ export class InterestService {
         from = nextDate.toISOString().slice(0, 10);
       }
 
-      if (from <= yesterdayStr) {
+      if (from <= todayStr) {
         try {
           const result = await this.recalculateInterest('app-open', userId, from);
           if (result.daysProcessed > 0) {

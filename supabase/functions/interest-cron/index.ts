@@ -80,7 +80,6 @@ Deno.serve(async (req) => {
 
   try {
     const todayKolkata = getKolkataDateString();
-    const yesterdayKolkata = getPreviousDayString(todayKolkata);
 
     // 1. Fetch interest rates
     const { data: rates, error: ratesError } = await supabase
@@ -124,28 +123,28 @@ Deno.serve(async (req) => {
         startDate = '2026-08-01';
       }
 
-      if (startDate > yesterdayKolkata) {
-        // User is already fully up to date up to yesterday
+      if (startDate > todayKolkata) {
+        // User is already fully up to date up to today
         continue;
       }
 
-      const datesToProcess = getDateRange(startDate, yesterdayKolkata);
+      const datesToProcess = getDateRange(startDate, todayKolkata);
       if (datesToProcess.length === 0) {
         continue;
       }
 
-      // Fetch user's primary bank account and transactions up to yesterday
+      // Fetch user's primary bank account and transactions up to today
       const [incomesRes, expensesRes, bankDataRes] = await Promise.all([
         supabase
           .from('user_income')
           .select('id, amount, date, is_auto_interest, is_manually_edited, bank_account_id')
           .eq('user_id', userId)
-          .lte('date', yesterdayKolkata),
+          .lte('date', todayKolkata),
         supabase
           .from('user_expenses')
           .select('amount, date')
           .eq('user_id', userId)
-          .lte('date', yesterdayKolkata),
+          .lte('date', todayKolkata),
         supabase
           .from('user_bank_accounts')
           .select('id')
@@ -208,7 +207,7 @@ Deno.serve(async (req) => {
 
       for (const month of affectedMonths) {
         const lastDayOfMonth = getLastDayOfMonth(month);
-        const maxDateInMonth = yesterdayKolkata < lastDayOfMonth ? yesterdayKolkata : lastDayOfMonth;
+        const maxDateInMonth = todayKolkata < lastDayOfMonth ? todayKolkata : lastDayOfMonth;
 
         const { data: monthDays, error: monthDaysError } = await supabase
           .from('interest_days')
