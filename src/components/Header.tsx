@@ -45,14 +45,14 @@ const Header = () => {
 
   const getNavLinkClass = (path: string, isMobile = false) => {
     const isActive = location.pathname === path;
-    const base = "inline-flex items-center gap-2 px-4 py-2 text-sm font-medium transition-all duration-300 hover:scale-105 hover:bg-accent/80 select-none relative focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-md";
+    const base = "inline-flex items-center gap-2 px-4 py-2 text-sm font-medium transition-colors duration-200 hover:bg-accent hover:text-accent-foreground select-none relative focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-md";
 
     if (isMobile) {
       return [
         base,
         "w-full justify-start min-h-[44px]",
         isActive
-          ? "bg-foreground text-background shadow-sm animate-fade-in"
+          ? "bg-foreground text-background shadow-sm"
           : "text-muted-foreground hover:text-foreground hover:bg-accent"
       ].join(" ");
     }
@@ -60,7 +60,7 @@ const Header = () => {
     return [
       base,
       isActive
-        ? "bg-foreground text-background shadow-sm animate-fade-in"
+        ? "bg-foreground text-background shadow-sm"
         : "text-muted-foreground hover:text-foreground hover:bg-accent"
     ].join(" ");
   };

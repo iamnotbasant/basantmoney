@@ -102,7 +102,7 @@ const BankTransferDialog = ({ open, onOpenChange, bankAccounts, onTransfer }: Ba
                     <div className="flex flex-col">
                       <span>{account.name}</span>
                       <span className="text-sm text-muted-foreground">
-                        Balance: ₹{account.balance.toLocaleString()}
+                        Balance: ₹{account.balance.toLocaleString('en-IN')}
                       </span>
                     </div>
                   </SelectItem>
@@ -151,7 +151,7 @@ const BankTransferDialog = ({ open, onOpenChange, bankAccounts, onTransfer }: Ba
             />
             {fromAccount && (
               <p className="text-sm text-muted-foreground">
-                Available: ₹{fromAccount.balance.toLocaleString()}
+                Available: ₹{fromAccount.balance.toLocaleString('en-IN')}
               </p>
             )}
           </div>

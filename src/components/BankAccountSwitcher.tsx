@@ -58,8 +58,8 @@ const BankAccountSwitcher = ({
               <div className="flex flex-col">
                 <span className="font-medium">{account.name}</span>
                 <span className="text-sm text-muted-foreground">{account.bank_name}</span>
-                <span className="text-sm font-mono text-primary">
-                  ₹{account.balance.toLocaleString()}
+                <span className="text-sm tabular-nums text-primary">
+                  ₹{account.balance.toLocaleString('en-IN')}
                 </span>
               </div>
             </div>

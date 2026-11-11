@@ -115,13 +115,13 @@ const GoalCard = ({ goal, onUpdateGoal, onDeleteGoal }: GoalCardProps) => {
           <div className="flex justify-between text-sm">
             <span>Progress</span>
             <span className="font-medium">
-              ₹{goal.savedAmount.toLocaleString()} / ₹{goal.targetAmount.toLocaleString()}
+              ₹{goal.savedAmount.toLocaleString('en-IN')} / ₹{goal.targetAmount.toLocaleString('en-IN')}
             </span>
           </div>
           <Progress value={progressPercentage} className="h-2" />
           <div className="flex justify-between text-xs text-muted-foreground">
             <span>{progressPercentage.toFixed(1)}% complete</span>
-            <span>₹{remainingAmount.toLocaleString()} remaining</span>
+            <span>₹{remainingAmount.toLocaleString('en-IN')} remaining</span>
           </div>
         </div>
 
@@ -158,7 +158,7 @@ const GoalCard = ({ goal, onUpdateGoal, onDeleteGoal }: GoalCardProps) => {
               <DialogHeader>
                 <DialogTitle>Add Contribution to {goal.title}</DialogTitle>
                 <DialogDescription>
-                  Add money to your savings goal. Current progress: ₹{goal.savedAmount.toLocaleString()} / ₹{goal.targetAmount.toLocaleString()}
+                  Add money to your savings goal. Current progress: ₹{goal.savedAmount.toLocaleString('en-IN')} / ₹{goal.targetAmount.toLocaleString('en-IN')}
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4 py-4">

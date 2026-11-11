@@ -233,7 +233,7 @@ html.dark {
 @keyframes fade-in {
   from {
     opacity: 0;
-    transform: translateY(20px);
+    transform: translateY(6px);
   }
   to {
     opacity: 1;
@@ -242,8 +242,7 @@ html.dark {
 }
 
 .animate-fade-in {
-  animation: fade-in 0.6s ease-out forwards;
-  opacity: 0;
+  animation: fade-in 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 /* Prevent icon blinking/pulsing */
@@ -262,6 +261,11 @@ svg[data-lucide="plus"],
 /* Global SVG animation prevention for stability */
 svg {
   animation: none !important;
+}
+
+/* Allow spinner animations on svgs */
+svg.animate-spin {
+  animation: spin 1s linear infinite !important;
 }
 
 /* Mobile-specific improvements */
