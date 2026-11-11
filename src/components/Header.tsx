@@ -45,33 +45,33 @@ const Header = () => {
 
   const getNavLinkClass = (path: string, isMobile = false) => {
     const isActive = location.pathname === path;
-    const base = "inline-flex items-center gap-2 px-4 py-2 text-sm font-medium transition-all duration-300 hover:scale-105 select-none relative focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-lg";
+    const base = "inline-flex items-center gap-2 px-4 py-2 text-sm font-medium transition-all duration-300 hover:scale-105 hover:bg-accent/80 select-none relative focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-md";
 
     if (isMobile) {
       return [
         base,
         "w-full justify-start min-h-[44px]",
         isActive
-          ? "bg-foreground text-background shadow-sm animate-fade-in dark:bg-white/15 dark:text-white dark:border dark:border-white/20 dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.4)]"
-          : "text-muted-foreground hover:text-foreground hover:bg-accent dark:text-zinc-400 hover:dark:text-white hover:dark:bg-white/[0.06]"
+          ? "bg-foreground text-background shadow-sm animate-fade-in"
+          : "text-muted-foreground hover:text-foreground hover:bg-accent"
       ].join(" ");
     }
 
     return [
       base,
       isActive
-        ? "bg-foreground text-background shadow-sm animate-fade-in dark:bg-white/15 dark:text-white dark:border dark:border-white/20 dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.4)]"
-        : "text-muted-foreground hover:text-foreground hover:bg-accent dark:text-zinc-400 hover:dark:text-white hover:dark:bg-white/[0.06]"
+        ? "bg-foreground text-background shadow-sm animate-fade-in"
+        : "text-muted-foreground hover:text-foreground hover:bg-accent"
     ].join(" ");
   };
 
   return (
-    <div className="bg-background transition-colors">
+    <div className="bg-background">
       {/* Desktop Navigation - Tab Style */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-center py-6 relative">
-          {/* Main Navigation Tabs - Centered Glass Bar */}
-          <nav aria-label="Primary" className="inline-flex items-center gap-1 rounded-xl border border-border bg-background/80 backdrop-blur px-1 py-1 shadow-sm dark:bg-white/[0.04] dark:border-white/[0.12] dark:backdrop-blur-2xl dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.2),0_10px_30px_rgba(0,0,0,0.6)]">
+          {/* Main Navigation Tabs - Centered */}
+          <nav aria-label="Primary" className="inline-flex items-center gap-1 rounded-lg border border-border bg-background/80 backdrop-blur px-1 py-1 shadow-sm">
             {navItems.map((item) => {
               const IconComponent = item.icon;
               return (

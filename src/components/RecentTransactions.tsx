@@ -58,14 +58,14 @@ const RecentTransactions = () => {
   const isLoading = incomeLoading || expenseLoading;
 
   return (
-    <Card className="transition-all dark:bg-white/[0.03] dark:backdrop-blur-2xl dark:border-white/[0.1] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.18),0_16px_40px_rgba(0,0,0,0.7)] dark:rounded-[28px]">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-        <CardTitle className="text-xl font-semibold tracking-tight dark:text-zinc-100">Recent Transactions</CardTitle>
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle className="text-xl font-semibold">Recent Transactions</CardTitle>
         <Button
           variant="ghost"
           size="sm"
           onClick={() => navigate('/transactions')}
-          className="text-primary hover:text-primary/80 dark:text-zinc-300 hover:dark:text-white hover:dark:bg-white/[0.08] dark:rounded-full"
+          className="text-primary hover:text-primary/80"
         >
           View All
           <ArrowRight className="h-4 w-4 ml-1" />
@@ -73,7 +73,7 @@ const RecentTransactions = () => {
       </CardHeader>
       <CardContent>
         {isLoading ? (
-          <div className="text-center py-8 text-muted-foreground dark:text-zinc-400">
+          <div className="text-center py-8 text-muted-foreground">
             <p>Loading transactions...</p>
           </div>
         ) : recentTransactions.length > 0 ? (
@@ -81,13 +81,13 @@ const RecentTransactions = () => {
             {recentTransactions.map((transaction) => (
               <div
                 key={`${transaction.type}-${transaction.id}`}
-                className="flex items-center justify-between p-3.5 rounded-xl border border-border/60 hover:bg-accent/40 dark:bg-white/[0.03] dark:border-white/[0.08] hover:dark:bg-white/[0.07] hover:dark:border-white/[0.16] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] dark:rounded-2xl transition-all"
+                className="flex items-center justify-between p-3.5 rounded-xl border border-border/60 hover:bg-accent/40 transition-colors"
               >
                 <div className="flex items-center space-x-3 min-w-0">
                   <div className={`p-2.5 rounded-xl shrink-0 ${
                     transaction.type === 'income' 
-                      ? 'bg-green-500/10 text-green-600 dark:text-emerald-400 border border-green-500/20 dark:border-emerald-500/30 dark:bg-emerald-500/10' 
-                      : 'bg-red-500/10 text-red-600 dark:text-rose-400 border border-red-500/20 dark:border-rose-500/30 dark:bg-rose-500/10'
+                      ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20' 
+                      : 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20'
                   }`}>
                     {transaction.type === 'income' ? (
                       <TrendingUp className="h-4 w-4" />
@@ -96,22 +96,22 @@ const RecentTransactions = () => {
                     )}
                   </div>
                   <div className="min-w-0">
-                    <p className="font-medium text-sm truncate text-foreground dark:text-zinc-200">{transaction.description}</p>
+                    <p className="font-medium text-sm truncate text-foreground">{transaction.description}</p>
                     <div className="flex items-center space-x-2 mt-1">
-                      <Badge variant="outline" className="text-xs dark:bg-white/[0.06] dark:border-white/[0.12] dark:text-zinc-300">
+                      <Badge variant="outline" className="text-xs">
                         {transaction.category.charAt(0).toUpperCase() + transaction.category.slice(1)}
                       </Badge>
-                      <span className="text-xs text-muted-foreground dark:text-zinc-400">
+                      <span className="text-xs text-muted-foreground">
                         {formatDate(transaction.date)}
                       </span>
                     </div>
                   </div>
                 </div>
                 <div className="text-right shrink-0 pl-3">
-                  <p className={`font-bold tracking-tight ${
+                  <p className={`font-semibold ${
                     transaction.type === 'income' 
-                      ? 'text-green-600 dark:silver-text-gradient' 
-                      : 'text-foreground dark:silver-text-gradient'
+                      ? 'text-emerald-600 dark:text-emerald-400' 
+                      : 'text-foreground'
                   }`}>
                     {transaction.type === 'income' ? '+' : '-'}₹{transaction.amount.toLocaleString('en-IN')}
                   </p>

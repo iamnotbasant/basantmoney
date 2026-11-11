@@ -90,6 +90,19 @@ const Transactions = () => {
   const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
   const [selectedBreakdownMonth, setSelectedBreakdownMonth] = useState<string | null>(null);
   const [selectedBreakdownTotal, setSelectedBreakdownTotal] = useState<number | undefined>(undefined);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  const handleCopy = (text: string, id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (navigator?.clipboard?.writeText) {
+      navigator.clipboard.writeText(text);
+    }
+    setCopiedId(id);
+    toast({ title: 'Copied', description: `${text} copied to clipboard` });
+    setTimeout(() => {
+      setCopiedId(null);
+    }, 2000);
+  };
 
   // Supabase hooks for real-time data
   const { currentAccount } = useBankAccounts();
