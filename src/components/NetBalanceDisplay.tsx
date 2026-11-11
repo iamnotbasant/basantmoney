@@ -35,7 +35,11 @@ const NetBalanceDisplay: React.FC<NetBalanceDisplayProps> = ({ netBalance }) => 
           } ${isBlurred ? 'blur-md sm:blur-lg' : 'blur-none'}`}
         >
           {netBalance < 0 && '-'}₹{whole.toLocaleString('en-IN')}
-          {paise > 0 && `.${String(paise).padStart(2, '0')}`}
+          {paise > 0 && (
+            <span className="text-[0.5em] font-bold align-baseline">
+              .{String(paise).padStart(2, '0')}
+            </span>
+          )}
         </p>
       </div>
     </div>
