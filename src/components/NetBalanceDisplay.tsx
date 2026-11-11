@@ -5,7 +5,7 @@ interface NetBalanceDisplayProps {
 }
 
 const NetBalanceDisplay: React.FC<NetBalanceDisplayProps> = ({ netBalance }) => {
-  const [isBlurred, setIsBlurred] = useState(true);
+  const [isBlurred, setIsBlurred] = useState(false);
   const isPositive = netBalance >= 0;
   const abs = Math.abs(netBalance);
   let whole = Math.trunc(abs);
@@ -31,7 +31,7 @@ const NetBalanceDisplay: React.FC<NetBalanceDisplayProps> = ({ netBalance }) => 
           }}
           title={isBlurred ? 'Click to show balance' : 'Click to hide balance'}
           className={`inline-block cursor-pointer select-none transition-all duration-300 text-6xl sm:text-8xl font-extrabold ${
-            isPositive ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'
+            isPositive ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
           } ${isBlurred ? 'blur-md sm:blur-lg' : 'blur-none'}`}
         >
           {netBalance < 0 && '-'}₹{whole.toLocaleString('en-IN')}
