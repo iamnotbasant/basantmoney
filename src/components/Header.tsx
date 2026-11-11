@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Wallet, CreditCard, PiggyBank, Target, BarChart3, Settings, Menu, X, LogOut, User, TrendingUp, Sun, Moon } from "lucide-react";
+import { Wallet, CreditCard, PiggyBank, Target, Settings, Menu, X, LogOut, User, TrendingUp, Sun, Moon } from "lucide-react";
 import { useAuth } from "@/components/AuthProvider";
 import { useToast } from "@/hooks/use-toast";
 import { useTheme } from "next-themes";
@@ -38,7 +38,6 @@ const Header = () => {
   const navItems = [
     { path: "/", label: "Vault", icon: PiggyBank },
     { path: "/transactions", label: "Transactions", icon: CreditCard },
-    { path: "/reports", label: "Analytics", icon: BarChart3 },
     { path: "/financial-goals", label: "Goals", icon: Target },
     { path: "/payments", label: "Payments", icon: TrendingUp },
   ];

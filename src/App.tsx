@@ -12,7 +12,6 @@ import Auth from "./pages/Auth";
 import IncomeEntry from "./pages/IncomeEntry";
 import ExpenseEntry from "./pages/ExpenseEntry";
 import Transactions from "./pages/Transactions";
-import Reports from "./pages/Reports";
 import FinancialGoals from "./pages/FinancialGoals";
 import Settings from "./pages/Settings";
 import Payments from "./pages/Payments"; // Added Payments page
@@ -40,7 +39,8 @@ const App = () => (
                 
                 <Route path="/transactions" element={<ProtectedRoute><Transactions /></ProtectedRoute>} />
                 <Route path="/recent-transactions" element={<Navigate to="/transactions" replace />} />
-                <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
+                <Route path="/reports" element={<Navigate to="/" replace />} />
+                <Route path="/analytics" element={<Navigate to="/" replace />} />
                 <Route path="/payments" element={<ProtectedRoute><Payments /></ProtectedRoute>} />
                 <Route path="/financial-goals" element={<ProtectedRoute><FinancialGoals /></ProtectedRoute>} />
                 <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
