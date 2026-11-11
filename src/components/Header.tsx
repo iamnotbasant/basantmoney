@@ -38,6 +38,7 @@ const Header = () => {
   const navItems = [
     { path: "/", label: "Vault", icon: PiggyBank },
     { path: "/transactions", label: "Transactions", icon: CreditCard },
+    { path: "/analytics", label: "Analytics", icon: BarChart3 },
     { path: "/financial-goals", label: "Goals", icon: Target },
     { path: "/payments", label: "Payments", icon: TrendingUp },
   ];

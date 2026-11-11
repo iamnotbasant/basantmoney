@@ -15,6 +15,7 @@ import Transactions from "./pages/Transactions";
 import FinancialGoals from "./pages/FinancialGoals";
 import Settings from "./pages/Settings";
 import Payments from "./pages/Payments"; // Added Payments page
+import Analytics from "./pages/Analytics";
 import NotFound from "./pages/NotFound";
 
 import ErrorBoundary from "@/components/ErrorBoundary";
@@ -39,8 +40,8 @@ const App = () => (
                 
                 <Route path="/transactions" element={<ProtectedRoute><Transactions /></ProtectedRoute>} />
                 <Route path="/recent-transactions" element={<Navigate to="/transactions" replace />} />
-                <Route path="/reports" element={<Navigate to="/" replace />} />
-                <Route path="/analytics" element={<Navigate to="/" replace />} />
+                <Route path="/reports" element={<Navigate to="/analytics" replace />} />
+                <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
                 <Route path="/payments" element={<ProtectedRoute><Payments /></ProtectedRoute>} />
                 <Route path="/financial-goals" element={<ProtectedRoute><FinancialGoals /></ProtectedRoute>} />
                 <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
