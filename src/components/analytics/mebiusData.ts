@@ -16,8 +16,6 @@ export const MONTH_FULL = [
   'January', 'February', 'March', 'April', 'May', 'June',
   'July', 'August', 'September', 'October', 'November', 'December',
 ];
-export const WEEKDAYS_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-
 export interface ParsedDate { year: number; month: number; day: number }
 
 export function parseEntryDate(dateStr: string): ParsedDate | null {
@@ -92,28 +90,6 @@ export function cumulativeMonthly(income: IncomeEntry[], expenses: ExpenseEntry[
   });
 }
 
-export interface DayPoint { label: string; fullLabel: string; income: number; expenses: number; net: number; date: Date }
-
-/** Daily sums for the N days ending on `end` (inclusive). */
-export function dailySeries(income: IncomeEntry[], expenses: ExpenseEntry[], days: number, end: Date = TODAY): DayPoint[] {
-  const out: DayPoint[] = [];
-  for (let i = days - 1; i >= 0; i--) {
-    const d = addDays(end, -i);
-    const key = ymd(d);
-    const inc = sum(income.filter((r) => (r.date || '').slice(0, 10) === key));
-    const exp = sum(expenses.filter((r) => (r.date || '').slice(0, 10) === key));
-    out.push({
-      label: `${d.getDate()} ${MONTH_SHORT[d.getMonth()]}`,
-      fullLabel: `${d.getDate()} ${MONTH_FULL[d.getMonth()]} ${d.getFullYear()}`,
-      income: inc,
-      expenses: exp,
-      net: inc - exp,
-      date: d,
-    });
-  }
-  return out;
-}
-
 export interface CategoryTotal { name: string; total: number; share: number; count: number }
 
 export function byCategory(rows: Array<{ category: string; amount: number | string }>): CategoryTotal[] {
@@ -145,88 +121,6 @@ export function bySource(rows: IncomeEntry[]): CategoryTotal[] {
     .map(([name, v]) => ({ name, total: v.total, count: v.count, share: grand > 0 ? v.total / grand : 0 }))
     .sort((a, b) => b.total - a.total);
 }
-
-/** Sums by weekday (0 = Sun). Rows outside the given year are ignored when year is set. */
-export function byWeekday(
-  rows: Array<{ date: string; amount: number | string }>,
-  year: number | null = CURRENT_YEAR,
-) {
-  const totals = [0, 0, 0, 0, 0, 0, 0];
-  const counts = [0, 0, 0, 0, 0, 0, 0];
-  for (const r of rows) {
-    const p = parseEntryDate(r.date);
-    if (!p) continue;
-    if (year !== null && p.year !== year) continue;
-    const wd = new Date(p.year, p.month, p.day).getDay();
-    totals[wd] += Number(r.amount || 0);
-    counts[wd] += 1;
-  }
-  return WEEKDAYS_SHORT.map((day, i) => ({ day, total: totals[i], count: counts[i] }));
-}
-
-/** Last 8 weeks (Mon–Sun? No: 7-day windows ending today, matching the hero's week math). */
-export function weeklyNet(income: IncomeEntry[], expenses: ExpenseEntry[], weeks = 8, end: Date = TODAY) {
-  const out: Array<{ label: string; fullLabel: string; income: number; expenses: number; net: number; isCurrent: boolean }> = [];
-  for (let i = weeks - 1; i >= 0; i--) {
-    const e = addDays(end, -i * 7);
-    const s = addDays(e, -6);
-    const sStr = ymd(s);
-    const eStr = ymd(e);
-    const inc = sum(income.filter((r) => {
-      const d = (r.date || '').slice(0, 10);
-      return d >= sStr && d <= eStr;
-    }));
-    const exp = sum(expenses.filter((r) => {
-      const d = (r.date || '').slice(0, 10);
-      return d >= sStr && d <= eStr;
-    }));
-    out.push({
-      label: `${s.getDate()} ${MONTH_SHORT[s.getMonth()]}`,
-      fullLabel: `${sStr} to ${eStr}`,
-      income: inc,
-      expenses: exp,
-      net: inc - exp,
-      isCurrent: i === 0,
-    });
-  }
-  return out;
-}
-
-/** Growth % vs previous value; null when the base is too small to compare (hero rule: < ₹100). */
-export function growthPct(current: number, previous: number): number | null {
-  if (previous < 100 || current <= 0) return null;
-  return Math.round(((current - previous) / previous) * 100);
-}
-
-/** Sum of rows in a date range (inclusive, YYYY-MM-DD strings). */
-export function sumInRange(
-  rows: Array<{ date: string; amount: number | string }>,
-  startStr: string,
-  endStr: string,
-) {
-  return sum(rows.filter((r) => {
-    const d = (r.date || '').slice(0, 10);
-    return d >= startStr && d <= endStr;
-  }));
-}
-
-export const COLORS = {
-  zinc: '#18181b',
-  zincLight: '#d4d4d8',
-  zincMid: '#a1a1aa',
-  green: '#16a34a',
-  greenLight: '#86efac',
-  emerald: '#059669',
-  rose: '#e11d48',
-  blue: '#2563eb',
-  sky: '#38bdf8',
-  purple: '#9333ea',
-  violet: '#7c3aed',
-  orange: '#ea580c',
-  amber: '#d97706',
-  teal: '#0d9488',
-  pink: '#db2777',
-};
 
 export const CATEGORY_COLORS = [
   '#2563eb', '#16a34a', '#ea580c', '#9333ea', '#e11d48',
