@@ -516,7 +516,7 @@ export const AnalyticsHero: React.FC<AnalyticsHeroProps> = ({
                               Income:
                             </span>
                             <span className="font-semibold text-foreground font-mono">
-                              ₹{point.income.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                              ₹{point.income.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                             </span>
                           </div>
                         )}

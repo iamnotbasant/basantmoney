@@ -134,7 +134,7 @@ const ExpenseEntry = () => {
 
       toast({
         title: "Success",
-        description: `₹${expenseAmount.toLocaleString('en-IN')} expense recorded!`,
+        description: `₹${expenseAmount.toLocaleString()} expense recorded!`,
       });
 
       // Reset form

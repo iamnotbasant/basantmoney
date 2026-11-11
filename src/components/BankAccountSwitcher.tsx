@@ -59,7 +59,7 @@ const BankAccountSwitcher = ({
                 <span className="font-medium">{account.name}</span>
                 <span className="text-sm text-muted-foreground">{account.bank_name}</span>
                 <span className="text-sm font-mono text-primary">
-                  ₹{account.balance.toLocaleString()}
+                  ₹{account.balance.toLocaleString('en-IN')}
                 </span>
               </div>
             </div>

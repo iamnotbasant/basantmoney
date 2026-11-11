@@ -135,16 +135,16 @@ const Index = () => {
         {/* Month Filter Section - Moved to Bottom */}
         <section className="mb-8">
           <div className="flex items-center gap-4 mb-4 animate-fade-in" style={{ animationDelay: '0.7s' }}>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowMonthFilter(!showMonthFilter)}
-              className="flex items-center gap-2 transition-all duration-300 hover:scale-105 hover:shadow-md"
-            >
-              {showMonthFilter ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              {showMonthFilter ? 'Hide' : 'Show'} Month Filter
-              {showMonthFilter ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-            </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowMonthFilter(!showMonthFilter)}
+                className="flex items-center gap-2 transition-colors hover:bg-accent"
+              >
+                {showMonthFilter ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                {showMonthFilter ? 'Hide' : 'Show'} Month Filter
+                {showMonthFilter ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+              </Button>
           </div>
           
           {showMonthFilter && (
@@ -179,15 +179,16 @@ const Index = () => {
         </section>
       </main>
 
-      {/* Floating Action Button - Enhanced Design */}
-      <div className="fixed bottom-6 right-6 z-50 animate-fade-in" style={{ animationDelay: '0.8s' }}>
+      {/* Floating Action Button - Clean minimal style */}
+      <div className="fixed bottom-6 right-6 z-50 animate-fade-in" style={{ animationDelay: '0.2s' }}>
         <Sheet>
           <SheetTrigger asChild>
             <Button 
-              size="lg"
-              className="h-16 w-16 rounded-full shadow-xl hover:shadow-2xl transition-all duration-500 hover:scale-110 group bg-gradient-to-br from-primary via-primary/90 to-primary/80 hover:from-primary/90 hover:to-primary"
+              size="icon"
+              className="h-14 w-14 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 active:scale-95 bg-primary text-primary-foreground hover:bg-primary/90"
+              aria-label="Add transaction or action"
             >
-              <Plus className="h-7 w-7 transition-all duration-300 group-hover:rotate-180 group-hover:scale-110" />
+              <Plus className="h-6 w-6" />
             </Button>
           </SheetTrigger>
           <SheetContent side="bottom" className="h-auto">

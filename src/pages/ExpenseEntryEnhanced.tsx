@@ -107,7 +107,7 @@ const ExpenseEntryEnhanced = () => {
     const updatedExpenseData = [...currentExpenseData, newExpenseEntry];
     localStorage.setItem('expenseData', JSON.stringify(updatedExpenseData));
 
-    toast.success(`₹${expenseAmount.toLocaleString('en-IN')} expense added successfully!`);
+    toast.success(`₹${expenseAmount.toLocaleString()} expense added successfully!`);
 
     // Reset form
     setTitle('');
