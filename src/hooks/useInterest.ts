@@ -67,6 +67,13 @@ export const useInterest = () => {
         ) {
           localStorage.removeItem('interest_reconciliation_report');
         }
+
+        const cachedRunsRaw = localStorage.getItem('interest_job_runs_cache');
+        if (cachedRunsRaw) {
+          const list = JSON.parse(cachedRunsRaw);
+          const filtered = list.filter((r: any) => r.status === 'ok');
+          localStorage.setItem('interest_job_runs_cache', JSON.stringify(filtered));
+        }
       } catch (e) {
         // ignore
       }

@@ -197,7 +197,8 @@ export class InterestService {
     const now = new Date();
     const diffHours = (now.getTime() - runDate.getTime()) / (1000 * 60 * 60);
 
-    const isOverdue = lastRun.status === 'failed' || diffHours > 36;
+    // An update is only overdue if last run was more than 36 hours ago (Spec §4)
+    const isOverdue = diffHours > 36;
 
     return {
       lastRunAt: lastRun.run_at,
