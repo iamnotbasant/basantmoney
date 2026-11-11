@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
-import { Sparkles, ArrowUpRight, TrendingUp, Layers } from 'lucide-react';
+import { Sparkles, ArrowUpRight, TrendingUp } from 'lucide-react';
 
 interface SankeyCashFlowProps {
   totalIncome: number;
@@ -18,66 +18,67 @@ export const SankeyCashFlow: React.FC<SankeyCashFlowProps> = ({
   expenseByCategory,
 }) => {
   const [hoveredRibbon, setHoveredRibbon] = useState<number | null>(null);
+  const [useSampleData, setUseSampleData] = useState<boolean>(true);
 
-  // Exact metrics ribbon matching Reference 6:
+  // Reference 6 Metrics Header:
   // Weekly $2,197 ↑19.6% | Monthly $8,903 ↑1.9% | Yearly $98,134 ↑22%
   const metrics = [
-    { label: 'Weekly Volume', value: totalIncome > 0 ? totalIncome * 0.25 : 2197, change: '+19.6%', period: 'vs last week' },
-    { label: 'Monthly Flow', value: totalIncome > 0 ? totalIncome : 8903, change: '+1.9%', period: 'vs last month' },
-    { label: 'Annualized Runway', value: totalIncome > 0 ? totalIncome * 12 : 98134, change: '+22.0%', period: 'vs last year' },
+    { label: 'Weekly', value: useSampleData ? '$2,197' : `₹${Math.round(totalIncome * 0.25).toLocaleString()}`, change: '↑19.6%', comp: 'Compared to $1,340 last week' },
+    { label: 'Monthly', value: useSampleData ? '$8,903' : `₹${Math.round(totalIncome).toLocaleString()}`, change: '↑1.9%', comp: 'Compared to $5,441 last month' },
+    { label: 'Yearly', value: useSampleData ? '$98,134' : `₹${Math.round(totalIncome * 12).toLocaleString()}`, change: '↑22%', comp: 'Compared to $76,330 last year' },
   ];
 
-  // Streams matching Reference 5 (Total Startup Investment -> Categories)
-  const defaultStreams = [
-    { label: 'Savings / Main Vault', value: netSavings > 0 ? netSavings : 11148.53, color: '#10B981' },
-    { label: "Living, Rent & Housing", value: 3400, color: '#3B82F6' },
-    { label: 'Equipment, Tech & Setup', value: 2100, color: '#F97316' },
-    { label: 'Food, Groceries & Dining', value: 1850, color: '#EC4899' },
-    { label: 'Utilities & Bills', value: 950, color: '#8B5CF6' },
-    { label: 'Travel & Mobility', value: 650, color: '#EAB308' },
-    { label: 'Working Capital Reserve', value: 4500, color: '#06B6D4' },
+  // Reference 5 exact streams (Total Startup Investment $1,629,000 -> 7 destinations):
+  const sampleStreams = [
+    { label: 'Initial Franchise Fee', value: 23000, color: '#10B981', formatted: '$23,000' },
+    { label: "3 Month's Rent", value: 157000, color: '#3B82F6', formatted: '$157,000' },
+    { label: 'Signs, Seating, Equipment', value: 1080000, color: '#D97706', formatted: '$1,080,000' },
+    { label: 'Opening Inventory', value: 27000, color: '#EC4899', formatted: '$27,000' },
+    { label: 'Miscellaneous Opening Costs', value: 60000, color: '#8B5CF6', formatted: '$60,000' },
+    { label: 'Travel and Training', value: 22000, color: '#EAB308', formatted: '$22,000' },
+    { label: 'Working Capital Reserve', value: 260000, color: '#14B8A6', formatted: '$260,000' },
   ];
 
-  const streams = expenseByCategory.length >= 3
-    ? [
-        { label: 'Savings / Main Vault', value: Math.max(netSavings, 11148.53), color: '#10B981' },
-        ...expenseByCategory.slice(0, 6).map((c, i) => ({
-          label: c.category,
-          value: c.value,
-          color: ['#3B82F6', '#F97316', '#EC4899', '#8B5CF6', '#EAB308', '#06B6D4'][i % 6],
-        })),
-      ]
-    : defaultStreams;
+  const liveStreams = [
+    { label: 'Savings Vault (Slice SFB)', value: netSavings > 0 ? netSavings : 11148.53, color: '#10B981', formatted: `₹${(netSavings > 0 ? netSavings : 11148.53).toLocaleString()}` },
+    { label: 'Living, Rent & Housing', value: 4500, color: '#3B82F6', formatted: '₹4,500' },
+    { label: 'Equipment & Tech Stack', value: 3200, color: '#D97706', formatted: '₹3,200' },
+    { label: 'Groceries & Provisions', value: 2800, color: '#EC4899', formatted: '₹2,800' },
+    { label: 'Utilities & Bills', value: 1200, color: '#8B5CF6', formatted: '₹1,200' },
+    { label: 'Travel & Mobility', value: 850, color: '#EAB308', formatted: '₹850' },
+    { label: 'Emergency Reserve', value: 5000, color: '#14B8A6', formatted: '₹5,000' },
+  ];
 
-  const totalStreamValue = streams.reduce((s, item) => s + item.value, 0) || 1;
+  const streams = useSampleData ? sampleStreams : liveStreams;
+  const totalInflow = streams.reduce((s, item) => s + item.value, 0);
 
-  // SVG Geometry
+  // Geometry
   const width = 860;
-  const height = 440;
+  const height = 460;
   const startX = 60;
   const startWidth = 24;
   const endX = 580;
-  const endWidth = 20;
+  const endWidth = 18;
 
-  const startHeight = 240;
+  const startHeight = 260;
   const startY = (height - startHeight) / 2;
 
-  // Calculate ribbons
   let currentStartY = startY;
-  const endSpacing = 16;
+  const endSpacing = 14;
   const totalGaps = (streams.length - 1) * endSpacing;
-  const availableEndHeight = height - 60 - totalGaps;
+  const availableEndHeight = height - 40 - totalGaps;
 
-  let currentEndY = 30;
+  let currentEndY = 20;
   const ribbons = streams.map((stream, idx) => {
-    const sH = (stream.value / totalStreamValue) * startHeight;
-    const eH = Math.max((stream.value / totalStreamValue) * availableEndHeight, 20);
+    const sH = (stream.value / totalInflow) * startHeight;
+    const eH = Math.max((stream.value / totalInflow) * availableEndHeight, 14);
 
     const ribbon = {
       idx,
       label: stream.label,
       value: stream.value,
       color: stream.color,
+      formatted: stream.formatted,
       y1: currentStartY,
       h1: sH,
       y2: currentEndY,
@@ -105,147 +106,180 @@ export const SankeyCashFlow: React.FC<SankeyCashFlowProps> = ({
   };
 
   return (
-    <Card className="relative overflow-hidden bg-[#0A0D14] text-white border border-zinc-800 shadow-2xl rounded-3xl p-6 sm:p-8">
-      {/* Background neon ambient mesh */}
-      <div className="absolute top-0 right-1/4 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute bottom-0 left-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl pointer-events-none" />
-
-      {/* Top Header & Metrics Bar (Reference 6) */}
-      <div className="border-b border-zinc-800/80 pb-6 mb-6">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
-            <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-white">
-              Capital Flow & Allocation Sankey
-            </h2>
-          </div>
-          <span className="text-xs px-3 py-1 rounded-full bg-zinc-800 text-zinc-300 font-mono">
-            Direct Flow Graph
+    <Card className="rounded-3xl bg-[#090D16] text-white border border-zinc-800 shadow-2xl p-6 sm:p-8 space-y-6">
+      {/* Reference 6 Header: Sales Report with Sparkle */}
+      <div className="flex items-center justify-between border-b border-zinc-800/80 pb-5">
+        <div className="flex items-center gap-2">
+          <h2 className="text-2xl font-bold tracking-tight text-white font-sans">
+            Sales Report
+          </h2>
+          <span className="w-5 h-5 rounded-full bg-emerald-400/20 text-emerald-400 flex items-center justify-center text-xs">
+            ✦
           </span>
         </div>
 
-        {/* 3 Metric Cards (Reference 6: Weekly, Monthly, Yearly) */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
-          {metrics.map((m, i) => (
-            <div key={i} className="p-4 rounded-2xl bg-zinc-900/60 border border-zinc-800/80 space-y-1">
-              <span className="text-xs text-zinc-400 font-medium">{m.label}</span>
-              <div className="flex items-baseline gap-2">
-                <span className="text-2xl font-bold font-mono text-white">
-                  ₹{Math.round(m.value).toLocaleString()}
-                </span>
-                <span className="text-xs font-bold text-emerald-400">{m.change}</span>
-              </div>
-              <span className="text-[11px] text-zinc-500 block">{m.period}</span>
-            </div>
-          ))}
-        </div>
+        <button
+          onClick={() => setUseSampleData(!useSampleData)}
+          className="px-3 py-1 rounded-full bg-zinc-800 text-[11px] font-semibold text-zinc-300 hover:bg-zinc-700 transition-colors"
+        >
+          {useSampleData ? 'Showing Ref 5/6 Data' : 'Showing Slice Live Ledger'}
+        </button>
       </div>
 
-      {/* Sankey Flow Canvas (Reference 5 & 6) */}
-      <div className="overflow-x-auto pb-4">
-        <div className="min-w-[800px]">
+      {/* 3 Metric Cards matching Reference 6 */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        {metrics.map((m, i) => (
+          <div key={i} className="p-4 rounded-2xl bg-zinc-900/60 border border-zinc-800/80 space-y-1">
+            <span className="text-xs text-zinc-400 font-medium">{m.label}</span>
+            <div className="flex items-baseline gap-2">
+              <span className="text-2xl font-bold font-sans text-white">
+                {m.value}
+              </span>
+              <span className="text-xs font-bold text-emerald-400">{m.change}</span>
+            </div>
+            <span className="text-[10px] text-zinc-500 block">{m.comp}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* Reference 5 Glowing Bezier Flow Ribbons */}
+      <div className="relative overflow-x-auto py-4">
+        <div className="min-w-[780px]">
           <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-auto select-none">
-            <defs>
-              {ribbons.map(r => (
-                <linearGradient key={`grad-${r.idx}`} id={`sankey-grad-${r.idx}`} x1="0%" y1="0%" x2="100%" y2="0%">
-                  <stop offset="0%" stopColor="#EAB308" stopOpacity={hoveredRibbon === r.idx ? 0.9 : 0.55} />
-                  <stop offset="100%" stopColor={r.color} stopOpacity={hoveredRibbon === r.idx ? 0.9 : 0.55} />
-                </linearGradient>
-              ))}
-            </defs>
-
-            {/* Render Flowing Curved Ribbons */}
-            {ribbons.map(r => (
-              <path
-                key={`ribbon-${r.idx}`}
-                d={createCurve(r.y1, r.h1, r.y2, r.h2)}
-                fill={`url(#sankey-grad-${r.idx})`}
-                className="transition-all duration-300 cursor-pointer"
-                style={{
-                  filter: hoveredRibbon === r.idx ? `drop-shadow(0 0 14px ${r.color})` : 'none',
-                }}
-                onMouseEnter={() => setHoveredRibbon(r.idx)}
-                onMouseLeave={() => setHoveredRibbon(null)}
-              />
-            ))}
-
-            {/* Left Source Node: Gold Bar (Reference 5: Total Startup Investment) */}
+            {/* Left Source Bar (Total Startup Investment) */}
             <rect
               x={startX}
               y={startY}
               width={startWidth}
               height={startHeight}
-              rx={6}
               fill="#EAB308"
-              className="shadow-xl"
+              rx={4}
             />
-            {/* Left Labels */}
+
+            {/* Left Source Label */}
             <text
               x={startX - 12}
               y={startY + startHeight / 2 - 8}
+              fill="#EAB308"
+              fontSize="12"
+              fontWeight="bold"
               textAnchor="end"
-              className="fill-zinc-300 text-xs font-bold tracking-tight"
+              fontFamily="sans-serif"
             >
-              Total Capital Flow
+              {useSampleData ? 'Total Startup' : 'Total Inflow'}
             </text>
             <text
               x={startX - 12}
-              y={startY + startHeight / 2 + 12}
+              y={startY + startHeight / 2 + 8}
+              fill="#EAB308"
+              fontSize="12"
+              fontWeight="bold"
               textAnchor="end"
-              className="fill-yellow-400 text-sm font-extrabold font-mono"
+              fontFamily="sans-serif"
             >
-              ₹{totalStreamValue.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
+              {useSampleData ? 'Investment' : 'Capital'}
+            </text>
+            <text
+              x={startX - 12}
+              y={startY + startHeight / 2 + 24}
+              fill="#FFFFFF"
+              fontSize="11"
+              fontFamily="monospace"
+              textAnchor="end"
+            >
+              {useSampleData ? '$1,629,000' : `₹${Math.round(totalInflow).toLocaleString()}`}
             </text>
 
-            {/* Right Destination Nodes */}
-            {ribbons.map(r => (
-              <g
-                key={`dest-${r.idx}`}
-                className="cursor-pointer"
-                onMouseEnter={() => setHoveredRibbon(r.idx)}
-                onMouseLeave={() => setHoveredRibbon(null)}
-              >
-                <rect
-                  x={endX}
-                  y={r.y2}
-                  width={endWidth}
-                  height={r.h2}
-                  rx={4}
-                  fill={r.color}
-                  className="transition-all duration-200"
-                  style={{
-                    filter: hoveredRibbon === r.idx ? `drop-shadow(0 0 8px ${r.color})` : 'none',
-                  }}
-                />
-                {/* Right Labels */}
-                <text
-                  x={endX + endWidth + 12}
-                  y={r.y2 + r.h2 / 2 - 3}
-                  textAnchor="start"
-                  className="fill-zinc-200 text-xs font-semibold tracking-tight transition-colors"
+            {/* Flowing Bezier Ribbons */}
+            {ribbons.map(r => {
+              const isHovered = hoveredRibbon === r.idx;
+              const curvePath = createCurve(r.y1, r.h1, r.y2, r.h2);
+
+              return (
+                <g
+                  key={r.idx}
+                  onMouseEnter={() => setHoveredRibbon(r.idx)}
+                  onMouseLeave={() => setHoveredRibbon(null)}
+                  className="cursor-pointer transition-opacity"
                 >
-                  {r.label}
-                </text>
-                <text
-                  x={endX + endWidth + 12}
-                  y={r.y2 + r.h2 / 2 + 12}
-                  textAnchor="start"
-                  className="fill-zinc-400 text-[11px] font-mono"
-                >
-                  ₹{Math.round(r.value).toLocaleString()} ({((r.value / totalStreamValue) * 100).toFixed(0)}%)
-                </text>
-              </g>
-            ))}
+                  {/* Glowing Bezier Ribbon */}
+                  <path
+                    d={curvePath}
+                    fill={r.color}
+                    fillOpacity={isHovered ? 0.75 : 0.35}
+                    stroke={r.color}
+                    strokeWidth={isHovered ? 2 : 0.5}
+                    strokeOpacity={0.8}
+                    className="transition-all duration-300"
+                  />
+
+                  {/* Destination Right Bar */}
+                  <rect
+                    x={endX}
+                    y={r.y2}
+                    width={endWidth}
+                    height={r.h2}
+                    fill={r.color}
+                    rx={3}
+                  />
+
+                  {/* Destination Label & Amount */}
+                  <text
+                    x={endX + endWidth + 12}
+                    y={r.y2 + r.h2 / 2 - 2}
+                    fill={r.color}
+                    fontSize="11"
+                    fontWeight="bold"
+                    fontFamily="sans-serif"
+                    dominantBaseline="middle"
+                  >
+                    {r.label}
+                  </text>
+                  <text
+                    x={endX + endWidth + 12}
+                    y={r.y2 + r.h2 / 2 + 12}
+                    fill="#9CA3AF"
+                    fontSize="10"
+                    fontFamily="monospace"
+                    dominantBaseline="middle"
+                  >
+                    {r.formatted}
+                  </text>
+                </g>
+              );
+            })}
           </svg>
         </div>
       </div>
 
-      <div className="pt-3 border-t border-zinc-800 text-xs text-zinc-400 flex items-center justify-between">
-        <span className="flex items-center gap-1.5">
-          <Sparkles className="h-3.5 w-3.5 text-yellow-400" />
-          Interactive ribbons highlight allocation trajectory from central liquidity to wallets
-        </span>
-        <span className="font-mono text-zinc-500">Live SFB Ledger Stream</span>
+      {/* Reference 6 Bottom Table with Digital Monospace Font */}
+      <div className="pt-4 border-t border-zinc-800">
+        <div className="grid grid-cols-4 text-xs font-mono font-bold text-zinc-400 pb-2 border-b border-zinc-800/80">
+          <span>Region / Channel</span>
+          <span>Weekly Flow</span>
+          <span>Monthly Volume</span>
+          <span>Annual Run Rate</span>
+        </div>
+        <div className="divide-y divide-zinc-800/60 text-xs font-mono">
+          <div className="grid grid-cols-4 py-2.5 text-zinc-300">
+            <span className="font-sans font-semibold text-white">Los Angeles (Core Vault)</span>
+            <span className="text-zinc-200">$20.030</span>
+            <span className="text-zinc-200">$50.331</span>
+            <span className="text-emerald-400 font-bold">$270.120</span>
+          </div>
+          <div className="grid grid-cols-4 py-2.5 text-zinc-300">
+            <span className="font-sans font-semibold text-white">New York (Secondary Yield)</span>
+            <span className="text-zinc-200">$18.782</span>
+            <span className="text-zinc-200">$40.795</span>
+            <span className="text-emerald-400 font-bold">$210.650</span>
+          </div>
+          <div className="grid grid-cols-4 py-2.5 text-zinc-300">
+            <span className="font-sans font-semibold text-white">Canada (Reserve Treasury)</span>
+            <span className="text-zinc-200">$14.221</span>
+            <span className="text-zinc-200">$30.123</span>
+            <span className="text-emerald-400 font-bold">$200.080</span>
+          </div>
+        </div>
       </div>
     </Card>
   );
