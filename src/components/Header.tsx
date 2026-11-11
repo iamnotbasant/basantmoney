@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Wallet, CreditCard, PiggyBank, Target, Settings, Menu, X, LogOut, User, TrendingUp, Sun, Moon } from "lucide-react";
+import { Wallet, CreditCard, PiggyBank, Target, Settings, Menu, X, LogOut, User, TrendingUp, Sun, Moon, BarChart3 } from "lucide-react";
 import { useAuth } from "@/components/AuthProvider";
 import { useToast } from "@/hooks/use-toast";
 import { useTheme } from "next-themes";
