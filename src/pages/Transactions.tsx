@@ -568,9 +568,10 @@ const Transactions = () => {
 
   // Shared pill renderers (desktop table + mobile cards use the same ones,
   // so the two views cannot drift apart again).
-  // Category / payment pills: image-3 style — coloured border + light pastel
-  // fill, icon in a small rounded-square chip. Compact: 22px chip desktop,
-  // 20px chip mobile, no gloss/shadow.
+  // Category / payment pills: image-3 style — THICK (2px) coloured border +
+  // light pastel fill, icon in a rounded-square chip, BOLD larger text.
+  // Round 2 (user: Task 3's 22px chips were too small): desktop pill 40px
+  // tall, 15px bold text, 28px icon chip; mobile 36px / 14px / 24px chip.
   interface ChipPillStyle {
     borderClass: string;
     bgClass: string;
@@ -588,28 +589,29 @@ const Transactions = () => {
     const md = size === 'md';
     return (
       <span className={cn(
-        "inline-flex items-center gap-1.5 rounded-full border select-none whitespace-nowrap",
-        md ? "p-0.5 pl-0.5 pr-2.5 text-[12px] font-semibold tracking-tight" : "p-0.5 pl-0.5 pr-2.5 text-[12px] font-semibold",
+        "inline-flex items-center rounded-full border-2 select-none whitespace-nowrap shrink-0",
+        md ? "gap-2 py-1 pl-1 pr-3.5 text-[15px] font-bold tracking-tight" : "gap-2 py-1 pl-1 pr-3 text-[14px] font-bold",
         style.borderClass,
         style.bgClass,
         style.textClass
       )}>
         <span className={cn(
-          md ? "w-[22px] h-[22px] rounded-[6px]" : "w-5 h-5 rounded-[6px]",
+          md ? "w-7 h-7 rounded-lg" : "w-6 h-6 rounded-md",
           "flex items-center justify-center shrink-0",
           style.squircleBgClass,
           style.iconColorClass
         )}>
-          <PillIcon className={md ? "h-[13px] w-[13px]" : "h-3 w-3"} />
+          <PillIcon className={md ? "h-4 w-4" : "h-3.5 w-3.5"} />
         </span>
-        <span className={md ? "truncate max-w-[118px]" : "truncate max-w-[140px]"}>{label}</span>
+        <span className={md ? "truncate max-w-[104px]" : "truncate max-w-[150px]"}>{label}</span>
       </span>
     );
   };
 
   // Auto-interest status pills: image-1 style — soft pastel fill + matching
-  // text + small outline stroke icon directly left of the text. No border,
-  // no icon chip, no gloss. Clickable: opens the daily interest breakdown.
+  // text + outline stroke icon directly left of the text. No border,
+  // no icon chip, no gloss. Round 2: bigger — ~33px tall, 14px text, 18px
+  // icon (was ~25px / 11px / 14px). Clickable: opens the daily interest breakdown.
   const renderStatusPill = (t: Transaction) => {
     if (!t.is_auto_interest) return null;
     const edited = t.is_manually_edited;
@@ -619,7 +621,7 @@ const Transactions = () => {
     return (
       <span
         className={cn(
-          "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold cursor-pointer select-none whitespace-nowrap",
+          "inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-[14px] font-semibold cursor-pointer select-none whitespace-nowrap shrink-0",
           edited
             ? "bg-amber-100 text-amber-800 dark:bg-amber-950/50 dark:text-amber-200"
             : locked
@@ -633,7 +635,7 @@ const Transactions = () => {
         }}
         title="Click to view daily interest breakdown"
       >
-        <StatusIcon className="h-3.5 w-3.5 shrink-0" />
+        <StatusIcon className="h-[18px] w-[18px] shrink-0" />
         <span>{label}</span>
       </span>
     );
@@ -818,10 +820,10 @@ const Transactions = () => {
                  <TableHeader>
                    <TableRow className="border-b-2">
                      <TableHead className="px-4 py-3 text-[13px] font-semibold w-[112px]">Date</TableHead>
-                     <TableHead className="px-4 py-3 text-[13px] font-semibold w-[220px]">Source</TableHead>
+                     <TableHead className="px-4 py-3 text-[13px] font-semibold w-[240px]">Source</TableHead>
                      <TableHead className="px-4 py-3 text-[13px] font-semibold">Description</TableHead>
-                     <TableHead className="px-4 py-3 text-[13px] font-semibold w-[168px]">Category</TableHead>
-                     <TableHead className="px-4 py-3 text-[13px] font-semibold w-[168px]">Payment Method</TableHead>
+                     <TableHead className="px-4 py-3 text-[13px] font-semibold w-[196px]">Category</TableHead>
+                     <TableHead className="px-4 py-3 text-[13px] font-semibold w-[196px]">Payment Method</TableHead>
                      <TableHead className="px-4 py-3 text-right text-[13px] font-semibold w-[132px]">Amount</TableHead>
                    </TableRow>
                  </TableHeader>
@@ -835,16 +837,16 @@ const Transactions = () => {
                         onDoubleClick={() => handleDoubleClick(transaction)}
                         title="Double click to edit"
                       >
-                         <TableCell className="px-4 py-3.5 text-muted-foreground text-sm whitespace-nowrap">
+                         <TableCell className="px-4 py-3 text-muted-foreground text-sm whitespace-nowrap">
                            {formatDate(transaction.date)}
                          </TableCell>
-                         <TableCell className="px-4 py-3.5 font-medium text-foreground text-sm">
+                         <TableCell className="px-4 py-3 font-medium text-foreground text-sm">
                            <div className="flex items-center gap-2 min-w-0">
                              <span className="truncate" title={transaction.source}>{transaction.source}</span>
                              {renderStatusPill(transaction)}
                            </div>
                          </TableCell>
-                         <TableCell className="px-4 py-3.5 text-muted-foreground text-sm">
+                         <TableCell className="px-4 py-3 text-muted-foreground text-sm">
                            <div className="flex items-center justify-between gap-2 min-w-0">
                              <span className="truncate" title={transaction.description || ''}>{transaction.description || '-'}</span>
                              {transaction.is_auto_interest && (
@@ -875,19 +877,19 @@ const Transactions = () => {
                              )}
                            </div>
                          </TableCell>
-                        <TableCell className="px-4 py-3.5">
+                        <TableCell className="px-4 py-3">
                           {(() => {
                             const cat = getCategoryTagStyle(transaction.category);
                             return renderChipPill(cat, transaction.category.charAt(0).toUpperCase() + transaction.category.slice(1), cat.icon, 'md');
                           })()}
                         </TableCell>
-                        <TableCell className="px-4 py-3.5">
+                        <TableCell className="px-4 py-3">
                           {(() => {
                             const pm = getPaymentMethodTagStyle(transaction.paymentMethod || '');
                             return renderChipPill(pm, transaction.paymentMethod || 'Not specified', pm.icon, 'md');
                           })()}
                         </TableCell>
-                        <TableCell className="px-4 py-3.5 text-right whitespace-nowrap">
+                        <TableCell className="px-4 py-3 text-right whitespace-nowrap">
                           <span className={`font-bold text-[15px] transition-all duration-200 ${
                             transaction.type === 'income' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
                           }`}>
