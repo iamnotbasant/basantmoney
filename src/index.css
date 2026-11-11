@@ -282,3 +282,41 @@ svg {
     @apply rounded-lg border border-border bg-card p-4 shadow-sm;
   }
 }
+
+/* Neo-Glass VisionOS Glows & Ambient Mesh (Reference 7 & 8) */
+.ambient-glow-card {
+  position: relative;
+  overflow: hidden;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 16px 36px -12px rgba(0, 0, 0, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+}
+
+.dark .ambient-glow-card {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+}
+
+/* Polka-dot halftone button pattern (Reference 9) */
+.polka-dot-btn {
+  background-color: #ec4899;
+  background-image: radial-gradient(rgba(255, 255, 255, 0.4) 15%, transparent 16%);
+  background-size: 8px 8px;
+  box-shadow: 0 8px 24px -4px rgba(236, 72, 153, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.polka-dot-btn:hover {
+  transform: translateY(-1px) scale(1.02);
+  box-shadow: 0 12px 30px -4px rgba(236, 72, 153, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+/* Dot-matrix style numeric typography (Reference 7 & 8) */
+.font-dot-matrix {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  letter-spacing: 0.08em;
+  font-weight: 700;
+  text-shadow: 0 0 12px currentColor;
+}
+
