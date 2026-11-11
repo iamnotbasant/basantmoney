@@ -402,88 +402,153 @@ const Transactions = () => {
     if (c.includes('interest')) {
       return {
         icon: Percent,
-        classes: 'border-emerald-500/30 bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-500/40',
-        iconBg: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-300'
+        borderClass: 'border-emerald-500 dark:border-emerald-500',
+        bgClass: 'bg-emerald-50/90 dark:bg-emerald-950/40',
+        textClass: 'text-emerald-800 dark:text-emerald-200',
+        squircleBgClass: 'bg-emerald-200 dark:bg-emerald-800/70',
+        iconColorClass: 'text-emerald-700 dark:text-emerald-200'
       };
     }
     if (c.includes('salary') || c.includes('freelance') || c.includes('job') || c.includes('work') || c.includes('business')) {
       return {
         icon: Briefcase,
-        classes: 'border-teal-500/30 bg-teal-50 text-teal-700 dark:bg-teal-950/40 dark:text-teal-300 dark:border-teal-500/40',
-        iconBg: 'bg-teal-500/15 text-teal-600 dark:text-teal-300'
+        borderClass: 'border-teal-500 dark:border-teal-500',
+        bgClass: 'bg-teal-50/90 dark:bg-teal-950/40',
+        textClass: 'text-teal-800 dark:text-teal-200',
+        squircleBgClass: 'bg-teal-200 dark:bg-teal-800/70',
+        iconColorClass: 'text-teal-700 dark:text-teal-200'
       };
     }
     if (c.includes('food') || c.includes('grocer') || c.includes('rest') || c.includes('dining')) {
       return {
         icon: Utensils,
-        classes: 'border-orange-500/30 bg-orange-50 text-orange-700 dark:bg-orange-950/40 dark:text-orange-300 dark:border-orange-500/40',
-        iconBg: 'bg-orange-500/15 text-orange-600 dark:text-orange-300'
+        borderClass: 'border-orange-500 dark:border-orange-500',
+        bgClass: 'bg-orange-50/90 dark:bg-orange-950/40',
+        textClass: 'text-orange-900 dark:text-orange-200',
+        squircleBgClass: 'bg-orange-200 dark:bg-orange-800/70',
+        iconColorClass: 'text-orange-700 dark:text-orange-200'
       };
     }
     if (c.includes('shop') || c.includes('cloth') || c.includes('mall') || c.includes('store')) {
       return {
         icon: ShoppingBag,
-        classes: 'border-purple-500/30 bg-purple-50 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-500/40',
-        iconBg: 'bg-purple-500/15 text-purple-600 dark:text-purple-300'
+        borderClass: 'border-violet-500 dark:border-violet-500',
+        bgClass: 'bg-violet-50/90 dark:bg-violet-950/40',
+        textClass: 'text-violet-800 dark:text-violet-200',
+        squircleBgClass: 'bg-violet-200 dark:bg-violet-800/70',
+        iconColorClass: 'text-violet-700 dark:text-violet-200'
       };
     }
     if (c.includes('travel') || c.includes('fuel') || c.includes('cab') || c.includes('uber') || c.includes('car') || c.includes('transport')) {
       return {
         icon: Car,
-        classes: 'border-blue-500/30 bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-500/40',
-        iconBg: 'bg-blue-500/15 text-blue-600 dark:text-blue-300'
+        borderClass: 'border-amber-500 dark:border-amber-500',
+        bgClass: 'bg-amber-50/90 dark:bg-amber-950/40',
+        textClass: 'text-amber-900 dark:text-amber-200',
+        squircleBgClass: 'bg-amber-200 dark:bg-amber-800/70',
+        iconColorClass: 'text-amber-700 dark:text-amber-200'
       };
     }
     if (c.includes('rent') || c.includes('bill') || c.includes('home') || c.includes('util') || c.includes('house')) {
       return {
         icon: Home,
-        classes: 'border-amber-500/30 bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-500/40',
-        iconBg: 'bg-amber-500/15 text-amber-600 dark:text-amber-300'
+        borderClass: 'border-sky-500 dark:border-sky-500',
+        bgClass: 'bg-sky-50/90 dark:bg-sky-950/40',
+        textClass: 'text-sky-800 dark:text-sky-200',
+        squircleBgClass: 'bg-sky-200 dark:bg-sky-800/70',
+        iconColorClass: 'text-sky-700 dark:text-sky-200'
       };
     }
     if (c.includes('health') || c.includes('med') || c.includes('doctor') || c.includes('gym')) {
       return {
         icon: HeartPulse,
-        classes: 'border-rose-500/30 bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-500/40',
-        iconBg: 'bg-rose-500/15 text-rose-600 dark:text-rose-300'
+        borderClass: 'border-rose-500 dark:border-rose-500',
+        bgClass: 'bg-rose-50/90 dark:bg-rose-950/40',
+        textClass: 'text-rose-800 dark:text-rose-200',
+        squircleBgClass: 'bg-rose-200 dark:bg-rose-800/70',
+        iconColorClass: 'text-rose-700 dark:text-rose-200'
       };
     }
     if (c.includes('entertain') || c.includes('movie') || c.includes('subscript') || c.includes('game')) {
       return {
         icon: Film,
-        classes: 'border-pink-500/30 bg-pink-50 text-pink-700 dark:bg-pink-950/40 dark:text-pink-300 dark:border-pink-500/40',
-        iconBg: 'bg-pink-500/15 text-pink-600 dark:text-pink-300'
+        borderClass: 'border-pink-500 dark:border-pink-500',
+        bgClass: 'bg-pink-50/90 dark:bg-pink-950/40',
+        textClass: 'text-pink-800 dark:text-pink-200',
+        squircleBgClass: 'bg-pink-200 dark:bg-pink-800/70',
+        iconColorClass: 'text-pink-700 dark:text-pink-200'
       };
     }
     if (c.includes('education') || c.includes('book') || c.includes('course') || c.includes('study')) {
       return {
         icon: BookOpen,
-        classes: 'border-indigo-500/30 bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300 dark:border-indigo-500/40',
-        iconBg: 'bg-indigo-500/15 text-indigo-600 dark:text-indigo-300'
+        borderClass: 'border-indigo-600 dark:border-indigo-500',
+        bgClass: 'bg-indigo-50/90 dark:bg-indigo-950/40',
+        textClass: 'text-indigo-900 dark:text-indigo-200',
+        squircleBgClass: 'bg-indigo-200 dark:bg-indigo-800/70',
+        iconColorClass: 'text-indigo-800 dark:text-indigo-200'
       };
     }
     return {
       icon: Tag,
-      classes: 'border-sky-500/30 bg-sky-50 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300 dark:border-sky-500/40',
-      iconBg: 'bg-sky-500/15 text-sky-600 dark:text-sky-300'
+      borderClass: 'border-blue-500 dark:border-blue-500',
+      bgClass: 'bg-blue-50/90 dark:bg-blue-950/40',
+      textClass: 'text-blue-800 dark:text-blue-200',
+      squircleBgClass: 'bg-blue-200 dark:bg-blue-800/70',
+      iconColorClass: 'text-blue-700 dark:text-blue-200'
     };
   };
 
-  const getPaymentMethodTagIcon = (methodName: string) => {
+  const getPaymentMethodTagStyle = (methodName: string) => {
     const m = (methodName || '').toLowerCase();
     if (m.includes('upi') || m.includes('gpay') || m.includes('phonepe') || m.includes('paytm')) {
-      return Sparkles;
+      return {
+        icon: Sparkles,
+        borderClass: 'border-cyan-500 dark:border-cyan-500',
+        bgClass: 'bg-cyan-50/90 dark:bg-cyan-950/40',
+        textClass: 'text-cyan-800 dark:text-cyan-200',
+        squircleBgClass: 'bg-cyan-200 dark:bg-cyan-800/70',
+        iconColorClass: 'text-cyan-700 dark:text-cyan-200'
+      };
     }
     if (m.includes('card') || m.includes('credit') || m.includes('debit')) {
-      return CreditCard;
+      return {
+        icon: CreditCard,
+        borderClass: 'border-indigo-600 dark:border-indigo-500',
+        bgClass: 'bg-indigo-50/90 dark:bg-indigo-950/40',
+        textClass: 'text-indigo-900 dark:text-indigo-200',
+        squircleBgClass: 'bg-indigo-200 dark:bg-indigo-800/70',
+        iconColorClass: 'text-indigo-800 dark:text-indigo-200'
+      };
     }
     if (m.includes('bank') || m.includes('net') || m.includes('transfer') || m.includes('slice')) {
-      return Building2;
+      return {
+        icon: Building2,
+        borderClass: 'border-blue-500 dark:border-blue-500',
+        bgClass: 'bg-blue-50/90 dark:bg-blue-950/40',
+        textClass: 'text-blue-800 dark:text-blue-200',
+        squircleBgClass: 'bg-blue-200 dark:bg-blue-800/70',
+        iconColorClass: 'text-blue-700 dark:text-blue-200'
+      };
     }
     if (m.includes('cash')) {
-      return Coins;
+      return {
+        icon: Coins,
+        borderClass: 'border-emerald-600 dark:border-emerald-500',
+        bgClass: 'bg-emerald-50/90 dark:bg-emerald-950/40',
+        textClass: 'text-emerald-800 dark:text-emerald-200',
+        squircleBgClass: 'bg-emerald-200 dark:bg-emerald-800/70',
+        iconColorClass: 'text-emerald-700 dark:text-emerald-200'
+      };
     }
-    return Wallet;
+    return {
+      icon: Wallet,
+      borderClass: 'border-violet-500 dark:border-violet-500',
+      bgClass: 'bg-violet-50/90 dark:bg-violet-950/40',
+      textClass: 'text-violet-800 dark:text-violet-200',
+      squircleBgClass: 'bg-violet-200 dark:bg-violet-800/70',
+      iconColorClass: 'text-violet-700 dark:text-violet-200'
+    };
   };
 
   const getFilteredCategories = () => {
@@ -689,15 +754,15 @@ const Transactions = () => {
                            <div className="flex items-center gap-2">
                              <span>{transaction.source}</span>
                              {transaction.is_auto_interest && (
-                               <Badge
-                                 variant={transaction.auto_interest_status === 'locked' ? 'secondary' : 'default'}
-                                 className={`text-[10px] cursor-pointer ${
+                               <span
+                                 className={cn(
+                                   "inline-flex items-center gap-1.5 pl-1 pr-2.5 py-0.5 rounded-full border-2 text-[11px] font-semibold cursor-pointer shadow-sm transition-all select-none",
                                    transaction.is_manually_edited
-                                     ? 'bg-amber-600 hover:bg-amber-700 text-white'
+                                     ? "border-amber-500 bg-amber-50 text-amber-900 dark:bg-amber-950/40 dark:text-amber-200"
                                      : transaction.auto_interest_status === 'locked'
-                                     ? 'bg-slate-700 text-white'
-                                     : 'bg-green-600 hover:bg-green-700 text-white'
-                                 }`}
+                                     ? "border-slate-500 bg-slate-100 text-slate-800 dark:bg-slate-900/60 dark:text-slate-200"
+                                     : "border-emerald-500 bg-emerald-50 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200"
+                                 )}
                                  onClick={(e) => {
                                    e.stopPropagation();
                                    setSelectedBreakdownMonth(transaction.date.slice(0, 7));
@@ -705,12 +770,30 @@ const Transactions = () => {
                                  }}
                                  title="Click to view daily interest breakdown"
                                >
-                                 {transaction.is_manually_edited
-                                   ? 'Manually edited'
-                                   : transaction.auto_interest_status === 'locked'
-                                   ? 'Auto • Locked'
-                                   : 'Auto • Estimated'}
-                               </Badge>
+                                 <span className={cn(
+                                   "w-4 h-4 rounded-[4px] flex items-center justify-center shrink-0",
+                                   transaction.is_manually_edited
+                                     ? "bg-amber-200 dark:bg-amber-800/60 text-amber-800 dark:text-amber-200"
+                                     : transaction.auto_interest_status === 'locked'
+                                     ? "bg-slate-300 dark:bg-slate-700 text-slate-700 dark:text-slate-200"
+                                     : "bg-emerald-200 dark:bg-emerald-800/60 text-emerald-700 dark:text-emerald-200"
+                                 )}>
+                                   {transaction.is_manually_edited ? (
+                                     <RotateCcw className="h-2.5 w-2.5" />
+                                   ) : transaction.auto_interest_status === 'locked' ? (
+                                     <Shield className="h-2.5 w-2.5" />
+                                   ) : (
+                                     <Percent className="h-2.5 w-2.5" />
+                                   )}
+                                 </span>
+                                 <span>
+                                   {transaction.is_manually_edited
+                                     ? 'Manually edited'
+                                     : transaction.auto_interest_status === 'locked'
+                                     ? 'Auto • Locked'
+                                     : 'Auto • Estimated'}
+                                 </span>
+                               </span>
                              )}
                            </div>
                          </TableCell>
@@ -747,38 +830,46 @@ const Transactions = () => {
                          </TableCell>
                         <TableCell className="py-4">
                           {(() => {
-                            const catStyle = getCategoryTagStyle(transaction.category);
-                            const CatIcon = catStyle.icon;
+                            const cat = getCategoryTagStyle(transaction.category);
+                            const CatIcon = cat.icon;
                             return (
-                              <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border shadow-sm transition-all duration-200 ${catStyle.classes}`}>
-                                <span className={`p-0.5 rounded-full ${catStyle.iconBg}`}>
-                                  <CatIcon className="h-3 w-3" />
+                              <span className={cn(
+                                "inline-flex items-center gap-2 pl-1.5 pr-3 py-1 rounded-full border-2 shadow-sm text-xs font-semibold tracking-tight transition-all select-none",
+                                cat.borderClass,
+                                cat.bgClass,
+                                cat.textClass
+                              )}>
+                                <span className={cn(
+                                  "w-6 h-6 rounded-[7px] flex items-center justify-center shrink-0",
+                                  cat.squircleBgClass,
+                                  cat.iconColorClass
+                                )}>
+                                  <CatIcon className="h-3.5 w-3.5" />
                                 </span>
-                                <span>{transaction.category.charAt(0).toUpperCase() + transaction.category.slice(1)}</span>
+                                <span className="truncate max-w-[130px]">{transaction.category.charAt(0).toUpperCase() + transaction.category.slice(1)}</span>
                               </span>
                             );
                           })()}
                         </TableCell>
                         <TableCell className="py-4">
                           {(() => {
-                            const pmColor = getPaymentMethodColor(transaction.paymentMethod || '');
-                            const PmIcon = getPaymentMethodTagIcon(transaction.paymentMethod || '');
+                            const pm = getPaymentMethodTagStyle(transaction.paymentMethod || '');
+                            const PmIcon = pm.icon;
                             return (
-                              <span 
-                                className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full border shadow-sm transition-all duration-200"
-                                style={{ 
-                                  borderColor: `${pmColor}45`,
-                                  backgroundColor: `${pmColor}15`,
-                                  color: pmColor
-                                }}
-                              >
-                                <span 
-                                  className="p-0.5 rounded-full"
-                                  style={{ backgroundColor: `${pmColor}25` }}
-                                >
-                                  <PmIcon className="h-3 w-3" />
+                              <span className={cn(
+                                "inline-flex items-center gap-2 pl-1.5 pr-3 py-1 rounded-full border-2 shadow-sm text-xs font-semibold tracking-tight transition-all select-none",
+                                pm.borderClass,
+                                pm.bgClass,
+                                pm.textClass
+                              )}>
+                                <span className={cn(
+                                  "w-6 h-6 rounded-[7px] flex items-center justify-center shrink-0",
+                                  pm.squircleBgClass,
+                                  pm.iconColorClass
+                                )}>
+                                  <PmIcon className="h-3.5 w-3.5" />
                                 </span>
-                                <span>{transaction.paymentMethod || 'Not specified'}</span>
+                                <span className="truncate max-w-[140px]">{transaction.paymentMethod || 'Not specified'}</span>
                               </span>
                             );
                           })()}
@@ -830,27 +921,45 @@ const Transactions = () => {
                     <div className="flex items-center gap-2 mb-1 flex-wrap">
                       <h3 className="font-semibold text-foreground text-lg">{transaction.source}</h3>
                       {transaction.is_auto_interest && (
-                        <Badge
-                          variant={transaction.auto_interest_status === 'locked' ? 'secondary' : 'default'}
-                          className={`text-[10px] cursor-pointer ${
+                        <span
+                          className={cn(
+                            "inline-flex items-center gap-1.5 pl-1 pr-2.5 py-0.5 rounded-full border-2 text-[10px] font-semibold cursor-pointer shadow-sm transition-all select-none",
                             transaction.is_manually_edited
-                              ? 'bg-amber-600 hover:bg-amber-700 text-white'
+                              ? "border-amber-500 bg-amber-50 text-amber-900 dark:bg-amber-950/40 dark:text-amber-200"
                               : transaction.auto_interest_status === 'locked'
-                              ? 'bg-slate-700 text-white'
-                              : 'bg-green-600 hover:bg-green-700 text-white'
-                          }`}
+                              ? "border-slate-500 bg-slate-100 text-slate-800 dark:bg-slate-900/60 dark:text-slate-200"
+                              : "border-emerald-500 bg-emerald-50 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200"
+                          )}
                           onClick={(e) => {
                             e.stopPropagation();
                             setSelectedBreakdownMonth(transaction.date.slice(0, 7));
                             setSelectedBreakdownTotal(transaction.amount);
                           }}
                         >
-                          {transaction.is_manually_edited
-                            ? 'Manually edited'
-                            : transaction.auto_interest_status === 'locked'
-                            ? 'Auto • Locked'
-                            : 'Auto • Estimated'}
-                        </Badge>
+                          <span className={cn(
+                            "w-4 h-4 rounded-[4px] flex items-center justify-center shrink-0",
+                            transaction.is_manually_edited
+                              ? "bg-amber-200 dark:bg-amber-800/60 text-amber-800 dark:text-amber-200"
+                              : transaction.auto_interest_status === 'locked'
+                              ? "bg-slate-300 dark:bg-slate-700 text-slate-700 dark:text-slate-200"
+                              : "bg-emerald-200 dark:bg-emerald-800/60 text-emerald-700 dark:text-emerald-200"
+                          )}>
+                            {transaction.is_manually_edited ? (
+                              <RotateCcw className="h-2.5 w-2.5" />
+                            ) : transaction.auto_interest_status === 'locked' ? (
+                              <Shield className="h-2.5 w-2.5" />
+                            ) : (
+                              <Percent className="h-2.5 w-2.5" />
+                            )}
+                          </span>
+                          <span>
+                            {transaction.is_manually_edited
+                              ? 'Manually edited'
+                              : transaction.auto_interest_status === 'locked'
+                              ? 'Auto • Locked'
+                              : 'Auto • Estimated'}
+                          </span>
+                        </span>
                       )}
                     </div>
                     {transaction.description && (
@@ -885,15 +994,15 @@ const Transactions = () => {
                     <div className="flex items-center gap-2 mb-2 flex-wrap">
                       <span 
                         className={cn(
-                          "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border shadow-sm",
+                          "inline-flex items-center gap-1.5 pl-1.5 pr-2.5 py-0.5 rounded-full border-2 text-xs font-semibold shadow-sm transition-all select-none",
                           transaction.type === 'income' 
-                            ? "bg-green-50 text-green-700 border-green-500/30 dark:bg-green-950/40 dark:text-green-300 dark:border-green-500/40" 
-                            : "bg-red-50 text-red-700 border-red-500/30 dark:bg-red-950/40 dark:text-red-300 dark:border-red-500/40"
+                            ? "border-emerald-600 bg-emerald-50 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200" 
+                            : "border-rose-500 bg-rose-50 text-rose-800 dark:bg-rose-950/40 dark:text-rose-200"
                         )}
                       >
                         <span className={cn(
-                          "p-0.5 rounded-full",
-                          transaction.type === 'income' ? "bg-green-500/15 text-green-600" : "bg-red-500/15 text-red-600"
+                          "w-5 h-5 rounded-[5px] flex items-center justify-center shrink-0",
+                          transaction.type === 'income' ? "bg-emerald-200 dark:bg-emerald-800/60 text-emerald-700 dark:text-emerald-200" : "bg-rose-200 dark:bg-rose-800/60 text-rose-700 dark:text-rose-200"
                         )}>
                           {transaction.type === 'income' ? (
                             <ArrowDownLeft className="h-3 w-3" />
@@ -905,11 +1014,20 @@ const Transactions = () => {
                       </span>
 
                       {(() => {
-                        const catStyle = getCategoryTagStyle(transaction.category);
-                        const CatIcon = catStyle.icon;
+                        const cat = getCategoryTagStyle(transaction.category);
+                        const CatIcon = cat.icon;
                         return (
-                          <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border shadow-sm ${catStyle.classes}`}>
-                            <span className={`p-0.5 rounded-full ${catStyle.iconBg}`}>
+                          <span className={cn(
+                            "inline-flex items-center gap-1.5 pl-1.5 pr-2.5 py-0.5 rounded-full border-2 text-xs font-semibold shadow-sm transition-all select-none",
+                            cat.borderClass,
+                            cat.bgClass,
+                            cat.textClass
+                          )}>
+                            <span className={cn(
+                              "w-5 h-5 rounded-[5px] flex items-center justify-center shrink-0",
+                              cat.squircleBgClass,
+                              cat.iconColorClass
+                            )}>
                               <CatIcon className="h-3 w-3" />
                             </span>
                             <span>{transaction.category.charAt(0).toUpperCase() + transaction.category.slice(1)}</span>
@@ -918,21 +1036,20 @@ const Transactions = () => {
                       })()}
 
                       {(() => {
-                        const pmColor = getPaymentMethodColor(transaction.paymentMethod || '');
-                        const PmIcon = getPaymentMethodTagIcon(transaction.paymentMethod || '');
+                        const pm = getPaymentMethodTagStyle(transaction.paymentMethod || '');
+                        const PmIcon = pm.icon;
                         return (
-                          <span 
-                            className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full border shadow-sm"
-                            style={{ 
-                              borderColor: `${pmColor}45`,
-                              backgroundColor: `${pmColor}15`,
-                              color: pmColor
-                            }}
-                          >
-                            <span 
-                              className="p-0.5 rounded-full"
-                              style={{ backgroundColor: `${pmColor}25` }}
-                            >
+                          <span className={cn(
+                            "inline-flex items-center gap-1.5 pl-1.5 pr-2.5 py-0.5 rounded-full border-2 text-xs font-semibold shadow-sm transition-all select-none",
+                            pm.borderClass,
+                            pm.bgClass,
+                            pm.textClass
+                          )}>
+                            <span className={cn(
+                              "w-5 h-5 rounded-[5px] flex items-center justify-center shrink-0",
+                              pm.squircleBgClass,
+                              pm.iconColorClass
+                            )}>
                               <PmIcon className="h-3 w-3" />
                             </span>
                             <span>{transaction.paymentMethod || 'Not specified'}</span>
