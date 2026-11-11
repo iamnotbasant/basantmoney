@@ -116,20 +116,6 @@ const AddGoalForm = ({ onAddGoal }: AddGoalFormProps) => {
       </div>
 
       <div className="space-y-2">
-        <Label>Wallet Source</Label>
-        <Select value={wallet} onValueChange={(value: 'saving' | 'needs' | 'wants') => setWallet(value)}>
-          <SelectTrigger>
-            <SelectValue placeholder="Select wallet" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="saving">Saving Wallet</SelectItem>
-            <SelectItem value="needs">Needs Wallet</SelectItem>
-            <SelectItem value="wants">Wants Wallet</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
-      <div className="space-y-2">
         <Label htmlFor="description">Description (Optional)</Label>
         <Textarea
           id="description"

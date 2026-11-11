@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Trash2, Calendar, Wallet } from 'lucide-react';
+import { Plus, Trash2, Calendar } from 'lucide-react';
 import { FinancialGoal } from '@/types/finance';
 import { format, differenceInDays } from 'date-fns';
 import {
@@ -58,19 +58,6 @@ const GoalCard = ({ goal, onUpdateGoal, onDeleteGoal }: GoalCardProps) => {
         return <Badge variant="destructive">Overdue</Badge>;
       default:
         return <Badge variant="secondary">Active</Badge>;
-    }
-  };
-
-  const getWalletColor = () => {
-    switch (goal.wallet) {
-      case 'saving':
-        return 'text-green-600';
-      case 'needs':
-        return 'text-blue-600';
-      case 'wants':
-        return 'text-purple-600';
-      default:
-        return 'text-gray-600';
     }
   };
 
@@ -147,16 +134,6 @@ const GoalCard = ({ goal, onUpdateGoal, onDeleteGoal }: GoalCardProps) => {
             </div>
             <span className="font-medium">
               {format(new Date(goal.targetDate), 'MMM dd, yyyy')}
-            </span>
-          </div>
-
-          <div className="flex items-center justify-between text-sm">
-            <div className="flex items-center space-x-2">
-              <Wallet className="h-4 w-4 text-muted-foreground" />
-              <span>Wallet:</span>
-            </div>
-            <span className={`font-medium capitalize ${getWalletColor()}`}>
-              {goal.wallet}
             </span>
           </div>
 

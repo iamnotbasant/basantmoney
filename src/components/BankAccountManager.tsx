@@ -36,7 +36,7 @@ import {
   ArrowRightLeft, 
   Building2, 
   Wallet,
-  DollarSign 
+  IndianRupee 
 } from 'lucide-react';
 import { useBankAccounts } from '@/hooks/useBankAccounts';
 import { BankAccount } from '@/types/bank';
@@ -250,8 +250,8 @@ const BankAccountManager = () => {
                 <div className="flex items-center gap-2">
                   <div className="text-right">
                     <div className="flex items-center gap-1 text-lg font-semibold">
-                      <DollarSign className="h-4 w-4" />
-                      {account.balance.toLocaleString()}
+                      <IndianRupee className="h-4 w-4" />
+                      {account.balance.toLocaleString('en-IN')}
                     </div>
                   </div>
                   <div className="flex gap-2 items-center">

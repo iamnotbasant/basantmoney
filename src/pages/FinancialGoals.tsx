@@ -23,9 +23,25 @@ const FinancialGoals = () => {
 
   // Load goals from localStorage on component mount
   useEffect(() => {
+    const currentYear = new Date().getFullYear();
     const storedGoals = localStorage.getItem('financialGoals');
     if (storedGoals) {
-      setGoals(JSON.parse(storedGoals));
+      try {
+        const parsed: FinancialGoal[] = JSON.parse(storedGoals);
+        // If sample goals from 2025 exist, modernize their dates so they aren't permanently overdue
+        const modernized = parsed.map(g => {
+          if (g.id === 'goal-001' && g.targetDate.startsWith('2025')) {
+            return { ...g, targetDate: `${currentYear + 1}-12-31` };
+          }
+          if (g.id === 'goal-002' && g.targetDate.startsWith('2025')) {
+            return { ...g, targetDate: `${currentYear + 1}-06-30` };
+          }
+          return g;
+        });
+        setGoals(modernized);
+      } catch {
+        setGoals([]);
+      }
     } else {
       // Initialize with sample data
       const sampleGoals: FinancialGoal[] = [
@@ -34,7 +50,7 @@ const FinancialGoals = () => {
           title: 'Emergency Fund',
           targetAmount: 100000,
           savedAmount: 25000,
-          targetDate: '2025-12-31',
+          targetDate: `${currentYear + 1}-12-31`,
           wallet: 'saving',
           status: 'active',
           description: 'Build emergency fund for unexpected expenses'
@@ -44,7 +60,7 @@ const FinancialGoals = () => {
           title: 'New Laptop',
           targetAmount: 80000,
           savedAmount: 15000,
-          targetDate: '2025-06-30',
+          targetDate: `${currentYear + 1}-06-30`,
           wallet: 'wants',
           status: 'active',
           description: 'Upgrade to a new laptop for work'

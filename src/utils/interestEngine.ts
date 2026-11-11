@@ -365,6 +365,29 @@ export function evaluateReconciliation(
 
   const unallocated = roundToTwoDecimals(ledgerTotal - walletSum);
 
+  // 0. Check if wallets are retired or balances are zero (wallets system dropped)
+  if (
+    Math.abs(main) <= tolerance &&
+    Math.abs(needs) <= tolerance &&
+    Math.abs(wants) <= tolerance
+  ) {
+    return {
+      canReconcile: true,
+      unallocated: 0,
+      action: 'already_reconciled',
+      savingMoved: 0,
+      needsMoved: 0,
+      wantsMoved: 0,
+      reason: 'Wallets system retired or zero wallet balances. No wallet rebalance needed.',
+      resultingBalances: {
+        savingMain: 0,
+        needs: 0,
+        wants: 0,
+        total: 0,
+      },
+    };
+  }
+
   // 1. Check if already reconciled:
   // Main ≈ ledgerTotal, Needs ≈ 0, Wants ≈ 0, unallocated ≈ 0 (idempotent, second run moves ₹0)
   if (

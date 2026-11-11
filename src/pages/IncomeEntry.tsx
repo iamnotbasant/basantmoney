@@ -314,19 +314,15 @@ const IncomeEntry = () => {
               <CollapsibleSection title="▶ More Options">
                 <div className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="attachment">Attachment (Optional)</Label>
-                    <Input
-                      id="attachment"
-                      type="file"
-                      onChange={handleFileChange}
-                      accept="image/*,.pdf,.doc,.docx"
-                      className="file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/80"
-                    />
-                    {attachment && (
-                      <p className="text-sm text-muted-foreground">
-                        Selected: {attachment.name}
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="attachment">Attachment</Label>
+                      <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded">Cloud storage coming soon</span>
+                    </div>
+                    <div className="flex items-center justify-center w-full h-20 border-2 border-dashed border-border rounded-lg bg-muted/20">
+                      <p className="text-xs text-muted-foreground text-center">
+                        Document attachment will be supported in an upcoming storage release
                       </p>
-                    )}
+                    </div>
                   </div>
                 </div>
               </CollapsibleSection>

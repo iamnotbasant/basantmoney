@@ -54,6 +54,23 @@ export const useInterest = () => {
 
       setLoading(true);
 
+      // Clean up false-positive legacy skipped reconciliation reports from localStorage (zero wallets)
+      try {
+        const cachedRecon = InterestService.getReconciliationReport();
+        if (
+          cachedRecon &&
+          cachedRecon.status === 'skipped' &&
+          cachedRecon.currentBalances &&
+          cachedRecon.currentBalances.savingMain === 0 &&
+          cachedRecon.currentBalances.needs === 0 &&
+          cachedRecon.currentBalances.wants === 0
+        ) {
+          localStorage.removeItem('interest_reconciliation_report');
+        }
+      } catch (e) {
+        // ignore
+      }
+
       const hasRunFirstRun = localStorage.getItem('interest_first_run_completed');
       if (!hasRunFirstRun) {
         try {
@@ -65,7 +82,6 @@ export const useInterest = () => {
           console.log('Interest first run migration completed:', result);
         } catch (e: any) {
           console.error('First run migration error:', e);
-          toast.error(`First-run interest setup failed: ${e?.message || 'Database error'}`);
         }
       } else {
         // App-open catch up (Spec §4 Backup 1)
@@ -73,14 +89,56 @@ export const useInterest = () => {
           await InterestService.checkAndRunCatchUp(user.id);
         } catch (e: any) {
           console.error('Catch-up check error:', e);
-          toast.error(`Interest catch-up failed: ${e?.message || 'Database error'}`);
         }
       }
 
       await refreshData();
+
+      // AUTO-HEAL IN BACKGROUND: If last job is overdue or failed, recalculate automatically
+      try {
+        const runInfo = await InterestService.getLastJobRun();
+        if (runInfo.isOverdue || runInfo.status === 'failed') {
+          console.log('Auto-healing interest calculations in background...');
+          await InterestService.recalculateInterest('app-open', user.id);
+          await refreshData();
+        }
+      } catch (e) {
+        console.warn('Background auto-heal attempt note:', e);
+      }
     };
 
     initialize();
+  }, [user, authLoading, refreshData]);
+
+  // Periodic and tab visibility background auto-catchup
+  useEffect(() => {
+    if (!user || authLoading) return;
+
+    const runBackgroundCatchUp = async () => {
+      try {
+        const updated = await InterestService.checkAndRunCatchUp(user.id);
+        if (updated) {
+          await refreshData();
+        }
+      } catch (e) {
+        // silent background check
+      }
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        runBackgroundCatchUp();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    // Hourly background interval
+    const interval = setInterval(runBackgroundCatchUp, 60 * 60 * 1000);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      clearInterval(interval);
+    };
   }, [user, authLoading, refreshData]);
 
   const recalculateNow = async (fromDate?: string) => {

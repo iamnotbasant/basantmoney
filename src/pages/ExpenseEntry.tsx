@@ -308,23 +308,19 @@ const ExpenseEntry = () => {
             <CollapsibleSection title="More Options" defaultOpen={false}>
               <div className="space-y-4">
                 <div>
-                  <Label htmlFor="attachment">Attachment (Optional)</Label>
+                  <div className="flex items-center justify-between mb-1">
+                    <Label htmlFor="attachment">Attachment</Label>
+                    <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded">Cloud storage coming soon</span>
+                  </div>
                   <div className="mt-1">
-                    <label htmlFor="attachment" className="flex items-center justify-center w-full h-24 border-2 border-dashed border-border rounded-lg cursor-pointer hover:bg-muted/50 transition-colors">
+                    <div className="flex items-center justify-center w-full h-20 border-2 border-dashed border-border rounded-lg bg-muted/20">
                       <div className="text-center">
-                        <Upload className="h-6 w-6 text-muted-foreground mx-auto mb-2" />
-                        <p className="text-sm text-muted-foreground">
-                          {attachment ? attachment.name : "Click to upload receipt or document"}
+                        <Upload className="h-5 w-5 text-muted-foreground mx-auto mb-1" />
+                        <p className="text-xs text-muted-foreground">
+                          Receipt / bill upload will be supported in an upcoming storage release
                         </p>
                       </div>
-                    </label>
-                    <input
-                      id="attachment"
-                      type="file"
-                      onChange={handleAttachmentChange}
-                      className="hidden"
-                      accept="image/*,application/pdf,.doc,.docx"
-                    />
+                    </div>
                   </div>
                 </div>
               </div>

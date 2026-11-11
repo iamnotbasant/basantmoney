@@ -5,6 +5,9 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
+import { useTheme } from 'next-themes';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/components/AuthProvider';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -32,6 +35,8 @@ interface UserSettings {
 const Settings = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { theme, setTheme, resolvedTheme } = useTheme();
+  const { user } = useAuth();
   
   const [settings, setSettings] = useState<UserSettings>({
     currency: '₹',
@@ -60,30 +65,73 @@ const Settings = () => {
     if (storedExpenses) setExpenseData(JSON.parse(storedExpenses));
   }, []);
 
-  const handleResetData = () => {
+  const handleResetData = async () => {
+    try {
+      if (user?.id) {
+        // Delete user's income, expenses, and bank records in Supabase
+        await supabase.from('user_income').delete().eq('user_id', user.id);
+        await supabase.from('user_expenses').delete().eq('user_id', user.id);
+        await supabase.from('user_financial_goals').delete().eq('user_id', user.id);
+      }
+    } catch (err) {
+      console.error('Error clearing user data from Supabase:', err);
+    }
+
+    // Preserve Supabase auth tokens in localStorage so user session isn't broken
+    const authKeys: { [key: string]: string | null } = {};
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && (key.startsWith('sb-') || key.includes('supabase.auth.token'))) {
+        authKeys[key] = localStorage.getItem(key);
+      }
+    }
+
     localStorage.clear();
+
+    // Restore auth tokens
+    Object.entries(authKeys).forEach(([key, val]) => {
+      if (val !== null) localStorage.setItem(key, val);
+    });
+
+    // Notify listeners
+    window.dispatchEvent(new Event('transactionUpdated'));
+    window.dispatchEvent(new Event('bankAccountChanged'));
+
     toast({
       title: "Data Reset",
-      description: "All app data has been cleared",
+      description: "All transaction, goal, and local cache data has been reset",
     });
     navigate('/');
   };
 
-  const handleClearTransactions = () => {
-    const currentBankId = localStorage.getItem('currentBankId');
-    const storagePrefix = currentBankId ? `${currentBankId}_` : '';
+  const handleClearTransactions = async () => {
+    try {
+      if (user?.id) {
+        // Delete actual income and expenses from Supabase
+        await supabase.from('user_income').delete().eq('user_id', user.id);
+        await supabase.from('user_expenses').delete().eq('user_id', user.id);
+      }
+    } catch (err) {
+      console.error('Error clearing transactions from Supabase:', err);
+    }
+
+    const currentBankAccountId = localStorage.getItem('currentBankAccountId');
+    const prefixes = ['', currentBankAccountId ? `${currentBankAccountId}_` : '', currentBankAccountId ? `${currentBankAccountId}:` : ''];
     
-    // Clear all transaction data
-    localStorage.removeItem(`${storagePrefix}incomeData`);
-    localStorage.removeItem(`${storagePrefix}expenseData`);
-    localStorage.removeItem(`${storagePrefix}totalBalance`);
+    // Clear all transaction cache keys
+    prefixes.forEach(prefix => {
+      localStorage.removeItem(`${prefix}incomeData`);
+      localStorage.removeItem(`${prefix}expenseData`);
+      localStorage.removeItem(`${prefix}totalBalance`);
+    });
     
     // Dispatch event to update UI
     window.dispatchEvent(new Event('transactionUpdated'));
+    window.dispatchEvent(new Event('walletDataChanged'));
     
     toast({
       title: "Transactions Cleared",
-      description: "All transactions and balances have been reset to ₹0",
+      description: "All transactions and ledger balances have been reset to ₹0 in backend & local cache",
     });
   };
 
@@ -94,8 +142,9 @@ const Settings = () => {
   };
 
   const handleThemeChange = (checked: boolean) => {
-    const theme: 'light' | 'dark' = checked ? 'dark' : 'light';
-    const updatedSettings = { ...settings, appTheme: theme };
+    const newTheme = checked ? 'dark' : 'light';
+    setTheme(newTheme);
+    const updatedSettings = { ...settings, appTheme: newTheme };
     setSettings(updatedSettings);
     localStorage.setItem('userSettings', JSON.stringify(updatedSettings));
   };
@@ -197,7 +246,7 @@ const Settings = () => {
                 <p className="text-xs text-muted-foreground">Switch between light and dark theme</p>
               </div>
               <Switch
-                checked={settings.appTheme === 'dark'}
+                checked={(resolvedTheme || theme) === 'dark'}
                 onCheckedChange={handleThemeChange}
               />
             </div>

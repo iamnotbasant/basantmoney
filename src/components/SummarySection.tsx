@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { TrendingUp, TrendingDown, DollarSign } from 'lucide-react';
+import { TrendingUp, TrendingDown, IndianRupee } from 'lucide-react';
 import { IncomeData, ExpenseData } from '@/types/finance';
 
 interface SummarySectionProps {
@@ -17,7 +17,7 @@ const SummarySection: React.FC<SummarySectionProps> = ({ incomeData, expenseData
     {
       title: 'Net Balance',
       value: netBalance,
-      icon: DollarSign,
+      icon: IndianRupee,
       bgColor: netBalance >= 0 
         ? 'bg-emerald-500/10 border-emerald-500/20 dark:bg-emerald-500/10 dark:border-emerald-500/30' 
         : 'bg-rose-500/10 border-rose-500/20 dark:bg-rose-500/10 dark:border-rose-500/30',

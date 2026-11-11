@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, DollarSign, TrendingUp, Target, Wallet } from 'lucide-react';
+import { Loader2, IndianRupee, TrendingUp, Target, Building2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const Auth = () => {
@@ -166,20 +166,20 @@ const Auth = () => {
           <div className="space-y-4">
             <div className="flex items-center space-x-2">
               <div className="p-2 rounded-lg bg-primary">
-                <DollarSign className="h-6 w-6 text-primary-foreground" />
+                <IndianRupee className="h-6 w-6 text-primary-foreground" />
               </div>
               <h1 className="text-3xl font-bold text-foreground">Financial Tracker</h1>
             </div>
             <p className="text-lg text-muted-foreground">
-              Take control of your finances with smart wallet management and intelligent tracking.
+              Take control of your finances with multi-bank tracking, real-time analytics, and financial goals.
             </p>
           </div>
 
           <div className="grid gap-4">
             <FeatureCard
-              icon={Wallet}
-              title="Smart Wallet System"
-              description="Organize your money into saving, needs, and wants wallets with automated allocation."
+              icon={Building2}
+              title="Multi-Bank Ledger"
+              description="Track balances across multiple bank accounts with automatic reconciliation and interest accrual."
             />
             <FeatureCard
               icon={TrendingUp}
@@ -200,7 +200,7 @@ const Auth = () => {
             <CardHeader className="space-y-1 text-center">
               <div className="flex justify-center mb-4 lg:hidden">
                 <div className="p-3 rounded-xl bg-primary">
-                  <DollarSign className="h-8 w-8 text-primary-foreground" />
+                  <IndianRupee className="h-8 w-8 text-primary-foreground" />
                 </div>
               </div>
               <CardTitle className="text-2xl font-bold">

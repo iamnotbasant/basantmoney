@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import Header from '@/components/Header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
@@ -17,7 +18,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Calendar, DollarSign, Scale, ArrowRightLeft, TrendingUp, TrendingDown, PieChart, BarChart3, Filter, SortAsc, SortDesc } from 'lucide-react';
+import { Calendar, IndianRupee, Scale, ArrowRightLeft, TrendingUp, TrendingDown, PieChart, BarChart3, Filter, SortAsc, SortDesc } from 'lucide-react';
 import { IncomeData, ExpenseData } from '@/types/finance';
 import { useBankAccounts } from '@/hooks/useBankAccounts';
 import { useIncomeData } from '@/hooks/useIncomeData';
@@ -328,12 +329,14 @@ const Reports = () => {
     .map((item, index) => ({ ...item, fill: DONUT_COLORS[index] }));
 
   return (
-    <div className="container mx-auto py-6 px-4 sm:px-6">
-      <Card className="mb-6">
-        <CardHeader className="pb-4">
-          <CardTitle className="text-2xl sm:text-3xl font-bold">📊 Financial Reports Dashboard</CardTitle>
-          <CardDescription className="text-sm sm:text-base">Comprehensive analytics and visualizations of your financial data</CardDescription>
-        </CardHeader>
+    <div className="min-h-screen bg-background">
+      <Header />
+      <main className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+        <Card className="mb-6">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-2xl sm:text-3xl font-bold">Financial Reports & Analytics</CardTitle>
+            <CardDescription className="text-sm sm:text-base">Comprehensive analytics and visualizations of your financial data</CardDescription>
+          </CardHeader>
         <CardContent className="space-y-6">
           {/* Filter Controls */}
           <Card className="bg-gray-50 border-2 border-dashed border-gray-200">
@@ -899,6 +902,7 @@ const Reports = () => {
           </div>
         </CardContent>
       </Card>
+      </main>
     </div>
   );
 };

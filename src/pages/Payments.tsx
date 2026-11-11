@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import Header from '@/components/Header';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogTrigger } from '@/components/ui/dialog';
@@ -319,63 +320,66 @@ const Payments = () => {
 
     return (
         <div className="min-h-screen bg-background">
-            <header className="bg-background border-b border-border">
-                <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="flex items-center justify-between h-16">
-                        <div className="flex items-center">
-                            <Button variant="ghost" size="sm" onClick={() => navigate('/')} className="mr-4">
-                                <ArrowLeft className="h-4 w-4" />
-                            </Button>
-                            <h1 className="text-xl font-semibold text-foreground">Payments & Default</h1>
-                        </div>
-                        <div className="flex gap-2">
-                            <Dialog open={isUdaarDialogOpen} onOpenChange={setIsUdaarDialogOpen}>
-                                <DialogTrigger asChild>
-                                    <Button variant="outline">
-                                        <PlusCircle className="mr-2 h-4 w-4" /> Add Default
-                                    </Button>
-                                </DialogTrigger>
-                                <AddDefaultDialog
-                                    isOpen={isUdaarDialogOpen}
-                                    onOpenChange={setIsUdaarDialogOpen}
-                                    personName={personName}
-                                    amount={amount}
-                                    description={description}
-                                    type={type}
-                                    setPersonName={setPersonName}
-                                    setAmount={setAmount}
-                                    setDescription={setDescription}
-                                    setType={setType}
-                                    onSubmit={handleAddUdaar}
-                                />
-                            </Dialog>
+            <Header />
 
-                            <Dialog open={isPaymentDialogOpen} onOpenChange={setIsPaymentDialogOpen}>
-                                <DialogTrigger asChild>
-                                    <Button>
-                                        <PlusCircle className="mr-2 h-4 w-4" /> Add Payment
-                                    </Button>
-                                </DialogTrigger>
-                                <AddCustomPaymentDialog
-                                    isOpen={isPaymentDialogOpen}
-                                    onOpenChange={setIsPaymentDialogOpen}
-                                    paymentTitle={paymentTitle}
-                                    paymentAmount={paymentAmount}
-                                    paymentDescription={paymentDescription}
-                                    paymentCategory={paymentCategory}
-                                    setPaymentTitle={setPaymentTitle}
-                                    setPaymentAmount={setPaymentAmount}
-                                    setPaymentDescription={setPaymentDescription}
-                                    setPaymentCategory={setPaymentCategory}
-                                    onSubmit={handleAddCustomPayment}
-                                />
-                            </Dialog>
+            <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-6 border-b border-border">
+                    <div className="flex items-center">
+                        <Button variant="ghost" size="sm" onClick={() => navigate('/')} className="mr-3">
+                            <ArrowLeft className="h-4 w-4" />
+                        </Button>
+                        <div>
+                            <h1 className="text-2xl font-bold tracking-tight text-foreground">Payments & Default</h1>
+                            <p className="text-xs sm:text-sm text-muted-foreground">Track loans, borrowed money (Udaar), and custom payments</p>
                         </div>
                     </div>
-                </div>
-            </header>
+                    <div className="flex gap-2">
+                        <Dialog open={isUdaarDialogOpen} onOpenChange={setIsUdaarDialogOpen}>
+                            <DialogTrigger asChild>
+                                <Button variant="outline">
+                                    <PlusCircle className="mr-2 h-4 w-4" /> Add Default
+                                </Button>
+                            </DialogTrigger>
+                            <AddDefaultDialog
+                                isOpen={isUdaarDialogOpen}
+                                onOpenChange={setIsUdaarDialogOpen}
+                                personName={personName}
+                                amount={amount}
+                                description={description}
+                                type={type}
+                                setPersonName={setPersonName}
+                                setAmount={setAmount}
+                                setDescription={setDescription}
+                                setType={setType}
+                                onSubmit={handleAddUdaar}
+                            />
+                        </Dialog>
 
-            <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                        <Dialog open={isPaymentDialogOpen} onOpenChange={setIsPaymentDialogOpen}>
+                            <DialogTrigger asChild>
+                                <Button>
+                                    <PlusCircle className="mr-2 h-4 w-4" /> Add Payment
+                                </Button>
+                            </DialogTrigger>
+                            <AddCustomPaymentDialog
+                                isOpen={isPaymentDialogOpen}
+                                onOpenChange={setIsPaymentDialogOpen}
+                                paymentTitle={paymentTitle}
+                                paymentAmount={paymentAmount}
+                                paymentDescription={paymentDescription}
+                                paymentCategory={paymentCategory}
+                                setPaymentTitle={setPaymentTitle}
+                                setPaymentAmount={setPaymentAmount}
+                                setPaymentDescription={setPaymentDescription}
+                                setPaymentCategory={setPaymentCategory}
+                                onSubmit={handleAddCustomPayment}
+                            />
+                        </Dialog>
+                    </div>
+                </div>
+            </div>
+
+            <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
                 <PaymentSummaryCards udaarList={udaarList} customPayments={customPayments} />
 
                 <Tabs defaultValue="udaar" className="w-full">

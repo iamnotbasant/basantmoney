@@ -144,7 +144,11 @@ export const InterestSettingsSection: React.FC = () => {
       </div>
 
       {/* Warning card if automatic reconciliation was skipped */}
-      {reconciliationReport?.status === 'skipped' && (
+      {reconciliationReport?.status === 'skipped' &&
+        reconciliationReport.currentBalances &&
+        (reconciliationReport.currentBalances.savingMain > 0 ||
+         reconciliationReport.currentBalances.needs > 0 ||
+         reconciliationReport.currentBalances.wants > 0) && (
         <div className="p-3 bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-700 rounded-lg flex items-start justify-between gap-3 text-sm">
           <div className="flex items-start gap-3">
             <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
