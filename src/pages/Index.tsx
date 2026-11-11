@@ -40,20 +40,25 @@ const Index = () => {
   ];
 
   // Convert Supabase data to local format
-  const incomeData: IncomeData[] = supabaseIncome.map(item => ({
+  const incomeData: IncomeData[] = (supabaseIncome || []).map(item => ({
     id: item.id,
-    source: item.source,
-    amount: Number(item.amount),
-    date: item.date,
-    category: item.category,
+    source: item.source || '',
+    amount: Number(item.amount) || 0,
+    date: item.date || new Date().toISOString().split('T')[0],
+    category: item.category || 'Other',
+    notes: (item as any).notes || '',
+    is_auto_interest: Boolean((item as any).is_auto_interest),
+    wallet_target: (item as any).wallet_target,
+    auto_interest_status: (item as any).auto_interest_status,
   }));
 
-  const expenseData: ExpenseData[] = supabaseExpenses.map(item => ({
+  const expenseData: ExpenseData[] = (supabaseExpenses || []).map(item => ({
     id: item.id,
-    description: item.description,
-    amount: Number(item.amount),
-    date: item.date,
-    category: item.category,
+    description: item.description || '',
+    amount: Number(item.amount) || 0,
+    date: item.date || new Date().toISOString().split('T')[0],
+    category: item.category || 'Other',
+    notes: (item as any).notes,
     deductions: (item.deductions as any) || [],
   }));
 
@@ -64,14 +69,18 @@ const Index = () => {
 
   // Filter data by selected month and year (ONLY for summary cards)
   const filteredIncomeData = incomeData.filter(item => {
+    if (!item?.date) return false;
     const itemDate = new Date(item.date);
+    if (isNaN(itemDate.getTime())) return false;
     const itemMonth = itemDate.getMonth();
     const itemYear = itemDate.getFullYear();
     return itemMonth === selectedMonth && itemYear === selectedYear;
   });
 
   const filteredExpenseData = expenseData.filter(item => {
+    if (!item?.date) return false;
     const itemDate = new Date(item.date);
+    if (isNaN(itemDate.getTime())) return false;
     const itemMonth = itemDate.getMonth();
     const itemYear = itemDate.getFullYear();
     return itemMonth === selectedMonth && itemYear === selectedYear;

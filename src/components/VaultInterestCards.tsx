@@ -2,33 +2,30 @@ import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
 import {
   AlertTriangle,
   CheckCircle2,
   AlertCircle,
   TrendingUp,
-  FileText,
   X,
-  ChevronRight,
   Info,
   Check,
 } from 'lucide-react';
 import { useInterest } from '@/hooks/useInterest';
-import { PendingCorrection } from '@/services/interestService';
 import { getKolkataDateString } from '@/utils/interestEngine';
 import { toast } from 'sonner';
 
 interface VaultInterestCardsProps {
-  incomeData: any[];
+  incomeData?: any[];
 }
 
-export const VaultInterestCards: React.FC<VaultInterestCardsProps> = ({ incomeData }) => {
+export const VaultInterestCards: React.FC<VaultInterestCardsProps> = ({ incomeData = [] }) => {
   const {
     lastJobRun,
-    pendingCorrections,
-    verifiedMonths,
+    pendingCorrections = [],
+    verifiedMonths = [],
     reconciliationReport,
+    isRecalculating = false,
     recalculateNow,
     applyCorrection,
     dismissCorrection,
@@ -44,47 +41,24 @@ export const VaultInterestCards: React.FC<VaultInterestCardsProps> = ({ incomeDa
 
   // Closed months that have an auto interest entry but are not yet verified
   // E.g. October 2026 (2026-10) is closed
-  const unverifiedClosedEntries = incomeData.filter(inc => {
-    if (!inc.is_auto_interest) return false;
-    const m = inc.date.slice(0, 7);
-    if (m >= currentMonth) return false; // Not closed yet
-    if (verifiedMonths.includes(m)) return false; // Already verified
+  const unverifiedClosedEntries = (incomeData || []).filter(inc => {
+    if (!inc?.is_auto_interest) return false;
+    const m = inc.date ? String(inc.date).slice(0, 7) : '';
+    if (!m || m >= currentMonth) return false; // Not closed yet
+    if ((verifiedMonths || []).includes(m)) return false; // Already verified
     return true;
   });
 
   return (
     <div className="space-y-4 mb-6">
-      {/* 1. AUTO-HEALING & CRITICAL FAILURE BANNER */}
-      {isRecalculating ? (
+      {/* 1. AUTO-HEALING & BACKGROUND STATUS INDICATOR */}
+      {isRecalculating && (
         <div className="bg-primary/10 border border-primary/20 text-primary p-3 rounded-lg flex items-center justify-between text-sm animate-pulse">
           <div className="flex items-center gap-2">
             <TrendingUp className="h-4 w-4 animate-spin text-primary shrink-0" />
             <p className="font-medium text-xs sm:text-sm">Updating interest calculations automatically in background...</p>
           </div>
         </div>
-      ) : (
-        lastJobRun?.isOverdue && (
-          <div className="bg-red-600 text-white p-4 rounded-lg shadow-md flex items-center justify-between animate-pulse">
-            <div className="flex items-center gap-3">
-              <AlertTriangle className="h-6 w-6 text-white shrink-0" />
-              <div>
-                <p className="font-bold text-sm sm:text-base">Interest update missed</p>
-                <p className="text-xs sm:text-sm text-red-100">
-                  Last run: {lastJobRun.lastRunAt ? new Date(lastJobRun.lastRunAt).toLocaleString('en-IN') : 'Never'}.
-                  Your interest calculation may be out of date.
-                </p>
-              </div>
-            </div>
-            <Button
-              size="sm"
-              variant="secondary"
-              className="text-red-700 bg-white hover:bg-red-50 font-semibold shrink-0"
-              onClick={() => recalculateNow()}
-            >
-              Tap to recalculate now
-            </Button>
-          </div>
-        )
       )}
 
       {/* 2. RECONCILIATION NOTICE (Spec §6) */}
@@ -92,9 +66,9 @@ export const VaultInterestCards: React.FC<VaultInterestCardsProps> = ({ incomeDa
         reconciliationReport.status === 'skipped' ? (
           // ONLY display if there are actually non-zero wallet balances that were being managed
           reconciliationReport.currentBalances &&
-          (reconciliationReport.currentBalances.savingMain > 0 ||
-           reconciliationReport.currentBalances.needs > 0 ||
-           reconciliationReport.currentBalances.wants > 0) ? (
+          (Number(reconciliationReport.currentBalances.savingMain || 0) > 0 ||
+           Number(reconciliationReport.currentBalances.needs || 0) > 0 ||
+           Number(reconciliationReport.currentBalances.wants || 0) > 0) ? (
             <Card className="border-amber-300 bg-amber-50/80 dark:bg-amber-950/40 dark:border-amber-700">
               <CardContent className="p-4">
                 <div className="flex items-start justify-between gap-2">
@@ -106,7 +80,7 @@ export const VaultInterestCards: React.FC<VaultInterestCardsProps> = ({ incomeDa
                       </p>
                       <p className="text-amber-800 dark:text-amber-300 text-xs">
                         Wallet balances have changed since 10 Nov 2026
-                        {` (Current: Main ₹${reconciliationReport.currentBalances.savingMain.toFixed(2)}, Needs ₹${reconciliationReport.currentBalances.needs.toFixed(2)}, Wants ₹${reconciliationReport.currentBalances.wants.toFixed(2)})`}.
+                        {` (Current: Main ₹${Number(reconciliationReport.currentBalances.savingMain || 0).toFixed(2)}, Needs ₹${Number(reconciliationReport.currentBalances.needs || 0).toFixed(2)}, Wants ₹${Number(reconciliationReport.currentBalances.wants || 0).toFixed(2)})`}.
                         Automatic reconciliation was skipped to protect your balances. Please verify your wallets and sub-wallets manually.
                       </p>
                     </div>
@@ -124,7 +98,9 @@ export const VaultInterestCards: React.FC<VaultInterestCardsProps> = ({ incomeDa
             </Card>
           ) : null
         ) : (
-          (reconciliationReport.savingMoved > 0 || reconciliationReport.needsMoved > 0 || reconciliationReport.wantsMoved > 0) ? (
+          (Number(reconciliationReport.savingMoved || 0) > 0 ||
+           Number(reconciliationReport.needsMoved || 0) > 0 ||
+           Number(reconciliationReport.wantsMoved || 0) > 0) ? (
             <Card className="border-blue-200 bg-blue-50/70 dark:bg-blue-950/30 dark:border-blue-800">
               <CardContent className="p-4">
                 <div className="flex items-start justify-between gap-2">
@@ -156,18 +132,18 @@ export const VaultInterestCards: React.FC<VaultInterestCardsProps> = ({ incomeDa
       )}
 
       {/* 3. PENDING CORRECTION CARDS for LOCKED months (Spec §5) */}
-      {pendingCorrections.map((corr) => (
+      {(pendingCorrections || []).map((corr) => (
         <Card key={corr.month} className="border-amber-300 bg-amber-50/80 dark:bg-amber-950/40 dark:border-amber-700">
           <CardContent className="p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div className="flex items-center gap-3">
               <AlertCircle className="h-5 w-5 text-amber-600 dark:text-amber-400 shrink-0" />
               <div className="text-sm">
                 <p className="font-semibold text-amber-900 dark:text-amber-200">
-                  {corr.monthName} interest needs a ₹{Math.abs(corr.diff).toFixed(2)} correction
+                  {corr.monthName} interest needs a ₹{Math.abs(Number(corr.diff || 0)).toFixed(2)} correction
                 </p>
                 <p className="text-xs text-amber-800 dark:text-amber-300">
                   Because of a backdated entry affecting {corr.monthName}.
-                  Existing locked: ₹{corr.existingAmount.toFixed(2)} • Recomputed: ₹{corr.recomputedAmount.toFixed(2)}.
+                  Existing locked: ₹{Number(corr.existingAmount || 0).toFixed(2)} • Recomputed: ₹{Number(corr.recomputedAmount || 0).toFixed(2)}.
                 </p>
               </div>
             </div>
@@ -193,10 +169,10 @@ export const VaultInterestCards: React.FC<VaultInterestCardsProps> = ({ incomeDa
       ))}
 
       {/* 4. MONTHLY VERIFICATION CARDS for CLOSED months (Spec §9) */}
-      {unverifiedClosedEntries.map((entry) => {
-        const m = entry.date.slice(0, 7);
+      {(unverifiedClosedEntries || []).map((entry) => {
+        const m = entry.date ? String(entry.date).slice(0, 7) : '';
         const monthName = (entry.notes || '').replace(' savings interest', '') || m;
-        const computedAmt = Number(entry.amount);
+        const computedAmt = Number(entry.amount || 0);
         const isOpen = showVerifyInput[m] || false;
         const enteredVal = verificationInput[m] ?? computedAmt.toString();
 
@@ -278,4 +254,5 @@ export const VaultInterestCards: React.FC<VaultInterestCardsProps> = ({ incomeDa
     </div>
   );
 };
+
 export default VaultInterestCards;
