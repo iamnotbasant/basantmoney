@@ -53,6 +53,10 @@ const formatYAxis = (val: number) => {
   return `${sign}₹${abs}`;
 };
 
+// Growth % is meaningless when the previous period's income is ~zero
+// (e.g. +791% from a ₹6 base). Below this base the badge shows '—'.
+const MIN_GROWTH_BASE = 100;
+
 export const AnalyticsHero: React.FC<AnalyticsHeroProps> = ({
   incomeData = [],
   expenseData = [],
@@ -113,7 +117,7 @@ export const AnalyticsHero: React.FC<AnalyticsHeroProps> = ({
 
         const net = monthIncome - monthExpenses;
         let growth: number | null = null;
-        if (prevIncome > 0 && monthIncome > 0) {
+        if (prevIncome >= MIN_GROWTH_BASE && monthIncome > 0) {
           growth = Math.round(((monthIncome - prevIncome) / prevIncome) * 100);
         }
         prevIncome = monthIncome;
@@ -165,7 +169,7 @@ export const AnalyticsHero: React.FC<AnalyticsHeroProps> = ({
 
         const net = weekIncome - weekExpenses;
         let growth: number | null = null;
-        if (prevIncome > 0 && weekIncome > 0) {
+        if (prevIncome >= MIN_GROWTH_BASE && weekIncome > 0) {
           growth = Math.round(((weekIncome - prevIncome) / prevIncome) * 100);
         }
         prevIncome = weekIncome;
@@ -214,7 +218,7 @@ export const AnalyticsHero: React.FC<AnalyticsHeroProps> = ({
 
         const net = qIncome - qExpenses;
         let growth: number | null = null;
-        if (prevIncome > 0 && qIncome > 0) {
+        if (prevIncome >= MIN_GROWTH_BASE && qIncome > 0) {
           growth = Math.round(((qIncome - prevIncome) / prevIncome) * 100);
         }
         prevIncome = qIncome;
@@ -251,7 +255,7 @@ export const AnalyticsHero: React.FC<AnalyticsHeroProps> = ({
 
       const net = yIncome - yExpenses;
       let growth: number | null = null;
-      if (prevIncome > 0 && yIncome > 0) {
+      if (prevIncome >= MIN_GROWTH_BASE && yIncome > 0) {
         growth = Math.round(((yIncome - prevIncome) / prevIncome) * 100);
       }
       prevIncome = yIncome;
@@ -495,7 +499,7 @@ export const AnalyticsHero: React.FC<AnalyticsHeroProps> = ({
                     <div className="rounded-xl border border-border/80 bg-popover/95 p-3.5 shadow-xl backdrop-blur-md text-xs space-y-2 min-w-[190px]">
                       <div className="flex items-center justify-between border-b border-border/60 pb-1.5">
                         <span className="font-semibold text-foreground">{point.fullLabel}</span>
-                        {point.growth !== null && (
+                        {point.growth !== null ? (
                           <span
                             className={cn(
                               'px-1.5 py-0.5 rounded-full text-[10px] font-semibold',
@@ -506,6 +510,13 @@ export const AnalyticsHero: React.FC<AnalyticsHeroProps> = ({
                           >
                             {point.growth >= 0 ? `+${point.growth}%` : `${point.growth}%`}
                           </span>
+                        ) : (
+                          <span
+                            className="px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-muted text-muted-foreground"
+                            title="Too little prior income to compare"
+                          >
+                            —
+                          </span>
                         )}
                       </div>
                       <div className="space-y-1">
@@ -515,8 +526,8 @@ export const AnalyticsHero: React.FC<AnalyticsHeroProps> = ({
                               <span className="h-2 w-2 rounded-full bg-foreground" />
                               Income:
                             </span>
-                            <span className="font-semibold text-foreground font-mono">
-                              ₹{point.income.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                            <span className="font-semibold text-foreground tabular-nums">
+                              ₹{point.income.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                             </span>
                           </div>
                         )}
@@ -526,7 +537,7 @@ export const AnalyticsHero: React.FC<AnalyticsHeroProps> = ({
                               <span className="h-2 w-2 rounded-full border border-muted-foreground" />
                               Expenses:
                             </span>
-                            <span className="font-semibold text-foreground font-mono">
+                            <span className="font-semibold text-foreground tabular-nums">
                               ₹{point.expenses.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                             </span>
                           </div>
@@ -541,7 +552,7 @@ export const AnalyticsHero: React.FC<AnalyticsHeroProps> = ({
                             <span className="text-muted-foreground">Net:</span>
                             <span
                               className={cn(
-                                'font-mono font-bold',
+                                'font-bold tabular-nums',
                                 point.net >= 0
                                   ? 'text-emerald-600 dark:text-emerald-400'
                                   : 'text-rose-600 dark:text-rose-400'

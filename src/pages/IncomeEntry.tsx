@@ -152,7 +152,7 @@ const IncomeEntry = () => {
         return;
       }
 
-      toast.success(`₹${incomeAmount.toLocaleString()} income added to account balance!`);
+      toast.success(`₹${incomeAmount.toLocaleString('en-IN')} income added to account balance!`);
 
       // Reset form
       setSource('');
@@ -353,7 +353,7 @@ const IncomeEntry = () => {
                       <div className="text-sm text-muted-foreground">{entry.date}</div>
                     </div>
                     <div className="text-lg font-semibold text-foreground">
-                      ₹{Number(entry.amount).toLocaleString()}
+                      ₹{Number(entry.amount).toLocaleString('en-IN')}
                     </div>
                   </div>
                 ))}

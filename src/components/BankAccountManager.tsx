@@ -348,7 +348,7 @@ const BankAccountManager = () => {
                         <SelectContent>
                           {bankAccounts.map((account) => (
                             <SelectItem key={account.id} value={account.id}>
-                              {account.name} - ₹{account.balance.toLocaleString()}
+                              {account.name} - ₹{account.balance.toLocaleString('en-IN')}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -365,7 +365,7 @@ const BankAccountManager = () => {
                             .filter(account => account.id !== fromAccountId)
                             .map((account) => (
                               <SelectItem key={account.id} value={account.id}>
-                                {account.name} - ₹{account.balance.toLocaleString()}
+                                {account.name} - ₹{account.balance.toLocaleString('en-IN')}
                               </SelectItem>
                             ))}
                         </SelectContent>
