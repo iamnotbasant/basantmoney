@@ -1,14 +1,16 @@
 import React, { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Wallet, CreditCard, PiggyBank, Target, BarChart3, Settings, Menu, X, LogOut, User, TrendingUp } from "lucide-react";
+import { Wallet, CreditCard, PiggyBank, Target, BarChart3, Settings, Menu, X, LogOut, User, TrendingUp, Sun, Moon } from "lucide-react";
 import { useAuth } from "@/components/AuthProvider";
 import { useToast } from "@/hooks/use-toast";
+import { useTheme } from "next-themes";
 
 const Header = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, signOut } = useAuth();
   const { toast } = useToast();
+  const { theme, setTheme } = useTheme();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const handleMobileNav = (path: string) => {
@@ -97,6 +99,20 @@ const Header = () => {
               </span>
             </div>
 
+            {/* Theme Toggle */}
+            <button
+              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+              className="p-2 text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-colors"
+              title={theme === 'dark' ? "Switch to White theme" : "Switch to Dark theme"}
+              aria-label="Toggle theme"
+            >
+              {theme === 'dark' ? (
+                <Sun className="h-4 w-4 text-amber-500" />
+              ) : (
+                <Moon className="h-4 w-4" />
+              )}
+            </button>
+
             {/* Settings */}
             <button
               onClick={() => navigate("/settings")}
@@ -155,6 +171,14 @@ const Header = () => {
                 <span className="truncate">{user?.email}</span>
               </div>
               
+              <button
+                onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+                className="w-full flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 text-muted-foreground hover:text-foreground hover:bg-accent"
+              >
+                {theme === 'dark' ? <Sun className="h-4 w-4 text-amber-500" /> : <Moon className="h-4 w-4" />}
+                <span>{theme === 'dark' ? "Switch to White Theme" : "Switch to Dark Theme"}</span>
+              </button>
+
               <button
                 onClick={() => handleMobileNav("/settings")}
                 className={`${getNavLinkClass("/settings", true)}`}
