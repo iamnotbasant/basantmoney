@@ -5,7 +5,31 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Filter, Trash2, Loader2, Download } from 'lucide-react';
+import { 
+  Plus, 
+  Filter, 
+  Trash2, 
+  Loader2, 
+  Download,
+  Briefcase,
+  Percent,
+  Coins,
+  Utensils,
+  ShoppingBag,
+  Car,
+  Home,
+  HeartPulse,
+  Film,
+  BookOpen,
+  Tag,
+  CreditCard,
+  Wallet,
+  Building2,
+  Shield,
+  Sparkles,
+  ArrowDownLeft,
+  ArrowUpRight
+} from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -373,6 +397,95 @@ const Transactions = () => {
     });
   };
 
+  const getCategoryTagStyle = (categoryName: string) => {
+    const c = (categoryName || '').toLowerCase();
+    if (c.includes('interest')) {
+      return {
+        icon: Percent,
+        classes: 'border-emerald-500/30 bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-500/40',
+        iconBg: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-300'
+      };
+    }
+    if (c.includes('salary') || c.includes('freelance') || c.includes('job') || c.includes('work') || c.includes('business')) {
+      return {
+        icon: Briefcase,
+        classes: 'border-teal-500/30 bg-teal-50 text-teal-700 dark:bg-teal-950/40 dark:text-teal-300 dark:border-teal-500/40',
+        iconBg: 'bg-teal-500/15 text-teal-600 dark:text-teal-300'
+      };
+    }
+    if (c.includes('food') || c.includes('grocer') || c.includes('rest') || c.includes('dining')) {
+      return {
+        icon: Utensils,
+        classes: 'border-orange-500/30 bg-orange-50 text-orange-700 dark:bg-orange-950/40 dark:text-orange-300 dark:border-orange-500/40',
+        iconBg: 'bg-orange-500/15 text-orange-600 dark:text-orange-300'
+      };
+    }
+    if (c.includes('shop') || c.includes('cloth') || c.includes('mall') || c.includes('store')) {
+      return {
+        icon: ShoppingBag,
+        classes: 'border-purple-500/30 bg-purple-50 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-500/40',
+        iconBg: 'bg-purple-500/15 text-purple-600 dark:text-purple-300'
+      };
+    }
+    if (c.includes('travel') || c.includes('fuel') || c.includes('cab') || c.includes('uber') || c.includes('car') || c.includes('transport')) {
+      return {
+        icon: Car,
+        classes: 'border-blue-500/30 bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-500/40',
+        iconBg: 'bg-blue-500/15 text-blue-600 dark:text-blue-300'
+      };
+    }
+    if (c.includes('rent') || c.includes('bill') || c.includes('home') || c.includes('util') || c.includes('house')) {
+      return {
+        icon: Home,
+        classes: 'border-amber-500/30 bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-500/40',
+        iconBg: 'bg-amber-500/15 text-amber-600 dark:text-amber-300'
+      };
+    }
+    if (c.includes('health') || c.includes('med') || c.includes('doctor') || c.includes('gym')) {
+      return {
+        icon: HeartPulse,
+        classes: 'border-rose-500/30 bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-500/40',
+        iconBg: 'bg-rose-500/15 text-rose-600 dark:text-rose-300'
+      };
+    }
+    if (c.includes('entertain') || c.includes('movie') || c.includes('subscript') || c.includes('game')) {
+      return {
+        icon: Film,
+        classes: 'border-pink-500/30 bg-pink-50 text-pink-700 dark:bg-pink-950/40 dark:text-pink-300 dark:border-pink-500/40',
+        iconBg: 'bg-pink-500/15 text-pink-600 dark:text-pink-300'
+      };
+    }
+    if (c.includes('education') || c.includes('book') || c.includes('course') || c.includes('study')) {
+      return {
+        icon: BookOpen,
+        classes: 'border-indigo-500/30 bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300 dark:border-indigo-500/40',
+        iconBg: 'bg-indigo-500/15 text-indigo-600 dark:text-indigo-300'
+      };
+    }
+    return {
+      icon: Tag,
+      classes: 'border-sky-500/30 bg-sky-50 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300 dark:border-sky-500/40',
+      iconBg: 'bg-sky-500/15 text-sky-600 dark:text-sky-300'
+    };
+  };
+
+  const getPaymentMethodTagIcon = (methodName: string) => {
+    const m = (methodName || '').toLowerCase();
+    if (m.includes('upi') || m.includes('gpay') || m.includes('phonepe') || m.includes('paytm')) {
+      return Sparkles;
+    }
+    if (m.includes('card') || m.includes('credit') || m.includes('debit')) {
+      return CreditCard;
+    }
+    if (m.includes('bank') || m.includes('net') || m.includes('transfer') || m.includes('slice')) {
+      return Building2;
+    }
+    if (m.includes('cash')) {
+      return Coins;
+    }
+    return Wallet;
+  };
+
   const getFilteredCategories = () => {
     if (!editingTransaction) return [];
     return categories.filter((cat: Category) => cat.type === editingTransaction.type);
@@ -633,25 +746,42 @@ const Transactions = () => {
                            </div>
                          </TableCell>
                         <TableCell className="py-4">
-                          <Badge variant="secondary" className="transition-all duration-200 text-xs">
-                            {transaction.category.charAt(0).toUpperCase() + transaction.category.slice(1)}
-                          </Badge>
+                          {(() => {
+                            const catStyle = getCategoryTagStyle(transaction.category);
+                            const CatIcon = catStyle.icon;
+                            return (
+                              <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border shadow-sm transition-all duration-200 ${catStyle.classes}`}>
+                                <span className={`p-0.5 rounded-full ${catStyle.iconBg}`}>
+                                  <CatIcon className="h-3 w-3" />
+                                </span>
+                                <span>{transaction.category.charAt(0).toUpperCase() + transaction.category.slice(1)}</span>
+                              </span>
+                            );
+                          })()}
                         </TableCell>
                         <TableCell className="py-4">
-                          <Badge 
-                            variant="outline" 
-                            className="transition-all duration-200 text-xs"
-                            style={{ 
-                              borderColor: getPaymentMethodColor(transaction.paymentMethod || ''),
-                              color: getPaymentMethodColor(transaction.paymentMethod || '')
-                            }}
-                          >
-                            <div 
-                              className="w-2 h-2 rounded-full mr-2" 
-                              style={{ backgroundColor: getPaymentMethodColor(transaction.paymentMethod || '') }}
-                            />
-                            {transaction.paymentMethod || 'Not specified'}
-                          </Badge>
+                          {(() => {
+                            const pmColor = getPaymentMethodColor(transaction.paymentMethod || '');
+                            const PmIcon = getPaymentMethodTagIcon(transaction.paymentMethod || '');
+                            return (
+                              <span 
+                                className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full border shadow-sm transition-all duration-200"
+                                style={{ 
+                                  borderColor: `${pmColor}45`,
+                                  backgroundColor: `${pmColor}15`,
+                                  color: pmColor
+                                }}
+                              >
+                                <span 
+                                  className="p-0.5 rounded-full"
+                                  style={{ backgroundColor: `${pmColor}25` }}
+                                >
+                                  <PmIcon className="h-3 w-3" />
+                                </span>
+                                <span>{transaction.paymentMethod || 'Not specified'}</span>
+                              </span>
+                            );
+                          })()}
                         </TableCell>
                         <TableCell className="text-right py-4">
                           <span className={`font-bold text-lg transition-all duration-200 ${
@@ -753,34 +883,62 @@ const Transactions = () => {
                       </div>
                     )}
                     <div className="flex items-center gap-2 mb-2 flex-wrap">
-                      <Badge 
-                        variant="outline" 
+                      <span 
                         className={cn(
-                          "text-xs font-medium",
+                          "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border shadow-sm",
                           transaction.type === 'income' 
-                            ? "text-green-700 border-green-200 dark:text-green-300 dark:border-green-800" 
-                            : "text-red-700 border-red-200 dark:text-red-300 dark:border-red-800"
+                            ? "bg-green-50 text-green-700 border-green-500/30 dark:bg-green-950/40 dark:text-green-300 dark:border-green-500/40" 
+                            : "bg-red-50 text-red-700 border-red-500/30 dark:bg-red-950/40 dark:text-red-300 dark:border-red-500/40"
                         )}
                       >
-                        {transaction.type === 'income' ? 'Income' : 'Expense'}
-                      </Badge>
-                      <Badge variant="secondary" className="text-xs">
-                        {transaction.category.charAt(0).toUpperCase() + transaction.category.slice(1)}
-                      </Badge>
-                      <Badge 
-                        variant="outline" 
-                        className="text-xs"
-                        style={{ 
-                          borderColor: getPaymentMethodColor(transaction.paymentMethod || ''),
-                          color: getPaymentMethodColor(transaction.paymentMethod || '')
-                        }}
-                      >
-                        <div 
-                          className="w-2 h-2 rounded-full mr-1" 
-                          style={{ backgroundColor: getPaymentMethodColor(transaction.paymentMethod || '') }}
-                        />
-                        {transaction.paymentMethod || 'Not specified'}
-                      </Badge>
+                        <span className={cn(
+                          "p-0.5 rounded-full",
+                          transaction.type === 'income' ? "bg-green-500/15 text-green-600" : "bg-red-500/15 text-red-600"
+                        )}>
+                          {transaction.type === 'income' ? (
+                            <ArrowDownLeft className="h-3 w-3" />
+                          ) : (
+                            <ArrowUpRight className="h-3 w-3" />
+                          )}
+                        </span>
+                        <span>{transaction.type === 'income' ? 'Income' : 'Expense'}</span>
+                      </span>
+
+                      {(() => {
+                        const catStyle = getCategoryTagStyle(transaction.category);
+                        const CatIcon = catStyle.icon;
+                        return (
+                          <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border shadow-sm ${catStyle.classes}`}>
+                            <span className={`p-0.5 rounded-full ${catStyle.iconBg}`}>
+                              <CatIcon className="h-3 w-3" />
+                            </span>
+                            <span>{transaction.category.charAt(0).toUpperCase() + transaction.category.slice(1)}</span>
+                          </span>
+                        );
+                      })()}
+
+                      {(() => {
+                        const pmColor = getPaymentMethodColor(transaction.paymentMethod || '');
+                        const PmIcon = getPaymentMethodTagIcon(transaction.paymentMethod || '');
+                        return (
+                          <span 
+                            className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full border shadow-sm"
+                            style={{ 
+                              borderColor: `${pmColor}45`,
+                              backgroundColor: `${pmColor}15`,
+                              color: pmColor
+                            }}
+                          >
+                            <span 
+                              className="p-0.5 rounded-full"
+                              style={{ backgroundColor: `${pmColor}25` }}
+                            >
+                              <PmIcon className="h-3 w-3" />
+                            </span>
+                            <span>{transaction.paymentMethod || 'Not specified'}</span>
+                          </span>
+                        );
+                      })()}
                     </div>
                     <p className="text-xs text-muted-foreground mt-2">Double tap to edit</p>
                   </div>
