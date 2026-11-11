@@ -86,8 +86,8 @@ const RecentTransactions = () => {
                 <div className="flex items-center space-x-3 min-w-0">
                   <div className={`p-2.5 rounded-xl shrink-0 ${
                     transaction.type === 'income' 
-                      ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20' 
-                      : 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20'
+                      ? 'bg-green-500/10 text-green-600 dark:text-green-400 border border-green-500/20' 
+                      : 'bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20'
                   }`}>
                     {transaction.type === 'income' ? (
                       <TrendingUp className="h-4 w-4" />
@@ -110,7 +110,7 @@ const RecentTransactions = () => {
                 <div className="text-right shrink-0 pl-3">
                   <p className={`font-semibold ${
                     transaction.type === 'income' 
-                      ? 'text-emerald-600 dark:text-emerald-400' 
+                      ? 'text-green-600 dark:text-green-400' 
                       : 'text-foreground'
                   }`}>
                     {transaction.type === 'income' ? '+' : '-'}₹{transaction.amount.toLocaleString('en-IN')}

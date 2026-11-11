@@ -19,29 +19,29 @@ const SummarySection: React.FC<SummarySectionProps> = ({ incomeData, expenseData
       value: netBalance,
       icon: IndianRupee,
       bgColor: netBalance >= 0 
-        ? 'bg-emerald-500/10 border-emerald-500/20 dark:bg-emerald-500/10 dark:border-emerald-500/30' 
-        : 'bg-rose-500/10 border-rose-500/20 dark:bg-rose-500/10 dark:border-rose-500/30',
-      iconColor: netBalance >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400',
-      textColor: netBalance >= 0 ? 'text-emerald-700 dark:text-emerald-300' : 'text-rose-700 dark:text-rose-300',
-      iconBg: netBalance >= 0 ? 'bg-emerald-500/20 dark:bg-emerald-500/20' : 'bg-rose-500/20 dark:bg-rose-500/20'
+        ? 'bg-green-500/10 border-green-500/20 dark:bg-green-500/10 dark:border-green-500/30' 
+        : 'bg-red-500/10 border-red-500/20 dark:bg-red-500/10 dark:border-red-500/30',
+      iconColor: netBalance >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400',
+      textColor: netBalance >= 0 ? 'text-green-700 dark:text-green-300' : 'text-red-700 dark:text-red-300',
+      iconBg: netBalance >= 0 ? 'bg-green-500/20 dark:bg-green-500/20' : 'bg-red-500/20 dark:bg-red-500/20'
     },
     {
       title: 'Total Income',
       value: totalIncome,
       icon: TrendingUp,
-      bgColor: 'bg-emerald-500/10 border-emerald-500/20 dark:bg-emerald-500/10 dark:border-emerald-500/30',
-      iconColor: 'text-emerald-600 dark:text-emerald-400',
-      textColor: 'text-emerald-700 dark:text-emerald-300',
-      iconBg: 'bg-emerald-500/20 dark:bg-emerald-500/20'
+      bgColor: 'bg-green-500/10 border-green-500/20 dark:bg-green-500/10 dark:border-green-500/30',
+      iconColor: 'text-green-600 dark:text-green-400',
+      textColor: 'text-green-700 dark:text-green-300',
+      iconBg: 'bg-green-500/20 dark:bg-green-500/20'
     },
     {
       title: 'Total Expenses',
       value: totalExpenses,
       icon: TrendingDown,
-      bgColor: 'bg-rose-500/10 border-rose-500/20 dark:bg-rose-500/10 dark:border-rose-500/30',
-      iconColor: 'text-rose-600 dark:text-rose-400',
-      textColor: 'text-rose-700 dark:text-rose-300',
-      iconBg: 'bg-rose-500/20 dark:bg-rose-500/20'
+      bgColor: 'bg-red-500/10 border-red-500/20 dark:bg-red-500/10 dark:border-red-500/30',
+      iconColor: 'text-red-600 dark:text-red-400',
+      textColor: 'text-red-700 dark:text-red-300',
+      iconBg: 'bg-red-500/20 dark:bg-red-500/20'
     }
   ];
 

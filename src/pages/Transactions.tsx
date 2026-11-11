@@ -583,7 +583,7 @@ const Transactions = () => {
                                      ? 'bg-amber-600 hover:bg-amber-700 text-white'
                                      : transaction.auto_interest_status === 'locked'
                                      ? 'bg-slate-700 text-white'
-                                     : 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                                     : 'bg-green-600 hover:bg-green-700 text-white'
                                  }`}
                                  onClick={(e) => {
                                    e.stopPropagation();
@@ -707,7 +707,7 @@ const Transactions = () => {
                               ? 'bg-amber-600 hover:bg-amber-700 text-white'
                               : transaction.auto_interest_status === 'locked'
                               ? 'bg-slate-700 text-white'
-                              : 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                              : 'bg-green-600 hover:bg-green-700 text-white'
                           }`}
                           onClick={(e) => {
                             e.stopPropagation();
