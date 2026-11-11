@@ -30,6 +30,21 @@ import {
   ArrowDownLeft,
   ArrowUpRight
 } from 'lucide-react';
+import {
+  IconDigital,
+  IconFinance,
+  IconSimple,
+  IconFast,
+  IconSecure,
+  IconFluid,
+  IconPercent,
+  IconFood,
+  IconShopping,
+  IconTransport,
+  IconHome,
+  IconCoins,
+  IconWallet
+} from '@/components/SolidPillIcons';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -401,7 +416,7 @@ const Transactions = () => {
     const c = (categoryName || '').toLowerCase();
     if (c.includes('interest')) {
       return {
-        icon: Percent,
+        icon: IconPercent,
         borderClass: 'border-emerald-500 dark:border-emerald-500',
         bgClass: 'bg-emerald-50/90 dark:bg-emerald-950/40',
         textClass: 'text-emerald-800 dark:text-emerald-200',
@@ -411,7 +426,7 @@ const Transactions = () => {
     }
     if (c.includes('salary') || c.includes('freelance') || c.includes('job') || c.includes('work') || c.includes('business')) {
       return {
-        icon: Briefcase,
+        icon: IconFinance,
         borderClass: 'border-teal-500 dark:border-teal-500',
         bgClass: 'bg-teal-50/90 dark:bg-teal-950/40',
         textClass: 'text-teal-800 dark:text-teal-200',
@@ -421,7 +436,7 @@ const Transactions = () => {
     }
     if (c.includes('food') || c.includes('grocer') || c.includes('rest') || c.includes('dining')) {
       return {
-        icon: Utensils,
+        icon: IconFood,
         borderClass: 'border-orange-500 dark:border-orange-500',
         bgClass: 'bg-orange-50/90 dark:bg-orange-950/40',
         textClass: 'text-orange-900 dark:text-orange-200',
@@ -431,7 +446,7 @@ const Transactions = () => {
     }
     if (c.includes('shop') || c.includes('cloth') || c.includes('mall') || c.includes('store')) {
       return {
-        icon: ShoppingBag,
+        icon: IconShopping,
         borderClass: 'border-violet-500 dark:border-violet-500',
         bgClass: 'bg-violet-50/90 dark:bg-violet-950/40',
         textClass: 'text-violet-800 dark:text-violet-200',
@@ -441,7 +456,7 @@ const Transactions = () => {
     }
     if (c.includes('travel') || c.includes('fuel') || c.includes('cab') || c.includes('uber') || c.includes('car') || c.includes('transport')) {
       return {
-        icon: Car,
+        icon: IconTransport,
         borderClass: 'border-amber-500 dark:border-amber-500',
         bgClass: 'bg-amber-50/90 dark:bg-amber-950/40',
         textClass: 'text-amber-900 dark:text-amber-200',
@@ -451,7 +466,7 @@ const Transactions = () => {
     }
     if (c.includes('rent') || c.includes('bill') || c.includes('home') || c.includes('util') || c.includes('house')) {
       return {
-        icon: Home,
+        icon: IconHome,
         borderClass: 'border-sky-500 dark:border-sky-500',
         bgClass: 'bg-sky-50/90 dark:bg-sky-950/40',
         textClass: 'text-sky-800 dark:text-sky-200',
@@ -490,7 +505,7 @@ const Transactions = () => {
       };
     }
     return {
-      icon: Tag,
+      icon: IconSimple,
       borderClass: 'border-blue-500 dark:border-blue-500',
       bgClass: 'bg-blue-50/90 dark:bg-blue-950/40',
       textClass: 'text-blue-800 dark:text-blue-200',
@@ -503,7 +518,7 @@ const Transactions = () => {
     const m = (methodName || '').toLowerCase();
     if (m.includes('upi') || m.includes('gpay') || m.includes('phonepe') || m.includes('paytm')) {
       return {
-        icon: Sparkles,
+        icon: IconFluid,
         borderClass: 'border-cyan-500 dark:border-cyan-500',
         bgClass: 'bg-cyan-50/90 dark:bg-cyan-950/40',
         textClass: 'text-cyan-800 dark:text-cyan-200',
@@ -513,8 +528,8 @@ const Transactions = () => {
     }
     if (m.includes('card') || m.includes('credit') || m.includes('debit')) {
       return {
-        icon: CreditCard,
-        borderClass: 'border-indigo-600 dark:border-indigo-500',
+        icon: IconSecure,
+        borderClass: 'border-indigo-700 dark:border-indigo-500',
         bgClass: 'bg-indigo-50/90 dark:bg-indigo-950/40',
         textClass: 'text-indigo-900 dark:text-indigo-200',
         squircleBgClass: 'bg-indigo-200 dark:bg-indigo-800/70',
@@ -523,7 +538,7 @@ const Transactions = () => {
     }
     if (m.includes('bank') || m.includes('net') || m.includes('transfer') || m.includes('slice')) {
       return {
-        icon: Building2,
+        icon: IconDigital,
         borderClass: 'border-blue-500 dark:border-blue-500',
         bgClass: 'bg-blue-50/90 dark:bg-blue-950/40',
         textClass: 'text-blue-800 dark:text-blue-200',
@@ -533,7 +548,7 @@ const Transactions = () => {
     }
     if (m.includes('cash')) {
       return {
-        icon: Coins,
+        icon: IconCoins,
         borderClass: 'border-emerald-600 dark:border-emerald-500',
         bgClass: 'bg-emerald-50/90 dark:bg-emerald-950/40',
         textClass: 'text-emerald-800 dark:text-emerald-200',
@@ -542,7 +557,7 @@ const Transactions = () => {
       };
     }
     return {
-      icon: Wallet,
+      icon: IconWallet,
       borderClass: 'border-violet-500 dark:border-violet-500',
       bgClass: 'bg-violet-50/90 dark:bg-violet-950/40',
       textClass: 'text-violet-800 dark:text-violet-200',
@@ -834,17 +849,17 @@ const Transactions = () => {
                             const CatIcon = cat.icon;
                             return (
                               <span className={cn(
-                                "inline-flex items-center gap-2 pl-1.5 pr-3 py-1 rounded-full border-2 shadow-sm text-xs font-semibold tracking-tight transition-all select-none",
+                                "inline-flex items-center gap-2 p-0.5 pl-1 pr-3 rounded-full border-2 shadow-sm text-xs font-bold tracking-tight select-none transition-all",
                                 cat.borderClass,
                                 cat.bgClass,
                                 cat.textClass
                               )}>
                                 <span className={cn(
-                                  "w-6 h-6 rounded-[7px] flex items-center justify-center shrink-0",
+                                  "w-7 h-7 rounded-[8px] flex items-center justify-center shrink-0 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4)]",
                                   cat.squircleBgClass,
                                   cat.iconColorClass
                                 )}>
-                                  <CatIcon className="h-3.5 w-3.5" />
+                                  <CatIcon className="h-4 w-4" />
                                 </span>
                                 <span className="truncate max-w-[130px]">{transaction.category.charAt(0).toUpperCase() + transaction.category.slice(1)}</span>
                               </span>
@@ -857,17 +872,17 @@ const Transactions = () => {
                             const PmIcon = pm.icon;
                             return (
                               <span className={cn(
-                                "inline-flex items-center gap-2 pl-1.5 pr-3 py-1 rounded-full border-2 shadow-sm text-xs font-semibold tracking-tight transition-all select-none",
+                                "inline-flex items-center gap-2 p-0.5 pl-1 pr-3 rounded-full border-2 shadow-sm text-xs font-bold tracking-tight select-none transition-all",
                                 pm.borderClass,
                                 pm.bgClass,
                                 pm.textClass
                               )}>
                                 <span className={cn(
-                                  "w-6 h-6 rounded-[7px] flex items-center justify-center shrink-0",
+                                  "w-7 h-7 rounded-[8px] flex items-center justify-center shrink-0 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4)]",
                                   pm.squircleBgClass,
                                   pm.iconColorClass
                                 )}>
-                                  <PmIcon className="h-3.5 w-3.5" />
+                                  <PmIcon className="h-4 w-4" />
                                 </span>
                                 <span className="truncate max-w-[140px]">{transaction.paymentMethod || 'Not specified'}</span>
                               </span>
@@ -947,9 +962,9 @@ const Transactions = () => {
                             {transaction.is_manually_edited ? (
                               <RotateCcw className="h-2.5 w-2.5" />
                             ) : transaction.auto_interest_status === 'locked' ? (
-                              <Shield className="h-2.5 w-2.5" />
+                              <IconSecure className="h-2.5 w-2.5" />
                             ) : (
-                              <Percent className="h-2.5 w-2.5" />
+                              <IconPercent className="h-2.5 w-2.5" />
                             )}
                           </span>
                           <span>
@@ -994,20 +1009,20 @@ const Transactions = () => {
                     <div className="flex items-center gap-2 mb-2 flex-wrap">
                       <span 
                         className={cn(
-                          "inline-flex items-center gap-1.5 pl-1.5 pr-2.5 py-0.5 rounded-full border-2 text-xs font-semibold shadow-sm transition-all select-none",
+                          "inline-flex items-center gap-1.5 p-0.5 pl-1 pr-2.5 rounded-full border-2 text-xs font-bold shadow-sm transition-all select-none",
                           transaction.type === 'income' 
                             ? "border-emerald-600 bg-emerald-50 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200" 
                             : "border-rose-500 bg-rose-50 text-rose-800 dark:bg-rose-950/40 dark:text-rose-200"
                         )}
                       >
                         <span className={cn(
-                          "w-5 h-5 rounded-[5px] flex items-center justify-center shrink-0",
+                          "w-6 h-6 rounded-[7px] flex items-center justify-center shrink-0",
                           transaction.type === 'income' ? "bg-emerald-200 dark:bg-emerald-800/60 text-emerald-700 dark:text-emerald-200" : "bg-rose-200 dark:bg-rose-800/60 text-rose-700 dark:text-rose-200"
                         )}>
                           {transaction.type === 'income' ? (
-                            <ArrowDownLeft className="h-3 w-3" />
+                            <ArrowDownLeft className="h-3.5 w-3.5 stroke-[2.5]" />
                           ) : (
-                            <ArrowUpRight className="h-3 w-3" />
+                            <ArrowUpRight className="h-3.5 w-3.5 stroke-[2.5]" />
                           )}
                         </span>
                         <span>{transaction.type === 'income' ? 'Income' : 'Expense'}</span>
@@ -1018,17 +1033,17 @@ const Transactions = () => {
                         const CatIcon = cat.icon;
                         return (
                           <span className={cn(
-                            "inline-flex items-center gap-1.5 pl-1.5 pr-2.5 py-0.5 rounded-full border-2 text-xs font-semibold shadow-sm transition-all select-none",
+                            "inline-flex items-center gap-1.5 p-0.5 pl-1 pr-2.5 rounded-full border-2 text-xs font-bold shadow-sm transition-all select-none",
                             cat.borderClass,
                             cat.bgClass,
                             cat.textClass
                           )}>
                             <span className={cn(
-                              "w-5 h-5 rounded-[5px] flex items-center justify-center shrink-0",
+                              "w-6 h-6 rounded-[7px] flex items-center justify-center shrink-0",
                               cat.squircleBgClass,
                               cat.iconColorClass
                             )}>
-                              <CatIcon className="h-3 w-3" />
+                              <CatIcon className="h-3.5 w-3.5" />
                             </span>
                             <span>{transaction.category.charAt(0).toUpperCase() + transaction.category.slice(1)}</span>
                           </span>
@@ -1040,17 +1055,17 @@ const Transactions = () => {
                         const PmIcon = pm.icon;
                         return (
                           <span className={cn(
-                            "inline-flex items-center gap-1.5 pl-1.5 pr-2.5 py-0.5 rounded-full border-2 text-xs font-semibold shadow-sm transition-all select-none",
+                            "inline-flex items-center gap-1.5 p-0.5 pl-1 pr-2.5 rounded-full border-2 text-xs font-bold shadow-sm transition-all select-none",
                             pm.borderClass,
                             pm.bgClass,
                             pm.textClass
                           )}>
                             <span className={cn(
-                              "w-5 h-5 rounded-[5px] flex items-center justify-center shrink-0",
+                              "w-6 h-6 rounded-[7px] flex items-center justify-center shrink-0",
                               pm.squircleBgClass,
                               pm.iconColorClass
                             )}>
-                              <PmIcon className="h-3 w-3" />
+                              <PmIcon className="h-3.5 w-3.5" />
                             </span>
                             <span>{transaction.paymentMethod || 'Not specified'}</span>
                           </span>
