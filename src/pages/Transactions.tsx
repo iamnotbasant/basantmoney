@@ -488,333 +488,392 @@ const Transactions = () => {
           <p className="text-muted-foreground text-lg">Track and manage all your financial activities - Double click to edit</p>
         </div>
 
-        {/* Actions and Filters */}
-        <Card className="mb-8 animate-fade-in">
-          <CardContent className="p-4 sm:p-5">
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
-                <Button 
-                  onClick={() => navigate('/income')}
-                  className="h-10 gap-2 px-4 font-semibold transition-colors"
-                >
-                  <Plus className="h-4 w-4" />
-                  Add Income
-                </Button>
-                <Button 
-                  onClick={() => navigate('/expense')}
-                  variant="outline"
-                  className="h-10 gap-2 px-4 font-semibold transition-colors"
-                >
-                  <Plus className="h-4 w-4" />
-                  Add Expense
-                </Button>
-                <Button variant="outline" onClick={() => exportData('csv')} className="h-10 gap-2 px-4 font-semibold transition-colors">
-                  <Download className="h-4 w-4" />
-                  Export CSV
-                </Button>
-                <Button variant="outline" onClick={() => exportData('json')} className="h-10 gap-2 px-4 font-semibold transition-colors">
-                  <Download className="h-4 w-4" />
-                  Export JSON
-                </Button>
-              </div>
-
-              <div className="border-t pt-4">
-                <TransactionsFilterBar
-                  filterType={filterType}
-                  setFilterType={setFilterType}
-                  filterMonth={filterMonth}
-                  setFilterMonth={setFilterMonth}
-                  filterCategory={filterCategory}
-                  setFilterCategory={setFilterCategory}
-                  getUniqueMonths={getUniqueMonths}
-                  formatMonthForDisplay={formatMonthForDisplay}
-                  getUniqueCategories={getUniqueCategories}
-                />
-              </div>
+        {/* Actions and Filters Bar */}
+        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between animate-fade-in">
+          <div className="flex items-center gap-2 flex-wrap">
+            <div className="inline-flex items-center gap-2 bg-card border border-border/80 px-3.5 py-1.5 rounded-full text-xs font-semibold text-foreground shadow-sm">
+              <span className="h-2 w-2 rounded-full bg-primary animate-pulse"></span>
+              <span>Transactions</span>
+              <span className="text-muted-foreground font-normal">({filteredTransactions.length})</span>
             </div>
-          </CardContent>
-        </Card>
 
-        {/* Transactions Table */}
-        <Card className="animate-fade-in">
-          <CardHeader className="pb-4">
-            <CardTitle className="text-xl sm:text-2xl text-foreground flex items-center gap-3">
-              Transaction History
-              <span className="ml-2 text-sm font-normal text-muted-foreground bg-muted px-3 py-1 rounded-full">
-                {filteredTransactions.length} transactions
-              </span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-0">
-            {/* Desktop Table */}
-            <div className="hidden md:block overflow-x-auto">
-              <Table>
-                 <TableHeader>
-                   <TableRow className="border-b-2">
-                     <TableHead className="font-semibold text-base w-[120px]">Date</TableHead>
-                     <TableHead className="font-semibold text-base w-[200px]">Source</TableHead>
-                     <TableHead className="font-semibold text-base w-[200px]">Description</TableHead>
-                     <TableHead className="font-semibold text-base w-[140px]">Category</TableHead>
-                     <TableHead className="font-semibold text-base w-[180px]">Payment Method</TableHead>
-                     <TableHead className="text-right font-semibold text-base w-[140px]">Amount</TableHead>
-                   </TableRow>
-                 </TableHeader>
-                <TableBody>
-                  {filteredTransactions.length > 0 ? (
-                    filteredTransactions.map((transaction, index) => (
-                      <TableRow 
-                        key={`${transaction.type}-${transaction.id}`} 
-                        className="hover:bg-muted/30 transition-all duration-200 animate-fade-in cursor-pointer border-b"
-                        style={{ animationDelay: `${index * 50}ms` }}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => exportData('csv')}
+              className="h-8 rounded-full px-3 text-xs font-medium border-border/80 hover:bg-accent/40 gap-1.5 shadow-sm"
+            >
+              <Download className="h-3.5 w-3.5" />
+              CSV
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => exportData('json')}
+              className="h-8 rounded-full px-3 text-xs font-medium border-border/80 hover:bg-accent/40 gap-1.5 shadow-sm"
+            >
+              <Download className="h-3.5 w-3.5" />
+              JSON
+            </Button>
+          </div>
+
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <Button
+              onClick={() => navigate('/income')}
+              className="h-9 rounded-full px-4 text-xs font-semibold gap-1.5 bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm transition-transform active:scale-95"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              Add Income
+            </Button>
+            <Button
+              onClick={() => navigate('/expense')}
+              variant="outline"
+              className="h-9 rounded-full px-4 text-xs font-semibold gap-1.5 border-border/80 hover:bg-accent/40 shadow-sm transition-transform active:scale-95"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              Add Expense
+            </Button>
+          </div>
+        </div>
+
+        {/* Filter Bar */}
+        <div className="mb-6 bg-card/60 backdrop-blur-sm border border-border/80 p-3 sm:p-4 rounded-2xl shadow-sm animate-fade-in">
+          <TransactionsFilterBar
+            filterType={filterType}
+            setFilterType={setFilterType}
+            filterMonth={filterMonth}
+            setFilterMonth={setFilterMonth}
+            filterCategory={filterCategory}
+            setFilterCategory={setFilterCategory}
+            getUniqueMonths={getUniqueMonths}
+            formatMonthForDisplay={formatMonthForDisplay}
+            getUniqueCategories={getUniqueCategories}
+          />
+        </div>
+
+        {/* Transactions Table Container */}
+        <div className="bg-card border border-border/80 rounded-2xl shadow-sm overflow-hidden animate-fade-in mb-8">
+          {/* Desktop Table View */}
+          <div className="hidden md:block overflow-x-auto">
+            <table className="w-full text-left border-collapse text-sm">
+              <thead>
+                <tr className="border-b border-border/70 bg-muted/40 text-muted-foreground text-xs font-medium">
+                  <th className="py-3.5 px-5 font-medium">Transaction</th>
+                  <th className="py-3.5 px-4 font-medium">Reference ID</th>
+                  <th className="py-3.5 px-4 font-medium">Category</th>
+                  <th className="py-3.5 px-4 font-medium">Status</th>
+                  <th className="py-3.5 px-4 font-medium">Payment Method</th>
+                  <th className="py-3.5 px-5 font-medium">Date</th>
+                  <th className="py-3.5 px-5 font-medium text-right">Amount</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border/60 font-normal">
+                {filteredTransactions.length > 0 ? (
+                  filteredTransactions.map((transaction, index) => {
+                    const isIncome = transaction.type === 'income';
+                    const txCode = `TXN-${String(transaction.id).padStart(5, '0')}`;
+                    const isCopied = copiedId === `${transaction.type}-${transaction.id}`;
+
+                    return (
+                      <tr
+                        key={`${transaction.type}-${transaction.id}`}
                         onDoubleClick={() => handleDoubleClick(transaction)}
                         title="Double click to edit"
+                        className="hover:bg-muted/30 transition-colors cursor-pointer group"
+                        style={{ animationDelay: `${index * 30}ms` }}
                       >
-                         <TableCell className="text-muted-foreground py-4 text-sm">
-                           {formatDate(transaction.date)}
-                         </TableCell>
-                         <TableCell className="font-medium text-foreground py-4 text-sm">
-                           <div className="flex items-center gap-2">
-                             <span>{transaction.source}</span>
-                             {transaction.is_auto_interest && (
-                               <Badge
-                                 variant={transaction.auto_interest_status === 'locked' ? 'secondary' : 'default'}
-                                 className={`text-[10px] cursor-pointer ${
-                                   transaction.is_manually_edited
-                                     ? 'bg-amber-600 hover:bg-amber-700 text-white'
-                                     : transaction.auto_interest_status === 'locked'
-                                     ? 'bg-slate-700 text-white'
-                                     : 'bg-green-600 hover:bg-green-700 text-white'
-                                 }`}
-                                 onClick={(e) => {
-                                   e.stopPropagation();
-                                   setSelectedBreakdownMonth(transaction.date.slice(0, 7));
-                                   setSelectedBreakdownTotal(transaction.amount);
-                                 }}
-                                 title="Click to view daily interest breakdown"
-                               >
-                                 {transaction.is_manually_edited
-                                   ? 'Manually edited'
-                                   : transaction.auto_interest_status === 'locked'
-                                   ? 'Auto • Locked'
-                                   : 'Auto • Estimated'}
-                               </Badge>
-                             )}
-                           </div>
-                         </TableCell>
-                         <TableCell className="text-muted-foreground py-4 text-sm">
-                           <div className="flex items-center justify-between gap-2">
-                             <span>{transaction.description || '-'}</span>
-                             {transaction.is_auto_interest && (
-                               <div className="flex items-center gap-1.5">
-                                 <Button
-                                   variant="ghost"
-                                   size="sm"
-                                   className="h-6 px-1.5 text-xs text-primary hover:underline"
-                                   onClick={(e) => {
-                                     e.stopPropagation();
-                                     setSelectedBreakdownMonth(transaction.date.slice(0, 7));
-                                     setSelectedBreakdownTotal(transaction.amount);
-                                   }}
-                                 >
-                                   Daily breakdown
-                                 </Button>
-                                 {transaction.is_manually_edited && (
-                                   <Button
-                                     variant="outline"
-                                     size="sm"
-                                     className="h-6 px-2 text-[11px] text-amber-600 border-amber-300 hover:bg-amber-50"
-                                     onClick={(e) => handleResumeAutoUpdate(transaction, e)}
-                                   >
-                                     Resume auto-update
-                                   </Button>
-                                 )}
-                                </div>
-                             )}
-                           </div>
-                         </TableCell>
-                        <TableCell className="py-4">
-                          <Badge variant="secondary" className="transition-all duration-200 text-xs">
-                            {transaction.category.charAt(0).toUpperCase() + transaction.category.slice(1)}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="py-4">
-                          <Badge 
-                            variant="outline" 
-                            className="transition-all duration-200 text-xs"
+                        {/* Transaction Name & Type */}
+                        <td className="py-3.5 px-5">
+                          <div className="flex items-center gap-3">
+                            <div className={`h-8 w-8 rounded-full flex items-center justify-center shrink-0 ${
+                              isIncome 
+                                ? 'bg-green-500/10 text-green-600 dark:text-green-400' 
+                                : 'bg-red-500/10 text-red-600 dark:text-red-400'
+                            }`}>
+                              {isIncome ? (
+                                <ArrowDownLeft className="h-4 w-4" />
+                              ) : (
+                                <ArrowUpRight className="h-4 w-4" />
+                              )}
+                            </div>
+                            <div className="min-w-0 max-w-[200px]">
+                              <p className="font-medium text-foreground text-sm truncate leading-tight">
+                                {transaction.source}
+                              </p>
+                              {transaction.description && (
+                                <p className="text-xs text-muted-foreground truncate leading-tight mt-0.5">
+                                  {transaction.description}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        </td>
+
+                        {/* Reference / TXN ID with copy icon */}
+                        <td className="py-3.5 px-4 text-xs text-muted-foreground font-mono">
+                          <div className="inline-flex items-center gap-1.5 group/id">
+                            <span>{txCode}</span>
+                            <button
+                              type="button"
+                              onClick={(e) => handleCopy(txCode, `${transaction.type}-${transaction.id}`, e)}
+                              title="Copy Transaction ID"
+                              className="p-1 rounded-md text-muted-foreground/60 hover:text-foreground hover:bg-muted transition-colors opacity-70 group-hover:opacity-100"
+                            >
+                              {isCopied ? (
+                                <Check className="h-3.5 w-3.5 text-green-600" />
+                              ) : (
+                                <Copy className="h-3.5 w-3.5" />
+                              )}
+                            </button>
+                          </div>
+                        </td>
+
+                        {/* Category with Icon Badge */}
+                        <td className="py-3.5 px-4">
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-muted/60 text-foreground border border-border/50">
+                            <User className="h-3 w-3 text-muted-foreground" />
+                            <span>{transaction.category.charAt(0).toUpperCase() + transaction.category.slice(1)}</span>
+                          </span>
+                        </td>
+
+                        {/* Status - Clean pill with icon like reference image */}
+                        <td className="py-3.5 px-4">
+                          {transaction.is_auto_interest ? (
+                            transaction.is_manually_edited ? (
+                              <span 
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedBreakdownMonth(transaction.date.slice(0, 7));
+                                  setSelectedBreakdownTotal(transaction.amount);
+                                }}
+                                className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-500/15 text-amber-700 dark:text-amber-400 hover:bg-amber-500/25 transition-colors cursor-pointer"
+                                title="Manually edited - Click for breakdown"
+                              >
+                                <AlertTriangle className="h-3 w-3 shrink-0" />
+                                <span>Manual Edit</span>
+                              </span>
+                            ) : transaction.auto_interest_status === 'locked' ? (
+                              <span 
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedBreakdownMonth(transaction.date.slice(0, 7));
+                                  setSelectedBreakdownTotal(transaction.amount);
+                                }}
+                                className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-500/15 text-slate-700 dark:text-slate-300 hover:bg-slate-500/25 transition-colors cursor-pointer"
+                                title="Locked interest - Click for breakdown"
+                              >
+                                <ShieldCheck className="h-3 w-3 shrink-0" />
+                                <span>Locked</span>
+                              </span>
+                            ) : (
+                              <span 
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedBreakdownMonth(transaction.date.slice(0, 7));
+                                  setSelectedBreakdownTotal(transaction.amount);
+                                }}
+                                className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-500/15 text-purple-700 dark:text-purple-300 hover:bg-purple-500/25 transition-colors cursor-pointer"
+                                title="Estimated interest - Click for breakdown"
+                              >
+                                <Hourglass className="h-3 w-3 shrink-0" />
+                                <span>Pending</span>
+                              </span>
+                            )
+                          ) : isIncome ? (
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-500/15 text-green-700 dark:text-green-400">
+                              <CheckCircle2 className="h-3 w-3 shrink-0" />
+                              <span>Approved</span>
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-500/15 text-blue-700 dark:text-blue-300">
+                              <CheckCircle2 className="h-3 w-3 shrink-0" />
+                              <span>Settled</span>
+                            </span>
+                          )}
+                        </td>
+
+                        {/* Payment Method */}
+                        <td className="py-3.5 px-4">
+                          <span 
+                            className="inline-flex items-center gap-1.5 text-xs font-medium text-foreground px-2.5 py-0.5 rounded-full border"
                             style={{ 
-                              borderColor: getPaymentMethodColor(transaction.paymentMethod || ''),
-                              color: getPaymentMethodColor(transaction.paymentMethod || '')
+                              borderColor: `${getPaymentMethodColor(transaction.paymentMethod || '')}40`,
+                              backgroundColor: `${getPaymentMethodColor(transaction.paymentMethod || '')}10`
                             }}
                           >
-                            <div 
-                              className="w-2 h-2 rounded-full mr-2" 
+                            <span 
+                              className="w-1.5 h-1.5 rounded-full shrink-0" 
                               style={{ backgroundColor: getPaymentMethodColor(transaction.paymentMethod || '') }}
                             />
-                            {transaction.paymentMethod || 'Not specified'}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right py-4">
-                          <span className={`font-bold text-lg transition-all duration-200 ${
-                            transaction.type === 'income' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
-                          }`}>
-                            {transaction.type === 'income' ? '+' : '-'}₹{transaction.amount.toLocaleString('en-IN')}
+                            <span className="truncate max-w-[120px]">{transaction.paymentMethod || 'Not specified'}</span>
                           </span>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  ) : (
-                    <TableRow>
-                      <TableCell colSpan={6} className="text-center py-16 text-muted-foreground">
-                        <div className="flex flex-col items-center gap-4 animate-fade-in">
-                          <div className="text-center">
-                            <p className="text-xl font-semibold mb-2">No transactions found</p>
-                            <p className="text-sm">Start by adding your first income or expense</p>
-                          </div>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </div>
+                        </td>
 
-            {/* Mobile Cards */}
-            <div className="md:hidden divide-y">
-              {filteredTransactions.length > 0 ? (
-                filteredTransactions.map((transaction, index) => (
+                        {/* Date */}
+                        <td className="py-3.5 px-5 text-xs text-muted-foreground font-mono">
+                          {transaction.date}
+                        </td>
+
+                        {/* Amount */}
+                        <td className="py-3.5 px-5 text-right font-medium text-sm whitespace-nowrap">
+                          <span className={isIncome ? 'text-green-600 dark:text-green-400 font-semibold' : 'text-foreground font-semibold'}>
+                            {isIncome ? '+' : '-'}₹{transaction.amount.toLocaleString('en-IN')}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })
+                ) : (
+                  <tr>
+                    <td colSpan={7} className="text-center py-16 text-muted-foreground">
+                      <div className="flex flex-col items-center gap-2">
+                        <p className="text-base font-medium text-foreground">No transactions found</p>
+                        <p className="text-xs text-muted-foreground">Try adjusting your filters or add a new transaction</p>
+                      </div>
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Mobile Card View */}
+          <div className="md:hidden divide-y divide-border/60">
+            {filteredTransactions.length > 0 ? (
+              filteredTransactions.map((transaction, index) => {
+                const isIncome = transaction.type === 'income';
+                const txCode = `TXN-${String(transaction.id).padStart(5, '0')}`;
+                const isCopied = copiedId === `${transaction.type}-${transaction.id}`;
+
+                return (
                   <div 
                     key={`${transaction.type}-${transaction.id}`} 
-                    className="p-4 hover:bg-muted/50 transition-all duration-200 animate-fade-in cursor-pointer"
-                    style={{ animationDelay: `${index * 50}ms` }}
+                    className="p-4 hover:bg-muted/30 transition-colors cursor-pointer space-y-2.5"
+                    style={{ animationDelay: `${index * 30}ms` }}
                     onDoubleClick={() => handleDoubleClick(transaction)}
                   >
-                    {/* Card: First Date, then Description, then rest */}
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm text-muted-foreground">{formatDate(transaction.date)}</span>
-                      <span className={`font-bold text-lg ${
-                        transaction.type === 'income' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
-                      }`}>
-                        {transaction.type === 'income' ? '+' : '-'}₹{transaction.amount.toLocaleString('en-IN')}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2 mb-1 flex-wrap">
-                      <h3 className="font-semibold text-foreground text-lg">{transaction.source}</h3>
-                      {transaction.is_auto_interest && (
-                        <Badge
-                          variant={transaction.auto_interest_status === 'locked' ? 'secondary' : 'default'}
-                          className={`text-[10px] cursor-pointer ${
-                            transaction.is_manually_edited
-                              ? 'bg-amber-600 hover:bg-amber-700 text-white'
-                              : transaction.auto_interest_status === 'locked'
-                              ? 'bg-slate-700 text-white'
-                              : 'bg-green-600 hover:bg-green-700 text-white'
-                          }`}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedBreakdownMonth(transaction.date.slice(0, 7));
-                            setSelectedBreakdownTotal(transaction.amount);
-                          }}
-                        >
-                          {transaction.is_manually_edited
-                            ? 'Manually edited'
-                            : transaction.auto_interest_status === 'locked'
-                            ? 'Auto • Locked'
-                            : 'Auto • Estimated'}
-                        </Badge>
-                      )}
-                    </div>
-                    {transaction.description && (
-                      <p className="text-muted-foreground mb-2 text-sm">{transaction.description}</p>
-                    )}
-                    {transaction.is_auto_interest && (
-                      <div className="flex items-center gap-2 mb-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-6 px-2 text-xs text-primary"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedBreakdownMonth(transaction.date.slice(0, 7));
-                            setSelectedBreakdownTotal(transaction.amount);
-                          }}
-                        >
-                          Daily breakdown
-                        </Button>
-                        {transaction.is_manually_edited && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="h-6 px-2 text-[11px] text-amber-600 border-amber-300"
-                            onClick={(e) => handleResumeAutoUpdate(transaction, e)}
-                          >
-                            Resume auto-update
-                          </Button>
-                        )}
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div className={`h-8 w-8 rounded-full flex items-center justify-center shrink-0 ${
+                          isIncome 
+                            ? 'bg-green-500/10 text-green-600 dark:text-green-400' 
+                            : 'bg-red-500/10 text-red-600 dark:text-red-400'
+                        }`}>
+                          {isIncome ? (
+                            <ArrowDownLeft className="h-4 w-4" />
+                          ) : (
+                            <ArrowUpRight className="h-4 w-4" />
+                          )}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="font-medium text-foreground text-sm truncate">{transaction.source}</p>
+                          <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground font-mono">
+                            <span>{txCode}</span>
+                            <button
+                              type="button"
+                              onClick={(e) => handleCopy(txCode, `${transaction.type}-${transaction.id}`, e)}
+                              className="p-0.5 text-muted-foreground/60 hover:text-foreground"
+                            >
+                              {isCopied ? <Check className="h-3 w-3 text-green-600" /> : <Copy className="h-3 w-3" />}
+                            </button>
+                          </div>
+                        </div>
                       </div>
+                      <div className="text-right shrink-0">
+                        <span className={`text-base font-semibold ${
+                          isIncome ? 'text-green-600 dark:text-green-400' : 'text-foreground'
+                        }`}>
+                          {isIncome ? '+' : '-'}₹{transaction.amount.toLocaleString('en-IN')}
+                        </span>
+                        <p className="text-[11px] text-muted-foreground font-mono">{transaction.date}</p>
+                      </div>
+                    </div>
+
+                    {transaction.description && (
+                      <p className="text-xs text-muted-foreground pl-10.5">{transaction.description}</p>
                     )}
-                    <div className="flex items-center gap-2 mb-2 flex-wrap">
-                      <Badge 
-                        variant="outline" 
-                        className={cn(
-                          "text-xs font-medium",
-                          transaction.type === 'income' 
-                            ? "text-green-700 border-green-200 dark:text-green-300 dark:border-green-800" 
-                            : "text-red-700 border-red-200 dark:text-red-300 dark:border-red-800"
-                        )}
-                      >
-                        {transaction.type === 'income' ? 'Income' : 'Expense'}
-                      </Badge>
-                      <Badge variant="secondary" className="text-xs">
-                        {transaction.category.charAt(0).toUpperCase() + transaction.category.slice(1)}
-                      </Badge>
-                      <Badge 
-                        variant="outline" 
-                        className="text-xs"
+
+                    <div className="flex items-center gap-2 flex-wrap pt-1">
+                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-muted/70 text-foreground border border-border/50">
+                        <User className="h-3 w-3 text-muted-foreground" />
+                        <span>{transaction.category.charAt(0).toUpperCase() + transaction.category.slice(1)}</span>
+                      </span>
+
+                      {transaction.is_auto_interest ? (
+                        transaction.is_manually_edited ? (
+                          <span 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedBreakdownMonth(transaction.date.slice(0, 7));
+                              setSelectedBreakdownTotal(transaction.amount);
+                            }}
+                            className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-amber-500/15 text-amber-700 dark:text-amber-400 cursor-pointer"
+                          >
+                            <AlertTriangle className="h-3 w-3" />
+                            <span>Manual Edit</span>
+                          </span>
+                        ) : transaction.auto_interest_status === 'locked' ? (
+                          <span 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedBreakdownMonth(transaction.date.slice(0, 7));
+                              setSelectedBreakdownTotal(transaction.amount);
+                            }}
+                            className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-slate-500/15 text-slate-700 dark:text-slate-300 cursor-pointer"
+                          >
+                            <ShieldCheck className="h-3 w-3" />
+                            <span>Locked</span>
+                          </span>
+                        ) : (
+                          <span 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedBreakdownMonth(transaction.date.slice(0, 7));
+                              setSelectedBreakdownTotal(transaction.amount);
+                            }}
+                            className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-purple-500/15 text-purple-700 dark:text-purple-300 cursor-pointer"
+                          >
+                            <Hourglass className="h-3 w-3" />
+                            <span>Pending</span>
+                          </span>
+                        )
+                      ) : isIncome ? (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-green-500/15 text-green-700 dark:text-green-400">
+                          <CheckCircle2 className="h-3 w-3" />
+                          <span>Approved</span>
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-blue-500/15 text-blue-700 dark:text-blue-300">
+                          <CheckCircle2 className="h-3 w-3" />
+                          <span>Settled</span>
+                        </span>
+                      )}
+
+                      <span 
+                        className="inline-flex items-center gap-1 text-[11px] font-medium text-foreground px-2 py-0.5 rounded-full border"
                         style={{ 
-                          borderColor: getPaymentMethodColor(transaction.paymentMethod || ''),
-                          color: getPaymentMethodColor(transaction.paymentMethod || '')
+                          borderColor: `${getPaymentMethodColor(transaction.paymentMethod || '')}40`,
+                          backgroundColor: `${getPaymentMethodColor(transaction.paymentMethod || '')}10`
                         }}
                       >
-                        <div 
-                          className="w-2 h-2 rounded-full mr-1" 
+                        <span 
+                          className="w-1.5 h-1.5 rounded-full" 
                           style={{ backgroundColor: getPaymentMethodColor(transaction.paymentMethod || '') }}
                         />
-                        {transaction.paymentMethod || 'Not specified'}
-                      </Badge>
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-2">Double tap to edit</p>
-                  </div>
-                ))
-              ) : (
-                <div className="p-12 text-center text-muted-foreground animate-fade-in">
-                  <div className="flex flex-col items-center gap-4">
-                    <div className="text-center mb-6">
-                      <p className="text-xl font-semibold mb-2">No transactions found</p>
-                      <p className="text-sm">Start by adding your first income or expense</p>
-                    </div>
-                    <div className="flex gap-3">
-                      <Button 
-                        size="sm" 
-                        onClick={() => navigate('/income')} 
-                      >
-                        Add Income
-                      </Button>
-                      <Button 
-                        size="sm" 
-                        onClick={() => navigate('/expense')}
-                        variant="outline"
-                      >
-                        Add Expense
-                      </Button>
+                        <span>{transaction.paymentMethod || 'Not specified'}</span>
+                      </span>
                     </div>
                   </div>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Edit Dialog */}
+                );
+              })
+            ) : (
+              <div className="p-10 text-center text-muted-foreground">
+                <p className="text-sm font-medium">No transactions found</p>
+              </div>
+            )}
+          </div>
+        </div>
+{/* Edit Dialog */}
         <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
           <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
