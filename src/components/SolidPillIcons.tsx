@@ -101,3 +101,24 @@ export const IconWallet = ({ className = "w-4 h-4" }: { className?: string }) =>
     <circle cx="16.5" cy="14.5" r="1.6" fill="white" />
   </svg>
 );
+
+// New status icons
+export const IconLocked = ({ className = "w-4 h-4" }: { className?: string }) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <path d="M12 2.5l7.5 3.2a2 2 0 0 1 1.2 1.8v5.7c0 5.4-3.7 9.8-8.4 10.8-4.7-1-8.4-5.4-8.4-10.8V7.5a2 2 0 0 1 1.2-1.8L12 2.5z" />
+    <path d="M8.8 12.2l2.3 2.3 4.8-4.8" />
+  </svg>
+);
+
+export const IconEstimated = ({ className = "w-4 h-4" }: { className?: string }) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <circle cx="12" cy="12" r="9" strokeDasharray="3.5 3" />
+  </svg>
+);
+
+export const IconManuallyEdited = ({ className = "w-4 h-4" }: { className?: string }) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <path d="M20 12a8 8 0 1 1-2.34-5.66" />
+    <path d="M20 3v4h-4" />
+  </svg>
+);

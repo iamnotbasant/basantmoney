@@ -12,7 +12,6 @@ import {
   Loader2, 
   Download,
   Briefcase,
-  Percent,
   Coins,
   Utensils,
   ShoppingBag,
@@ -25,7 +24,6 @@ import {
   CreditCard,
   Wallet,
   Building2,
-  Shield,
   Sparkles,
   ArrowDownLeft,
   ArrowUpRight
@@ -43,7 +41,10 @@ import {
   IconTransport,
   IconHome,
   IconCoins,
-  IconWallet
+  IconWallet,
+  IconLocked,
+  IconEstimated,
+  IconManuallyEdited
 } from '@/components/SolidPillIcons';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -83,7 +84,6 @@ import { useAuth } from '@/components/AuthProvider';
 import InterestBreakdownModal from '@/components/InterestBreakdownModal';
 import { InterestService } from '@/services/interestService';
 import { isMonthLocked } from '@/utils/interestEngine';
-import { RotateCcw, ListFilter } from 'lucide-react';
 
 interface PaymentMethod {
   id: string;
@@ -566,6 +566,79 @@ const Transactions = () => {
     };
   };
 
+  // Shared pill renderers (desktop table + mobile cards use the same ones,
+  // so the two views cannot drift apart again).
+  // Category / payment pills: image-3 style — coloured border + light pastel
+  // fill, icon in a small rounded-square chip. Compact: 22px chip desktop,
+  // 20px chip mobile, no gloss/shadow.
+  interface ChipPillStyle {
+    borderClass: string;
+    bgClass: string;
+    textClass: string;
+    squircleBgClass: string;
+    iconColorClass: string;
+  }
+
+  const renderChipPill = (
+    style: ChipPillStyle,
+    label: string,
+    PillIcon: React.ElementType,
+    size: 'md' | 'sm'
+  ) => {
+    const md = size === 'md';
+    return (
+      <span className={cn(
+        "inline-flex items-center gap-1.5 rounded-full border select-none whitespace-nowrap",
+        md ? "p-0.5 pl-0.5 pr-2.5 text-[12px] font-semibold tracking-tight" : "p-0.5 pl-0.5 pr-2.5 text-[12px] font-semibold",
+        style.borderClass,
+        style.bgClass,
+        style.textClass
+      )}>
+        <span className={cn(
+          md ? "w-[22px] h-[22px] rounded-[6px]" : "w-5 h-5 rounded-[6px]",
+          "flex items-center justify-center shrink-0",
+          style.squircleBgClass,
+          style.iconColorClass
+        )}>
+          <PillIcon className={md ? "h-[13px] w-[13px]" : "h-3 w-3"} />
+        </span>
+        <span className={md ? "truncate max-w-[118px]" : "truncate max-w-[140px]"}>{label}</span>
+      </span>
+    );
+  };
+
+  // Auto-interest status pills: image-1 style — soft pastel fill + matching
+  // text + small outline stroke icon directly left of the text. No border,
+  // no icon chip, no gloss. Clickable: opens the daily interest breakdown.
+  const renderStatusPill = (t: Transaction) => {
+    if (!t.is_auto_interest) return null;
+    const edited = t.is_manually_edited;
+    const locked = t.auto_interest_status === 'locked';
+    const StatusIcon = edited ? IconManuallyEdited : locked ? IconLocked : IconEstimated;
+    const label = edited ? 'Manually edited' : locked ? 'Auto • Locked' : 'Auto • Estimated';
+    return (
+      <span
+        className={cn(
+          "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold cursor-pointer select-none whitespace-nowrap",
+          edited
+            ? "bg-amber-100 text-amber-800 dark:bg-amber-950/50 dark:text-amber-200"
+            : locked
+            ? "bg-slate-200/70 text-slate-700 dark:bg-slate-800/70 dark:text-slate-200"
+            : "bg-blue-100 text-blue-800 dark:bg-blue-950/50 dark:text-blue-200"
+        )}
+        onClick={(e) => {
+          e.stopPropagation();
+          setSelectedBreakdownMonth(t.date.slice(0, 7));
+          setSelectedBreakdownTotal(t.amount);
+        }}
+        title="Click to view daily interest breakdown"
+      >
+        <StatusIcon className="h-3.5 w-3.5 shrink-0" />
+        <span>{label}</span>
+      </span>
+    );
+  };
+
   const getFilteredCategories = () => {
     if (!editingTransaction) return [];
     return categories.filter((cat: Category) => cat.type === editingTransaction.type);
@@ -740,16 +813,16 @@ const Transactions = () => {
           </CardHeader>
           <CardContent className="p-0">
             {/* Desktop Table */}
-            <div className="hidden md:block overflow-x-auto">
-              <Table>
+            <div className="hidden md:block overflow-x-auto tabular-nums">
+              <Table className="table-fixed">
                  <TableHeader>
                    <TableRow className="border-b-2">
-                     <TableHead className="font-semibold text-base w-[120px]">Date</TableHead>
-                     <TableHead className="font-semibold text-base w-[200px]">Source</TableHead>
-                     <TableHead className="font-semibold text-base w-[200px]">Description</TableHead>
-                     <TableHead className="font-semibold text-base w-[140px]">Category</TableHead>
-                     <TableHead className="font-semibold text-base w-[180px]">Payment Method</TableHead>
-                     <TableHead className="text-right font-semibold text-base w-[140px]">Amount</TableHead>
+                     <TableHead className="px-4 py-3 text-[13px] font-semibold w-[112px]">Date</TableHead>
+                     <TableHead className="px-4 py-3 text-[13px] font-semibold w-[180px]">Source</TableHead>
+                     <TableHead className="px-4 py-3 text-[13px] font-semibold">Description</TableHead>
+                     <TableHead className="px-4 py-3 text-[13px] font-semibold w-[168px]">Category</TableHead>
+                     <TableHead className="px-4 py-3 text-[13px] font-semibold w-[168px]">Payment Method</TableHead>
+                     <TableHead className="px-4 py-3 text-right text-[13px] font-semibold w-[132px]">Amount</TableHead>
                    </TableRow>
                  </TableHeader>
                 <TableBody>
@@ -762,59 +835,18 @@ const Transactions = () => {
                         onDoubleClick={() => handleDoubleClick(transaction)}
                         title="Double click to edit"
                       >
-                         <TableCell className="text-muted-foreground py-4 text-sm">
+                         <TableCell className="px-4 py-3.5 text-muted-foreground text-sm whitespace-nowrap">
                            {formatDate(transaction.date)}
                          </TableCell>
-                         <TableCell className="font-medium text-foreground py-4 text-sm">
-                           <div className="flex items-center gap-2">
-                             <span>{transaction.source}</span>
-                             {transaction.is_auto_interest && (
-                               <span
-                                 className={cn(
-                                   "inline-flex items-center gap-1.5 pl-1 pr-2.5 py-0.5 rounded-full border-2 text-[11px] font-semibold cursor-pointer shadow-sm transition-all select-none",
-                                   transaction.is_manually_edited
-                                     ? "border-amber-500 bg-amber-50 text-amber-900 dark:bg-amber-950/40 dark:text-amber-200"
-                                     : transaction.auto_interest_status === 'locked'
-                                     ? "border-slate-500 bg-slate-100 text-slate-800 dark:bg-slate-900/60 dark:text-slate-200"
-                                     : "border-emerald-500 bg-emerald-50 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200"
-                                 )}
-                                 onClick={(e) => {
-                                   e.stopPropagation();
-                                   setSelectedBreakdownMonth(transaction.date.slice(0, 7));
-                                   setSelectedBreakdownTotal(transaction.amount);
-                                 }}
-                                 title="Click to view daily interest breakdown"
-                               >
-                                 <span className={cn(
-                                   "w-4 h-4 rounded-[4px] flex items-center justify-center shrink-0",
-                                   transaction.is_manually_edited
-                                     ? "bg-amber-200 dark:bg-amber-800/60 text-amber-800 dark:text-amber-200"
-                                     : transaction.auto_interest_status === 'locked'
-                                     ? "bg-slate-300 dark:bg-slate-700 text-slate-700 dark:text-slate-200"
-                                     : "bg-emerald-200 dark:bg-emerald-800/60 text-emerald-700 dark:text-emerald-200"
-                                 )}>
-                                   {transaction.is_manually_edited ? (
-                                     <RotateCcw className="h-2.5 w-2.5" />
-                                   ) : transaction.auto_interest_status === 'locked' ? (
-                                     <Shield className="h-2.5 w-2.5" />
-                                   ) : (
-                                     <Percent className="h-2.5 w-2.5" />
-                                   )}
-                                 </span>
-                                 <span>
-                                   {transaction.is_manually_edited
-                                     ? 'Manually edited'
-                                     : transaction.auto_interest_status === 'locked'
-                                     ? 'Auto • Locked'
-                                     : 'Auto • Estimated'}
-                                 </span>
-                               </span>
-                             )}
+                         <TableCell className="px-4 py-3.5 font-medium text-foreground text-sm">
+                           <div className="flex items-center gap-2 min-w-0">
+                             <span className="truncate" title={transaction.source}>{transaction.source}</span>
+                             {renderStatusPill(transaction)}
                            </div>
                          </TableCell>
-                         <TableCell className="text-muted-foreground py-4 text-sm">
-                           <div className="flex items-center justify-between gap-2">
-                             <span>{transaction.description || '-'}</span>
+                         <TableCell className="px-4 py-3.5 text-muted-foreground text-sm">
+                           <div className="flex items-center justify-between gap-2 min-w-0">
+                             <span className="truncate" title={transaction.description || ''}>{transaction.description || '-'}</span>
                              {transaction.is_auto_interest && (
                                <div className="flex items-center gap-1.5">
                                  <Button
@@ -843,54 +875,20 @@ const Transactions = () => {
                              )}
                            </div>
                          </TableCell>
-                        <TableCell className="py-4">
+                        <TableCell className="px-4 py-3.5">
                           {(() => {
                             const cat = getCategoryTagStyle(transaction.category);
-                            const CatIcon = cat.icon;
-                            return (
-                              <span className={cn(
-                                "inline-flex items-center gap-2 p-0.5 pl-1 pr-3 rounded-full border-2 shadow-sm text-xs font-bold tracking-tight select-none transition-all",
-                                cat.borderClass,
-                                cat.bgClass,
-                                cat.textClass
-                              )}>
-                                <span className={cn(
-                                  "w-7 h-7 rounded-[8px] flex items-center justify-center shrink-0 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4)]",
-                                  cat.squircleBgClass,
-                                  cat.iconColorClass
-                                )}>
-                                  <CatIcon className="h-4 w-4" />
-                                </span>
-                                <span className="truncate max-w-[130px]">{transaction.category.charAt(0).toUpperCase() + transaction.category.slice(1)}</span>
-                              </span>
-                            );
+                            return renderChipPill(cat, transaction.category.charAt(0).toUpperCase() + transaction.category.slice(1), cat.icon, 'md');
                           })()}
                         </TableCell>
-                        <TableCell className="py-4">
+                        <TableCell className="px-4 py-3.5">
                           {(() => {
                             const pm = getPaymentMethodTagStyle(transaction.paymentMethod || '');
-                            const PmIcon = pm.icon;
-                            return (
-                              <span className={cn(
-                                "inline-flex items-center gap-2 p-0.5 pl-1 pr-3 rounded-full border-2 shadow-sm text-xs font-bold tracking-tight select-none transition-all",
-                                pm.borderClass,
-                                pm.bgClass,
-                                pm.textClass
-                              )}>
-                                <span className={cn(
-                                  "w-7 h-7 rounded-[8px] flex items-center justify-center shrink-0 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4)]",
-                                  pm.squircleBgClass,
-                                  pm.iconColorClass
-                                )}>
-                                  <PmIcon className="h-4 w-4" />
-                                </span>
-                                <span className="truncate max-w-[140px]">{transaction.paymentMethod || 'Not specified'}</span>
-                              </span>
-                            );
+                            return renderChipPill(pm, transaction.paymentMethod || 'Not specified', pm.icon, 'md');
                           })()}
                         </TableCell>
-                        <TableCell className="text-right py-4">
-                          <span className={`font-bold text-lg transition-all duration-200 ${
+                        <TableCell className="px-4 py-3.5 text-right whitespace-nowrap">
+                          <span className={`font-bold text-[15px] transition-all duration-200 ${
                             transaction.type === 'income' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
                           }`}>
                             {transaction.type === 'income' ? '+' : '-'}₹{transaction.amount.toLocaleString('en-IN')}
@@ -926,8 +924,8 @@ const Transactions = () => {
                   >
                     {/* Card: First Date, then Description, then rest */}
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm text-muted-foreground">{formatDate(transaction.date)}</span>
-                      <span className={`font-bold text-lg ${
+                      <span className="text-sm text-muted-foreground tabular-nums">{formatDate(transaction.date)}</span>
+                      <span className={`font-bold text-[15px] tabular-nums whitespace-nowrap ${
                         transaction.type === 'income' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
                       }`}>
                         {transaction.type === 'income' ? '+' : '-'}₹{transaction.amount.toLocaleString('en-IN')}
@@ -935,47 +933,7 @@ const Transactions = () => {
                     </div>
                     <div className="flex items-center gap-2 mb-1 flex-wrap">
                       <h3 className="font-semibold text-foreground text-lg">{transaction.source}</h3>
-                      {transaction.is_auto_interest && (
-                        <span
-                          className={cn(
-                            "inline-flex items-center gap-1.5 pl-1 pr-2.5 py-0.5 rounded-full border-2 text-[10px] font-semibold cursor-pointer shadow-sm transition-all select-none",
-                            transaction.is_manually_edited
-                              ? "border-amber-500 bg-amber-50 text-amber-900 dark:bg-amber-950/40 dark:text-amber-200"
-                              : transaction.auto_interest_status === 'locked'
-                              ? "border-slate-500 bg-slate-100 text-slate-800 dark:bg-slate-900/60 dark:text-slate-200"
-                              : "border-emerald-500 bg-emerald-50 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200"
-                          )}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedBreakdownMonth(transaction.date.slice(0, 7));
-                            setSelectedBreakdownTotal(transaction.amount);
-                          }}
-                        >
-                          <span className={cn(
-                            "w-4 h-4 rounded-[4px] flex items-center justify-center shrink-0",
-                            transaction.is_manually_edited
-                              ? "bg-amber-200 dark:bg-amber-800/60 text-amber-800 dark:text-amber-200"
-                              : transaction.auto_interest_status === 'locked'
-                              ? "bg-slate-300 dark:bg-slate-700 text-slate-700 dark:text-slate-200"
-                              : "bg-emerald-200 dark:bg-emerald-800/60 text-emerald-700 dark:text-emerald-200"
-                          )}>
-                            {transaction.is_manually_edited ? (
-                              <RotateCcw className="h-2.5 w-2.5" />
-                            ) : transaction.auto_interest_status === 'locked' ? (
-                              <IconSecure className="h-2.5 w-2.5" />
-                            ) : (
-                              <IconPercent className="h-2.5 w-2.5" />
-                            )}
-                          </span>
-                          <span>
-                            {transaction.is_manually_edited
-                              ? 'Manually edited'
-                              : transaction.auto_interest_status === 'locked'
-                              ? 'Auto • Locked'
-                              : 'Auto • Estimated'}
-                          </span>
-                        </span>
-                      )}
+                      {renderStatusPill(transaction)}
                     </div>
                     {transaction.description && (
                       <p className="text-muted-foreground mb-2 text-sm">{transaction.description}</p>
@@ -1007,69 +965,23 @@ const Transactions = () => {
                       </div>
                     )}
                     <div className="flex items-center gap-2 mb-2 flex-wrap">
-                      <span 
-                        className={cn(
-                          "inline-flex items-center gap-1.5 p-0.5 pl-1 pr-2.5 rounded-full border-2 text-xs font-bold shadow-sm transition-all select-none",
-                          transaction.type === 'income' 
-                            ? "border-emerald-600 bg-emerald-50 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200" 
-                            : "border-rose-500 bg-rose-50 text-rose-800 dark:bg-rose-950/40 dark:text-rose-200"
-                        )}
-                      >
-                        <span className={cn(
-                          "w-6 h-6 rounded-[7px] flex items-center justify-center shrink-0",
-                          transaction.type === 'income' ? "bg-emerald-200 dark:bg-emerald-800/60 text-emerald-700 dark:text-emerald-200" : "bg-rose-200 dark:bg-rose-800/60 text-rose-700 dark:text-rose-200"
-                        )}>
-                          {transaction.type === 'income' ? (
-                            <ArrowDownLeft className="h-3.5 w-3.5 stroke-[2.5]" />
-                          ) : (
-                            <ArrowUpRight className="h-3.5 w-3.5 stroke-[2.5]" />
-                          )}
-                        </span>
-                        <span>{transaction.type === 'income' ? 'Income' : 'Expense'}</span>
-                      </span>
+                      {renderChipPill(
+                        transaction.type === 'income'
+                          ? { borderClass: 'border-emerald-600 dark:border-emerald-500', bgClass: 'bg-emerald-50 dark:bg-emerald-950/40', textClass: 'text-emerald-800 dark:text-emerald-200', squircleBgClass: 'bg-emerald-200 dark:bg-emerald-800/60', iconColorClass: 'text-emerald-700 dark:text-emerald-200' }
+                          : { borderClass: 'border-rose-500 dark:border-rose-500', bgClass: 'bg-rose-50 dark:bg-rose-950/40', textClass: 'text-rose-800 dark:text-rose-200', squircleBgClass: 'bg-rose-200 dark:bg-rose-800/60', iconColorClass: 'text-rose-700 dark:text-rose-200' },
+                        transaction.type === 'income' ? 'Income' : 'Expense',
+                        transaction.type === 'income' ? ArrowDownLeft : ArrowUpRight,
+                        'sm'
+                      )}
 
                       {(() => {
                         const cat = getCategoryTagStyle(transaction.category);
-                        const CatIcon = cat.icon;
-                        return (
-                          <span className={cn(
-                            "inline-flex items-center gap-1.5 p-0.5 pl-1 pr-2.5 rounded-full border-2 text-xs font-bold shadow-sm transition-all select-none",
-                            cat.borderClass,
-                            cat.bgClass,
-                            cat.textClass
-                          )}>
-                            <span className={cn(
-                              "w-6 h-6 rounded-[7px] flex items-center justify-center shrink-0",
-                              cat.squircleBgClass,
-                              cat.iconColorClass
-                            )}>
-                              <CatIcon className="h-3.5 w-3.5" />
-                            </span>
-                            <span>{transaction.category.charAt(0).toUpperCase() + transaction.category.slice(1)}</span>
-                          </span>
-                        );
+                        return renderChipPill(cat, transaction.category.charAt(0).toUpperCase() + transaction.category.slice(1), cat.icon, 'sm');
                       })()}
 
                       {(() => {
                         const pm = getPaymentMethodTagStyle(transaction.paymentMethod || '');
-                        const PmIcon = pm.icon;
-                        return (
-                          <span className={cn(
-                            "inline-flex items-center gap-1.5 p-0.5 pl-1 pr-2.5 rounded-full border-2 text-xs font-bold shadow-sm transition-all select-none",
-                            pm.borderClass,
-                            pm.bgClass,
-                            pm.textClass
-                          )}>
-                            <span className={cn(
-                              "w-6 h-6 rounded-[7px] flex items-center justify-center shrink-0",
-                              pm.squircleBgClass,
-                              pm.iconColorClass
-                            )}>
-                              <PmIcon className="h-3.5 w-3.5" />
-                            </span>
-                            <span>{transaction.paymentMethod || 'Not specified'}</span>
-                          </span>
-                        );
+                        return renderChipPill(pm, transaction.paymentMethod || 'Not specified', pm.icon, 'sm');
                       })()}
                     </div>
                     <p className="text-xs text-muted-foreground mt-2">Double tap to edit</p>
