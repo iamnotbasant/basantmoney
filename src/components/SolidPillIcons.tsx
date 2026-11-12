@@ -96,13 +96,10 @@ export const IconInterest = ({ className = "w-4 h-4" }: { className?: string }) 
 
 export const IconCashback = ({ className = "w-4 h-4" }: { className?: string }) => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className={className}>
-    {/* Coin first, return arrow second: the old icon read as "refresh"
-        because the circular arrow dominated. Now the coin (with ₹) is the
-        big shape and the return arrow is a small arc at the top-right. */}
-    <circle cx="11" cy="13.5" r="7.5" />
-    <path d="M8 10.5h6M8 13h6M11 10.5 9 16.5" />
-    <path d="M18.5 2.5v3h-3" />
-    <path d="M18.5 5.5a8 8 0 0 1 1.5 4.5" />
+    <path d="M20 7V3l-4 4" />
+    <path d="M20 7a9 9 0 1 0 1 8" />
+    <circle cx="12" cy="12" r="3.5" />
+    <path d="M12 9.5v5M13.5 10.5h-2a1 1 0 0 0 0 2h1a1 1 0 0 1 0 2h-2" />
   </svg>
 );
 
