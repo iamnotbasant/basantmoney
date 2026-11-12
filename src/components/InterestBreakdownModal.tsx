@@ -65,6 +65,7 @@ export const InterestBreakdownModal: React.FC<InterestBreakdownModalProps> = ({
 
   const monthDescription = getInterestDescription(yearMonth);
   const totalSum = records.reduce((sum, r) => sum + Number(r.interest_amount), 0);
+  const displayTotal = records.length > 0 ? totalSum : (entryTotal ?? totalSum);
   const statusLabel =
     status === 'manually_edited' ? 'Manually edited' : status === 'locked' ? 'Auto • Locked' : 'Auto • Estimated';
   const statusClasses =
@@ -106,7 +107,7 @@ export const InterestBreakdownModal: React.FC<InterestBreakdownModalProps> = ({
           </div>
           <div>
             <span className="text-muted-foreground">Total Accrued: </span>
-            <span className="font-bold text-green-600 dark:text-emerald-400">₹{(entryTotal ?? totalSum).toFixed(2)}</span>
+            <span className="font-bold text-green-600 dark:text-emerald-400">₹{displayTotal.toFixed(2)}</span>
           </div>
           <div>
             <span className="text-muted-foreground">Days: </span>

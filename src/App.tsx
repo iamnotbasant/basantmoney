@@ -19,14 +19,21 @@ import Analytics from "./pages/Analytics";
 import NotFound from "./pages/NotFound";
 
 import ErrorBoundary from "@/components/ErrorBoundary";
+import { useInterest } from "@/hooks/useInterest";
 
 const queryClient = new QueryClient();
+
+const InterestSync: React.FC = () => {
+  useInterest();
+  return null;
+};
 
 const App = () => (
   <ErrorBoundary>
     <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
+          <InterestSync />
           <TooltipProvider>
             <Toaster />
             <Sonner />

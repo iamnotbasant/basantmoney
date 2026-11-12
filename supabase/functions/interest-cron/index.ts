@@ -157,27 +157,38 @@ Deno.serve(async (req) => {
       const expenseList = expensesRes.data || [];
       const primaryBankId = bankDataRes.data?.[0]?.id || null;
 
+      // Track daily interest in this run to compute progressive closing balances
+      const processedDaysInRun: { date: string; interestAmount: number }[] = [];
+
       // Process each unprocessed day in chronological order
       for (const d of datesToProcess) {
         const applicableRate = rates.find(r => r.effective_from_date <= d) || rates[rates.length - 1];
         const ratePercent = Number(applicableRate.annual_rate_percent);
         const dMonth = d.slice(0, 7);
 
-        // Filter out auto-interest entries of the month being calculated
-        const totalIncome = incomeList
-          .filter(inc => inc.date <= d && !(inc.is_auto_interest && inc.date.slice(0, 7) === dMonth))
+        // Filter out auto-interest entries of the month being calculated and future months
+        const baseIncome = incomeList
+          .filter(inc => inc.date <= d && !(inc.is_auto_interest && inc.date.slice(0, 7) >= dMonth))
           .reduce((sum, inc) => sum + Number(inc.amount), 0);
 
         const totalExpense = expenseList
           .filter(exp => exp.date <= d)
           .reduce((sum, exp) => sum + Number(exp.amount), 0);
 
-        const closingBalance = roundToTwo(totalIncome - totalExpense);
+        // Accrued interest so far in this month from processed days in this run
+        const monthAccruedSoFar = processedDaysInRun
+          .filter(p => p.date.slice(0, 7) === dMonth && p.date < d)
+          .reduce((sum, p) => sum + p.interestAmount, 0);
+
+        const balanceBeforeInterest = roundToTwo(baseIncome - totalExpense + monthAccruedSoFar);
 
         let interestAmount = 0;
-        if (closingBalance > 0 && ratePercent > 0) {
-          interestAmount = roundToTwo((closingBalance * (ratePercent / 100)) / 365);
+        if (balanceBeforeInterest > 0 && ratePercent > 0) {
+          interestAmount = roundToTwo((balanceBeforeInterest * (ratePercent / 100)) / 365);
         }
+
+        const closingBalance = roundToTwo(balanceBeforeInterest + interestAmount);
+        processedDaysInRun.push({ date: d, interestAmount });
 
         const { error: upsertDayError } = await supabase
           .from('interest_days')
