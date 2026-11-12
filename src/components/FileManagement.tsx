@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import { 
   Upload, 
   Download, 
-  FileText, 
   Database, 
   RefreshCw, 
   FileSpreadsheet, 
@@ -70,10 +69,8 @@ export const FileManagement: React.FC<FileManagementProps> = ({
   const { user } = useAuth();
   const { bankAccounts, currentAccount } = useBankAccounts();
 
-  // Active sub-tab
   const [activeSubTab, setActiveSubTab] = useState<'export' | 'import' | 'templates'>('export');
 
-  // Database stats
   const [stats, setStats] = useState({
     incomeCount: 0,
     incomeTotal: 0,
@@ -87,19 +84,16 @@ export const FileManagement: React.FC<FileManagementProps> = ({
   const [isExporting, setIsExporting] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
 
-  // Hidden file inputs
   const incomeFileInputRef = useRef<HTMLInputElement>(null);
   const expenseFileInputRef = useRef<HTMLInputElement>(null);
   const categoriesFileInputRef = useRef<HTMLInputElement>(null);
   const fullBackupFileInputRef = useRef<HTMLInputElement>(null);
 
-  // Import preview dialog state
   const [preview, setPreview] = useState<ParsedImportPreview | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [importMode, setImportMode] = useState<'append' | 'replace'>('append');
   const [targetBankAccountId, setTargetBankAccountId] = useState<string>('');
 
-  // Set default target bank account when accounts load
   useEffect(() => {
     if (currentAccount?.id) {
       setTargetBankAccountId(currentAccount.id);
@@ -109,30 +103,25 @@ export const FileManagement: React.FC<FileManagementProps> = ({
     }
   }, [currentAccount, bankAccounts]);
 
-  // Fetch real database counts and stats
   const fetchDatabaseStats = async () => {
     if (!user) return;
     setIsLoadingStats(true);
     try {
-      // 1. Income count & total
       const { data: incomeRows } = await supabase
         .from('user_income')
         .select('amount')
         .eq('user_id', user.id);
 
-      // 2. Expense count & total
       const { data: expenseRows } = await supabase
         .from('user_expenses')
         .select('amount')
         .eq('user_id', user.id);
 
-      // 3. Bank accounts
       const { count: bankCount } = await supabase
         .from('user_bank_accounts')
         .select('*', { count: 'exact', head: true })
         .eq('user_id', user.id);
 
-      // 4. Categories & Payment Methods from localStorage
       const storedCategories = localStorage.getItem('categories');
       const storedMethods = localStorage.getItem('paymentMethods');
       const cats = storedCategories ? JSON.parse(storedCategories) : [];
@@ -161,7 +150,6 @@ export const FileManagement: React.FC<FileManagementProps> = ({
     fetchDatabaseStats();
   }, [user, bankAccounts.length]);
 
-  // CSV parsing helper that handles quotes and commas
   const parseCSVText = (csv: string): Record<string, string>[] => {
     const lines: string[] = [];
     let currentLine = '';
@@ -233,7 +221,6 @@ export const FileManagement: React.FC<FileManagementProps> = ({
     return rows;
   };
 
-  // Helper to trigger browser file download
   const triggerDownload = (content: string, filename: string, mimeType: string) => {
     const blob = new Blob([content], { type: mimeType });
     const url = URL.createObjectURL(blob);
@@ -268,10 +255,6 @@ export const FileManagement: React.FC<FileManagementProps> = ({
     const csvContent = '\uFEFF' + [headerLine, ...bodyLines].join('\r\n');
     triggerDownload(csvContent, filename, 'text/csv;charset=utf-8');
   };
-
-  // ----------------------------------------------------
-  // EXPORT HANDLERS (Fetching fresh from Supabase)
-  // ----------------------------------------------------
 
   const exportIncomeJSON = async () => {
     if (!user) return toast.error('Please login to export data');
@@ -499,10 +482,6 @@ export const FileManagement: React.FC<FileManagementProps> = ({
     }
   };
 
-  // ----------------------------------------------------
-  // IMPORT & FILE PARSING HANDLERS
-  // ----------------------------------------------------
-
   const handleFileSelected = (
     e: React.ChangeEvent<HTMLInputElement>,
     type: 'income' | 'expense' | 'categories' | 'full_backup'
@@ -680,10 +659,6 @@ export const FileManagement: React.FC<FileManagementProps> = ({
     });
     setIsPreviewOpen(true);
   };
-
-  // ----------------------------------------------------
-  // EXECUTE IMPORT TO SUPABASE DATABASE
-  // ----------------------------------------------------
 
   const executeImport = async () => {
     if (!preview || !user) {
@@ -1045,7 +1020,6 @@ export const FileManagement: React.FC<FileManagementProps> = ({
             </CardContent>
           </Card>
 
-          {/* Granular Export Cards Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Card className="hover:border-primary/40 transition-colors">
               <CardHeader className="pb-3">

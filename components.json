@@ -16,5 +16,13 @@
     "ui": "@/components/ui",
     "lib": "@/lib",
     "hooks": "@/hooks"
+  },
+  "registries": {
+    "@mebius": {
+      "url": "https://www.mebius.design/r/{name}.json",
+      "headers": {
+        "Authorization": "Bearer ${MEBIUS_TOKEN}"
+      }
+    }
   }
 }
