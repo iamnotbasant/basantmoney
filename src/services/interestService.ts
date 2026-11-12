@@ -359,18 +359,22 @@ export class InterestService {
     const novEndDate = todayStr >= '2026-11-01' ? todayStr : '2026-11-01';
     const novDates = getDateRange('2026-11-01', novEndDate);
 
-    const novRecords: InterestDayRecord[] = novDates.map(date => {
+    // Progressive backfill: start from base balance ₹11,130.05 and accumulate daily interest
+    let runningBalance = 11130.05;
+    const novRecords: InterestDayRecord[] = [];
+    for (const date of novDates) {
       const rate = getRateForDate(rates, date);
-      const interest = calculateDailyInterest(11130.05, rate);
-      return {
+      const interest = calculateDailyInterest(runningBalance, rate);
+      runningBalance = roundToTwoDecimals(runningBalance + interest);
+      novRecords.push({
         interest_date: date,
-        closing_balance: 11130.05,
+        closing_balance: runningBalance,
         annual_rate_percent: rate,
         interest_amount: interest,
         account: 'Slice',
         user_id: userId,
-      };
-    });
+      });
+    }
 
     // Upsert November interest_days
     if (novRecords.length > 0) {
@@ -493,6 +497,14 @@ export class InterestService {
         novemberAmount: 0,
         warnings,
       };
+    }
+
+    try {
+      window.dispatchEvent(new CustomEvent('incomeDataChanged'));
+      window.dispatchEvent(new CustomEvent('interestUpdated'));
+      window.dispatchEvent(new CustomEvent('bankAccountChanged'));
+    } catch {
+      // ignore SSR or non-browser environments
     }
 
     return {
