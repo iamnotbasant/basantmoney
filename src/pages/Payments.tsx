@@ -318,26 +318,45 @@ const Payments = () => {
         setIsPersonDetailsOpen(true);
     };
 
+    const uniquePeopleCount = new Set(udaarList.map(u => u.personName)).size;
+
     return (
         <div className="min-h-screen bg-background">
             <Header />
 
             <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-6 border-b border-border">
-                    <div className="flex items-center">
-                        <Button variant="ghost" size="sm" onClick={() => navigate('/')} className="mr-3">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-6 border-b border-border/60">
+                    <div className="flex items-center gap-3">
+                        <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            onClick={() => navigate('/')} 
+                            className="h-9 w-9 rounded-full hover:bg-accent border border-border/60 shrink-0"
+                            title="Back to Vault"
+                        >
                             <ArrowLeft className="h-4 w-4" />
                         </Button>
                         <div>
-                            <h1 className="text-2xl font-bold tracking-tight text-foreground">Payments & Default</h1>
-                            <p className="text-xs sm:text-sm text-muted-foreground">Track loans, borrowed money (Udaar), and custom payments</p>
+                            <div className="flex items-center gap-2">
+                                <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-foreground">
+                                    Payments & Default
+                                </h1>
+                                <span className="text-[11px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
+                                    Ledger
+                                </span>
+                            </div>
+                            <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
+                                Track loans, borrowed money (Udaar), and custom scheduled payments
+                            </p>
                         </div>
                     </div>
-                    <div className="flex gap-2">
+
+                    <div className="flex items-center gap-2">
                         <Dialog open={isUdaarDialogOpen} onOpenChange={setIsUdaarDialogOpen}>
                             <DialogTrigger asChild>
-                                <Button variant="outline">
-                                    <PlusCircle className="mr-2 h-4 w-4" /> Add Default
+                                <Button variant="outline" className="h-9 rounded-xl font-semibold gap-1.5 border-border/70 hover:bg-muted text-xs sm:text-sm shadow-xs">
+                                    <PlusCircle className="h-4 w-4 text-emerald-600 dark:text-emerald-400" /> 
+                                    <span>Add Default</span>
                                 </Button>
                             </DialogTrigger>
                             <AddDefaultDialog
@@ -357,8 +376,9 @@ const Payments = () => {
 
                         <Dialog open={isPaymentDialogOpen} onOpenChange={setIsPaymentDialogOpen}>
                             <DialogTrigger asChild>
-                                <Button>
-                                    <PlusCircle className="mr-2 h-4 w-4" /> Add Payment
+                                <Button className="h-9 rounded-xl font-semibold gap-1.5 shadow-sm text-xs sm:text-sm">
+                                    <PlusCircle className="h-4 w-4" /> 
+                                    <span>Add Payment</span>
                                 </Button>
                             </DialogTrigger>
                             <AddCustomPaymentDialog
@@ -382,14 +402,40 @@ const Payments = () => {
             <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
                 <PaymentSummaryCards udaarList={udaarList} customPayments={customPayments} />
 
-                <Tabs defaultValue="udaar" className="w-full">
-                    <TabsList className="grid w-full grid-cols-3">
-                        <TabsTrigger value="udaar">Default History</TabsTrigger>
-                        <TabsTrigger value="payments">Custom Payments</TabsTrigger>
-                        <TabsTrigger value="people">Person-wise</TabsTrigger>
-                    </TabsList>
+                <Tabs defaultValue="udaar" className="w-full space-y-6">
+                    <div className="flex justify-center sm:justify-start">
+                        <TabsList className="h-11 p-1 bg-muted/60 border border-border/60 rounded-2xl gap-1">
+                            <TabsTrigger 
+                                value="udaar"
+                                className="rounded-xl px-4 text-xs sm:text-sm font-semibold data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm transition-all gap-2"
+                            >
+                                <span>Default History</span>
+                                <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-muted text-muted-foreground font-bold">
+                                    {udaarList.length}
+                                </span>
+                            </TabsTrigger>
+                            <TabsTrigger 
+                                value="payments"
+                                className="rounded-xl px-4 text-xs sm:text-sm font-semibold data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm transition-all gap-2"
+                            >
+                                <span>Custom Payments</span>
+                                <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-muted text-muted-foreground font-bold">
+                                    {customPayments.length}
+                                </span>
+                            </TabsTrigger>
+                            <TabsTrigger 
+                                value="people"
+                                className="rounded-xl px-4 text-xs sm:text-sm font-semibold data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm transition-all gap-2"
+                            >
+                                <span>Person-wise</span>
+                                <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-muted text-muted-foreground font-bold">
+                                    {uniquePeopleCount}
+                                </span>
+                            </TabsTrigger>
+                        </TabsList>
+                    </div>
 
-                    <TabsContent value="udaar" className="space-y-4">
+                    <TabsContent value="udaar" className="space-y-4 focus-visible:outline-none">
                         <DefaultHistoryTab
                             udaarList={udaarList}
                             sortBy={sortBy}
@@ -400,21 +446,24 @@ const Payments = () => {
                             handleMarkAsPaid={handleMarkAsPaid}
                             handleDeleteUdaar={handleDeleteUdaar}
                             formatDate={formatDate}
+                            onAddNewUdaar={() => setIsUdaarDialogOpen(true)}
                         />
                     </TabsContent>
 
-                    <TabsContent value="payments" className="space-y-4">
+                    <TabsContent value="payments" className="space-y-4 focus-visible:outline-none">
                         <CustomPaymentsTab
                             customPayments={customPayments}
                             handleTogglePaymentStatus={handleTogglePaymentStatus}
                             formatDate={formatDate}
+                            onAddNewPayment={() => setIsPaymentDialogOpen(true)}
                         />
                     </TabsContent>
 
-                    <TabsContent value="people" className="space-y-4">
+                    <TabsContent value="people" className="space-y-4 focus-visible:outline-none">
                         <PersonWiseTab
                             udaarList={udaarList}
                             handlePersonCardClick={handlePersonCardClick}
+                            onAddNewUdaar={() => setIsUdaarDialogOpen(true)}
                         />
                     </TabsContent>
                 </Tabs>
