@@ -583,7 +583,7 @@ const Transactions = () => {
       <span
         className={cn(
           "inline-flex items-center rounded-full select-none whitespace-nowrap shrink-0",
-          md ? "h-6 gap-1 px-3 text-[13px] font-semibold" : "h-[22px] gap-1 px-3 text-xs font-semibold",
+          md ? "h-7 gap-1 px-3 text-[13px] font-semibold" : "h-[26px] gap-1 px-3 text-xs font-semibold",
           style.bgClass,
           style.textClass
         )}
