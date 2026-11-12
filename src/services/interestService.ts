@@ -1196,6 +1196,14 @@ export class InterestService {
 
     await this.logJobRun(trigger, dayRecords.length, 'ok', undefined, userId);
 
+    try {
+      window.dispatchEvent(new CustomEvent('incomeDataChanged'));
+      window.dispatchEvent(new CustomEvent('interestUpdated'));
+      window.dispatchEvent(new CustomEvent('bankAccountChanged'));
+    } catch {
+      // ignore SSR or non-browser environments
+    }
+
     return {
       daysProcessed: dayRecords.length,
       pendingCorrections,
@@ -1209,20 +1217,24 @@ export class InterestService {
 
   static async checkAndRunCatchUp(userId?: string): Promise<boolean> {
     const todayStr = getKolkataDateString();
+    const currentMonth = todayStr.slice(0, 7);
+    const monthStart = `${currentMonth}-01`;
 
     let latestRecordedDate: string | null = null;
+    let latestRecordedClosingBalance: number | null = null;
 
     if (userId) {
       try {
         const { data } = await supabase
           .from('interest_days')
-          .select('interest_date')
+          .select('interest_date, closing_balance')
           .eq('user_id', userId)
           .order('interest_date', { ascending: false })
           .limit(1);
 
         if (data && data.length > 0) {
           latestRecordedDate = data[0].interest_date;
+          latestRecordedClosingBalance = Number(data[0].closing_balance);
         }
       } catch (e) {
         console.warn('Error querying latest interest_date:', e);
@@ -1236,6 +1248,7 @@ export class InterestService {
           const list = JSON.parse(cached);
           if (list.length > 0) {
             latestRecordedDate = list[list.length - 1].interest_date;
+            latestRecordedClosingBalance = Number(list[list.length - 1].closing_balance);
           }
         } catch {
           // ignore
@@ -1243,28 +1256,32 @@ export class InterestService {
       }
     }
 
-    // If missing days exist between latestRecordedDate and today, run catch-up
-    if (!latestRecordedDate || latestRecordedDate < todayStr) {
-      let from = '2026-08-01';
-      if (latestRecordedDate) {
-        // Subsequent days start the day after latestRecordedDate
-        const [y, m, d] = latestRecordedDate.split('-').map(Number);
-        const nextDate = new Date(Date.UTC(y, m - 1, d + 1));
-        from = nextDate.toISOString().slice(0, 10);
-      }
+    // Determine if catch-up or re-sync is needed:
+    // 1. Missing days up to today (latestRecordedDate < todayStr)
+    // 2. OR today's record has legacy flat closing balance (e.g. 11130.05 instead of progressive >= 11150)
+    // 3. OR this session hasn't verified sync for todayStr
+    const sessionSynced = typeof sessionStorage !== 'undefined' && sessionStorage.getItem('interest_synced_today') === todayStr;
+    const isOutdatedBalance =
+      latestRecordedDate === todayStr &&
+      latestRecordedClosingBalance !== null &&
+      Math.abs(latestRecordedClosingBalance - 11130.05) < 0.05;
 
-      if (from <= todayStr) {
-        try {
-          const result = await this.recalculateInterest('app-open', userId, from);
-          if (result.daysProcessed > 0) {
-            toast.success('Interest updated (catch-up)');
-            return true;
-          }
-        } catch (e: any) {
-          console.error('Catch-up recomputation error:', e);
-          toast.error(`Interest catch-up failed: ${e?.message || 'Database error'}`);
-          return false;
+    const needsSync = !latestRecordedDate || latestRecordedDate < todayStr || isOutdatedBalance || !sessionSynced;
+
+    if (needsSync) {
+      try {
+        const result = await this.recalculateInterest('app-open', userId, monthStart);
+        if (typeof sessionStorage !== 'undefined') {
+          sessionStorage.setItem('interest_synced_today', todayStr);
         }
+        if (result.daysProcessed > 0) {
+          toast.success('Interest updated (catch-up)');
+          return true;
+        }
+      } catch (e: any) {
+        console.error('Catch-up recomputation error:', e);
+        toast.error(`Interest catch-up failed: ${e?.message || 'Database error'}`);
+        return false;
       }
     }
 

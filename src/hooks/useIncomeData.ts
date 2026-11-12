@@ -175,6 +175,20 @@ export const useIncomeData = (bankAccountId?: string | null) => {
     fetchIncomeData();
   }, [fetchIncomeData]);
 
+  useEffect(() => {
+    const handleUpdate = () => {
+      fetchIncomeData();
+    };
+    window.addEventListener('incomeDataChanged', handleUpdate);
+    window.addEventListener('bankAccountChanged', handleUpdate);
+    window.addEventListener('interestUpdated', handleUpdate);
+    return () => {
+      window.removeEventListener('incomeDataChanged', handleUpdate);
+      window.removeEventListener('bankAccountChanged', handleUpdate);
+      window.removeEventListener('interestUpdated', handleUpdate);
+    };
+  }, [fetchIncomeData]);
+
   return {
     incomeData,
     loading,

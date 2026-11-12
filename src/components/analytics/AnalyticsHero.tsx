@@ -10,6 +10,7 @@ import {
   Line,
   Area,
   Cell,
+  ReferenceLine,
 } from 'recharts';
 import { 
   Maximize2, 
@@ -21,8 +22,6 @@ import {
   Calendar,
   Layers,
   Sparkles,
-  ArrowUpRight,
-  ArrowDownRight
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { IncomeEntry } from '@/hooks/useIncomeData';
@@ -74,10 +73,10 @@ export const AnalyticsHero: React.FC<AnalyticsHeroProps> = ({
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   
-  // Controls
+  // Interactive Controls
   const [period, setPeriod] = useState<PeriodType>('month');
   const [selectedMonth, setSelectedMonth] = useState<number | 'all'>('all'); // 0-11 or 'all'
-  const [weekOffset, setWeekOffset] = useState<number>(0); // 0 = current 8 weeks, -1 = previous 8 weeks
+  const [weekOffset, setWeekOffset] = useState<number>(0); // 0 = current 8 weeks, -1 = earlier 8 weeks
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
   const [visibleSeries, setVisibleSeries] = useState({
     income: true,
@@ -399,7 +398,7 @@ export const AnalyticsHero: React.FC<AnalyticsHeroProps> = ({
     });
   }, [incomeData, expenseData, period, selectedMonth, weekOffset]);
 
-  // Verified figures fallback when income & expenses have no DB records yet
+  // Fallback verified figures if database has no records yet
   const FALLBACK_INCOME = 15767.46;
   const FALLBACK_EXPENSES = 4618.93;
   const FALLBACK_NET = 11148.53;
@@ -424,9 +423,8 @@ export const AnalyticsHero: React.FC<AnalyticsHeroProps> = ({
     };
   }, [hasData, chartData]);
 
-  // Growth calculation comparing current period with previous
+  // Overall Growth percentage
   const overallGrowth = useMemo(() => {
-    // If user selected a specific month, compare that month with previous month
     if (period === 'month' && selectedMonth !== 'all') {
       const curMonthIncome = incomeData
         .filter(item => {
@@ -450,7 +448,6 @@ export const AnalyticsHero: React.FC<AnalyticsHeroProps> = ({
       return curMonthIncome > 0 ? 100 : 0;
     }
 
-    // Default latest comparison
     const pointsWithIncome = chartData.filter(p => p.income > 0);
     if (pointsWithIncome.length >= 2) {
       const latest = pointsWithIncome[pointsWithIncome.length - 1];
@@ -462,21 +459,21 @@ export const AnalyticsHero: React.FC<AnalyticsHeroProps> = ({
     return -99;
   }, [incomeData, period, selectedMonth, chartData]);
 
-  const heroLabel = useMemo(() => {
+  const headerTitle = useMemo(() => {
     if (period === 'month' && selectedMonth !== 'all') {
-      return `${fullMonthNames[selectedMonth].toUpperCase()} 2026 INCOME`;
+      return `${fullMonthNames[selectedMonth]} 2026 Statement`;
     }
     switch (period) {
       case 'month':
-        return '2026 INCOME';
+        return '2026 Income Statement';
       case 'quarter':
-        return '2026 QUARTERLY INCOME';
+        return '2026 Quarterly Performance';
       case 'year':
-        return 'ALL-TIME INCOME';
+        return 'Multi-Year Financial Summary';
       case 'all':
-        return 'COMPLETE ALL-TIME RECORD';
+        return 'All-Time Financial Performance';
       case 'week':
-        return 'WEEKLY CASHFLOW';
+        return 'Weekly Cash Flow Analysis';
     }
   }, [period, selectedMonth]);
 
@@ -491,9 +488,9 @@ export const AnalyticsHero: React.FC<AnalyticsHeroProps> = ({
       case 'quarter':
         return 'Q1 – Q4 2026';
       case 'year':
-        return '2024 – 2026';
+        return '2024 – 2026 Fiscal Years';
       case 'all':
-        return 'All Historical Financial Records';
+        return 'Complete Recorded History';
       case 'week': {
         if (chartData.length > 0) {
           const first = chartData[0];
@@ -511,7 +508,7 @@ export const AnalyticsHero: React.FC<AnalyticsHeroProps> = ({
     }
   }, [period, selectedMonth, chartData]);
 
-  // Split whole rupees and paise
+  // Breakdown of whole rupees and paise
   const abs = Math.abs(displayIncome);
   let whole = Math.trunc(abs);
   let paise = Math.round((abs - whole) * 100);
@@ -526,155 +523,35 @@ export const AnalyticsHero: React.FC<AnalyticsHeroProps> = ({
       className={cn(
         "w-full transition-all duration-300 relative select-none",
         isFullscreen
-          ? "fixed inset-0 z-50 bg-[#0C0D10] text-white p-6 sm:p-10 overflow-y-auto flex flex-col justify-between"
-          : "bg-transparent text-foreground"
+          ? "fixed inset-0 z-50 bg-[#08090C] text-white p-6 sm:p-10 overflow-y-auto flex flex-col justify-between"
+          : "bg-transparent"
       )}
     >
       {/* 
-        Integrated Natural Container (NOT an alien detached box):
-        Blends with the application layout using subtle border, smooth backdrop, and natural airflow.
+        Executive High-Craft Card Container:
+        Always pure, high-contrast dark aesthetic with subtle borders and balanced spacing.
       */}
       <div className={cn(
-        "w-full transition-all duration-300",
-        !isFullscreen && "rounded-3xl border border-zinc-200/80 dark:border-zinc-800/80 bg-white/70 dark:bg-[#111215]/80 backdrop-blur-xl p-6 sm:p-8 lg:p-10 shadow-xl"
+        "w-full transition-all duration-300 flex flex-col justify-between",
+        !isFullscreen && "rounded-3xl border border-white/[0.08] bg-[#0A0B0E] p-6 sm:p-8 lg:p-10 shadow-2xl backdrop-blur-2xl"
       )}>
         
-        {/* Top Header Row (3-Column Layout from User's Screenshot) */}
-        <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-6 pb-2">
-          
-          {/* Left Column: Title label & Fixed Interactive Income/Expense/Net Buttons */}
-          <div className="space-y-3.5">
-            <p className="text-[11px] font-bold tracking-widest text-muted-foreground uppercase">
-              {heroLabel}
-            </p>
-
-            {/* Income / Expense / Net High-Craft Interactive Buttons */}
-            <div className="flex flex-wrap items-center gap-2 text-xs">
-              
-              {/* Income Button: Active with Solid Dot + Live Amount */}
-              <button
-                type="button"
-                onClick={() => setVisibleSeries(prev => ({ ...prev, income: !prev.income }))}
-                className={cn(
-                  "inline-flex items-center gap-2 px-3 py-1.5 rounded-xl border transition-all duration-200 font-semibold shadow-sm",
-                  visibleSeries.income
-                    ? "bg-zinc-900 text-white dark:bg-zinc-800 dark:text-zinc-100 border-zinc-700 ring-1 ring-zinc-500/30"
-                    : "bg-muted/30 text-muted-foreground border-transparent opacity-50 hover:opacity-80"
-                )}
-                title="Toggle Income Series"
-              >
-                <span className={cn(
-                  "h-2.5 w-2.5 rounded-full transition-colors",
-                  visibleSeries.income ? "bg-white dark:bg-zinc-200" : "bg-muted-foreground"
-                )} />
-                <span>Income</span>
-                <span className="font-mono text-[11px] text-zinc-300 font-bold ml-0.5">
-                  ₹{Math.round(displayIncome).toLocaleString('en-IN')}
-                </span>
-              </button>
-
-              {/* Expenses Button: Active with Rose Dot + Live Amount */}
-              <button
-                type="button"
-                onClick={() => setVisibleSeries(prev => ({ ...prev, expenses: !prev.expenses }))}
-                className={cn(
-                  "inline-flex items-center gap-2 px-3 py-1.5 rounded-xl border transition-all duration-200 font-semibold shadow-sm",
-                  visibleSeries.expenses
-                    ? "bg-rose-500/15 text-rose-500 dark:text-rose-400 border-rose-500/30 ring-1 ring-rose-500/20"
-                    : "bg-muted/30 text-muted-foreground border-transparent opacity-50 hover:opacity-80"
-                )}
-                title="Toggle Expenses Series"
-              >
-                <span className={cn(
-                  "h-2.5 w-2.5 rounded-full transition-colors",
-                  visibleSeries.expenses ? "bg-rose-500" : "border border-muted-foreground"
-                )} />
-                <span>Expenses</span>
-                <span className="font-mono text-[11px] font-bold ml-0.5">
-                  ₹{Math.round(displayExpenses).toLocaleString('en-IN')}
-                </span>
-              </button>
-
-              {/* Net / Balance Button: Active with Line Indicator + Live Amount */}
-              <button
-                type="button"
-                onClick={() => setVisibleSeries(prev => ({ ...prev, net: !prev.net }))}
-                className={cn(
-                  "inline-flex items-center gap-2 px-3 py-1.5 rounded-xl border transition-all duration-200 font-semibold shadow-sm",
-                  visibleSeries.net
-                    ? "bg-foreground/10 text-foreground border-foreground/25 ring-1 ring-foreground/20"
-                    : "bg-muted/30 text-muted-foreground border-transparent opacity-50 hover:opacity-80"
-                )}
-                title="Toggle Net Curve"
-              >
-                <span className="font-bold text-base leading-none select-none">—</span>
-                <span>Net</span>
-                <span className="font-mono text-[11px] font-bold ml-0.5">
-                  ₹{Math.round(displayNet).toLocaleString('en-IN')}
-                </span>
-              </button>
-            </div>
+        {/* ======================================================== */}
+        {/* ROW 1: TOP NAVIGATION & CONTROLS (BALANCED & CLUTTER-FREE) */}
+        {/* ======================================================== */}
+        <div className="flex items-center justify-between pb-6 border-b border-white/[0.06]">
+          {/* Section Indicator */}
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+            <h2 className="text-xs sm:text-sm font-semibold tracking-wider text-zinc-400 uppercase">
+              {headerTitle}
+            </h2>
           </div>
 
-          {/* Center Column: ONE HUGE HEADLINE TYPOGRAPHY (from Screenshot) */}
-          <div className="text-center order-first lg:order-none py-2 lg:py-0">
-            <div className="inline-flex items-baseline justify-center font-extrabold tracking-tight font-sans text-foreground">
-              <span className="text-5xl sm:text-7xl lg:text-8xl">
-                ₹{whole.toLocaleString('en-IN')}
-              </span>
-              <span className="text-2xl sm:text-4xl lg:text-5xl text-foreground/80 font-bold">
-                .{String(paise).padStart(2, '0')}
-              </span>
-            </div>
-
-            <p className="text-xs sm:text-sm text-muted-foreground font-medium mt-1">
-              {subtitle}
-            </p>
-
-            {/* Growth Pill Badge (Dynamic Green for positive, Red for negative) */}
-            <div className="mt-2.5 flex justify-center">
-              <div
-                className={cn(
-                  "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold shadow-sm transition-all duration-200 border",
-                  overallGrowth >= 0
-                    ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 ring-1 ring-emerald-500/20"
-                    : "bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30 ring-1 ring-rose-500/20"
-                )}
-              >
-                {overallGrowth >= 0 ? (
-                  <TrendingUp className="h-3.5 w-3.5" />
-                ) : (
-                  <TrendingDown className="h-3.5 w-3.5" />
-                )}
-                <span>
-                  {overallGrowth >= 0 ? `+${overallGrowth}%` : `${overallGrowth}%`} vs last {period === 'week' ? 'week' : 'month'}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Right Column: Real Fullscreen Button & Timeframe Switcher (Week | Month | Quarter | Year | All) */}
-          <div className="flex flex-col items-start lg:items-end gap-3">
-            
-            {/* Real Fullscreen Button */}
-            <button
-              type="button"
-              onClick={toggleFullscreen}
-              className="p-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted/50 border border-transparent hover:border-border/60 transition-all duration-200 shadow-sm"
-              title={isFullscreen ? "Exit Fullscreen (Esc)" : "Enter Fullscreen"}
-            >
-              {isFullscreen ? (
-                <div className="flex items-center gap-1.5 text-xs font-semibold px-1">
-                  <Minimize2 className="h-4 w-4" />
-                  <span>Exit Fullscreen</span>
-                </div>
-              ) : (
-                <Maximize2 className="h-4 w-4" />
-              )}
-            </button>
-
-            {/* Timeframe Switcher: Week | Month | Quarter | Year | All */}
-            <div className="flex items-center gap-4 text-xs sm:text-sm font-medium select-none">
+          {/* Right: Timeframe Segmented Control + Fullscreen Icon Button */}
+          <div className="flex items-center gap-3">
+            {/* Timeframe Switcher (Segmented luxury pill) */}
+            <div className="flex items-center bg-white/[0.04] border border-white/[0.08] p-1 rounded-xl text-xs font-medium">
               {(['week', 'month', 'quarter', 'year', 'all'] as const).map((p) => {
                 const isActive = period === p;
                 return (
@@ -687,10 +564,10 @@ export const AnalyticsHero: React.FC<AnalyticsHeroProps> = ({
                       if (p !== 'week') setWeekOffset(0);
                     }}
                     className={cn(
-                      'capitalize transition-all relative pb-1',
+                      'px-3 py-1.5 rounded-lg capitalize transition-all duration-200',
                       isActive
-                        ? 'text-foreground font-bold after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[2px] after:bg-foreground'
-                        : 'text-muted-foreground hover:text-foreground'
+                        ? 'bg-white text-zinc-950 font-bold shadow-md shadow-black/40'
+                        : 'text-zinc-400 hover:text-white hover:bg-white/[0.04]'
                     )}
                   >
                     {p}
@@ -698,32 +575,163 @@ export const AnalyticsHero: React.FC<AnalyticsHeroProps> = ({
                 );
               })}
             </div>
+
+            {/* Fullscreen Button */}
+            <button
+              type="button"
+              onClick={toggleFullscreen}
+              className="p-2 rounded-xl text-zinc-400 hover:text-white bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] transition-all duration-200"
+              title={isFullscreen ? "Exit Fullscreen (Esc)" : "Expand Fullscreen"}
+            >
+              {isFullscreen ? (
+                <div className="flex items-center gap-1.5 text-xs font-semibold px-1">
+                  <Minimize2 className="h-4 w-4" />
+                  <span className="hidden sm:inline">Exit</span>
+                </div>
+              ) : (
+                <Maximize2 className="h-4 w-4" />
+              )}
+            </button>
           </div>
         </div>
 
-        {/* 
-          Month-Wise Interactive System:
-          When 'Month' is active, allows user to pick ANY month (Jan - Dec) or 'All 2026'
-        */}
-        {period === 'month' && (
-          <div className="mt-5 pt-4 border-t border-border/40 dark:border-white/5 flex flex-wrap items-center justify-between gap-3 text-xs animate-fade-in">
-            <div className="flex items-center gap-1 overflow-x-auto pb-1 max-w-full">
-              <span className="text-[11px] font-bold text-muted-foreground uppercase mr-2 flex items-center gap-1 shrink-0">
-                <Calendar className="h-3 w-3" /> Select Month:
+        {/* ======================================================== */}
+        {/* ROW 2: HERO AMOUNT & TYPOGRAPHY (PURE CENTER & ZERO CLUTTER) */}
+        {/* ======================================================== */}
+        <div className="py-8 text-center flex flex-col items-center justify-center">
+          {/* Category Label */}
+          <span className="text-[11px] font-bold tracking-[0.2em] text-zinc-400 uppercase mb-2">
+            TOTAL REVENUE
+          </span>
+
+          {/* Crisp, Massive White Typography (Never dark/illegible) */}
+          <div className="inline-flex items-baseline justify-center tracking-tight font-extrabold text-white">
+            <span className="text-6xl sm:text-7xl lg:text-8xl drop-shadow-sm">
+              ₹{whole.toLocaleString('en-IN')}
+            </span>
+            <span className="text-3xl sm:text-4xl lg:text-5xl text-zinc-400 font-bold ml-0.5">
+              .{String(paise).padStart(2, '0')}
+            </span>
+          </div>
+
+          {/* Subtitle / Date Range */}
+          <p className="text-xs sm:text-sm text-zinc-400 font-medium mt-2">
+            {subtitle}
+          </p>
+
+          {/* Dynamic Growth Badge */}
+          <div className="mt-3">
+            <div
+              className={cn(
+                "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold transition-all duration-200 border",
+                overallGrowth >= 0
+                  ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20 shadow-sm shadow-emerald-500/10"
+                  : "bg-rose-500/10 text-rose-400 border-rose-500/20 shadow-sm shadow-rose-500/10"
+              )}
+            >
+              {overallGrowth >= 0 ? (
+                <TrendingUp className="h-3.5 w-3.5" />
+              ) : (
+                <TrendingDown className="h-3.5 w-3.5" />
+              )}
+              <span>
+                {overallGrowth >= 0 ? `+${overallGrowth}%` : `${overallGrowth}%`} vs previous {period === 'week' ? 'week' : 'month'}
               </span>
-              
+            </div>
+          </div>
+
+          {/* ======================================================== */}
+          {/* ROW 3: SERIES LEGEND & INTERACTIVE TOGGLES (CENTERED)   */}
+          {/* ======================================================== */}
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-2 sm:gap-3 text-xs">
+            {/* Income Series Toggle */}
+            <button
+              type="button"
+              onClick={() => setVisibleSeries(prev => ({ ...prev, income: !prev.income }))}
+              className={cn(
+                "inline-flex items-center gap-2.5 px-3.5 py-1.5 rounded-full border transition-all duration-200 font-medium",
+                visibleSeries.income
+                  ? "bg-white/[0.08] text-white border-white/20 shadow-sm"
+                  : "bg-transparent text-zinc-500 border-transparent opacity-40 hover:opacity-75"
+              )}
+              title="Toggle Income Series"
+            >
+              <span className={cn(
+                "h-2 w-2 rounded-full transition-colors",
+                visibleSeries.income ? "bg-white" : "bg-zinc-600"
+              )} />
+              <span className="font-semibold">Income</span>
+              <span className="font-mono text-zinc-300 font-bold">
+                ₹{Math.round(displayIncome).toLocaleString('en-IN')}
+              </span>
+            </button>
+
+            {/* Expenses Series Toggle */}
+            <button
+              type="button"
+              onClick={() => setVisibleSeries(prev => ({ ...prev, expenses: !prev.expenses }))}
+              className={cn(
+                "inline-flex items-center gap-2.5 px-3.5 py-1.5 rounded-full border transition-all duration-200 font-medium",
+                visibleSeries.expenses
+                  ? "bg-rose-500/15 text-rose-300 border-rose-500/30 shadow-sm"
+                  : "bg-transparent text-zinc-500 border-transparent opacity-40 hover:opacity-75"
+              )}
+              title="Toggle Expenses Series"
+            >
+              <span className={cn(
+                "h-2 w-2 rounded-full transition-colors",
+                visibleSeries.expenses ? "bg-[#FF2D55]" : "bg-zinc-600"
+              )} />
+              <span className="font-semibold">Expenses</span>
+              <span className="font-mono text-rose-300 font-bold">
+                ₹{Math.round(displayExpenses).toLocaleString('en-IN')}
+              </span>
+            </button>
+
+            {/* Net Series Toggle */}
+            <button
+              type="button"
+              onClick={() => setVisibleSeries(prev => ({ ...prev, net: !prev.net }))}
+              className={cn(
+                "inline-flex items-center gap-2.5 px-3.5 py-1.5 rounded-full border transition-all duration-200 font-medium",
+                visibleSeries.net
+                  ? "bg-white/[0.08] text-white border-white/20 shadow-sm"
+                  : "bg-transparent text-zinc-500 border-transparent opacity-40 hover:opacity-75"
+              )}
+              title="Toggle Net Curve"
+            >
+              <span className="font-bold text-sm leading-none select-none text-white">—</span>
+              <span className="font-semibold">Net Profit</span>
+              <span className={cn(
+                "font-mono font-bold",
+                displayNet >= 0 ? "text-emerald-400" : "text-rose-400"
+              )}>
+                {displayNet >= 0 ? '+' : ''}₹{Math.round(displayNet).toLocaleString('en-IN')}
+              </span>
+            </button>
+          </div>
+        </div>
+
+        {/* ======================================================== */}
+        {/* ROW 4: SUB-CONTROLS (MONTH PILLS / WEEK PAGER - SLEEK)  */}
+        {/* ======================================================== */}
+        {period === 'month' && (
+          <div className="mb-4 flex items-center justify-center">
+            <div className="inline-flex items-center gap-1 bg-white/[0.03] border border-white/[0.06] p-1 rounded-2xl overflow-x-auto max-w-full">
               <button
                 type="button"
                 onClick={() => setSelectedMonth('all')}
                 className={cn(
-                  "px-3 py-1 rounded-lg text-xs font-semibold transition-all shrink-0",
+                  "px-3 py-1 rounded-xl text-xs font-semibold transition-all shrink-0",
                   selectedMonth === 'all'
-                    ? "bg-foreground text-background shadow-sm font-bold"
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                    ? "bg-white text-zinc-950 font-bold shadow-sm"
+                    : "text-zinc-400 hover:text-white hover:bg-white/[0.04]"
                 )}
               >
-                All Months
+                All 2026
               </button>
+
+              <div className="w-[1px] h-4 bg-white/10 mx-1 shrink-0" />
 
               {monthNames.map((m, idx) => {
                 const isSelected = selectedMonth === idx;
@@ -734,70 +742,56 @@ export const AnalyticsHero: React.FC<AnalyticsHeroProps> = ({
                     type="button"
                     onClick={() => setSelectedMonth(idx)}
                     className={cn(
-                      "px-2.5 py-1 rounded-lg text-xs font-semibold transition-all shrink-0 flex items-center gap-1",
+                      "px-2.5 py-1 rounded-xl text-xs font-medium transition-all shrink-0 flex items-center gap-1",
                       isSelected
                         ? "bg-emerald-500 text-white font-bold shadow-md shadow-emerald-500/20"
-                        : "text-muted-foreground hover:text-foreground hover:bg-muted/50",
-                      isCurrent && !isSelected && "border border-emerald-500/30 text-emerald-600 dark:text-emerald-400"
+                        : "text-zinc-400 hover:text-white hover:bg-white/[0.04]",
+                      isCurrent && !isSelected && "border border-emerald-500/40 text-emerald-400"
                     )}
                   >
                     <span>{m}</span>
-                    {isCurrent && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />}
+                    {isCurrent && <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />}
                   </button>
                 );
               })}
             </div>
-
-            {selectedMonth !== 'all' && (
-              <div className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20">
-                Viewing Daily Breakdown of {fullMonthNames[selectedMonth]} 2026
-              </div>
-            )}
           </div>
         )}
 
-        {/* 
-          Weekly Interactive System:
-          When 'Week' is active, allows navigating between rolling week sets
-        */}
         {period === 'week' && (
-          <div className="mt-5 pt-4 border-t border-border/40 dark:border-white/5 flex items-center justify-between text-xs animate-fade-in">
-            <span className="text-[11px] font-bold text-muted-foreground uppercase flex items-center gap-1">
-              <Layers className="h-3 w-3" /> Rolling 8-Week Window:
-            </span>
+          <div className="mb-4 flex items-center justify-center gap-3 text-xs">
+            <button
+              type="button"
+              onClick={() => setWeekOffset(prev => prev - 1)}
+              className="px-3 py-1.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-zinc-300 hover:text-white border border-white/[0.08] flex items-center gap-1.5 transition-all font-medium"
+            >
+              <ChevronLeft className="h-3.5 w-3.5" /> Previous Weeks
+            </button>
 
-            <div className="flex items-center gap-2">
+            {weekOffset !== 0 && (
               <button
                 type="button"
-                onClick={() => setWeekOffset(prev => prev - 1)}
-                className="px-2.5 py-1 rounded-lg bg-muted/40 hover:bg-muted font-semibold text-muted-foreground hover:text-foreground flex items-center gap-1 transition-all"
+                onClick={() => setWeekOffset(0)}
+                className="px-3 py-1.5 rounded-xl bg-white text-zinc-950 font-bold"
               >
-                <ChevronLeft className="h-3.5 w-3.5" /> Previous Weeks
+                Current Week
               </button>
+            )}
 
-              {weekOffset !== 0 && (
-                <button
-                  type="button"
-                  onClick={() => setWeekOffset(0)}
-                  className="px-2.5 py-1 rounded-lg bg-foreground text-background font-bold text-xs"
-                >
-                  Current Week
-                </button>
-              )}
-
-              <button
-                type="button"
-                onClick={() => setWeekOffset(prev => prev + 1)}
-                className="px-2.5 py-1 rounded-lg bg-muted/40 hover:bg-muted font-semibold text-muted-foreground hover:text-foreground flex items-center gap-1 transition-all"
-              >
-                Next Weeks <ChevronRight className="h-3.5 w-3.5" />
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={() => setWeekOffset(prev => prev + 1)}
+              className="px-3 py-1.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-zinc-300 hover:text-white border border-white/[0.08] flex items-center gap-1.5 transition-all font-medium"
+            >
+              Next Weeks <ChevronRight className="h-3.5 w-3.5" />
+            </button>
           </div>
         )}
 
-        {/* Main Chart Section: Composed Bars + Smooth Curve matching Screenshot */}
-        <div className="mt-6 pt-2 w-full">
+        {/* ======================================================== */}
+        {/* ROW 5: HIGH-PRECISION RECHARTS CANVAS (LEDGERIX CRAFT)   */}
+        {/* ======================================================== */}
+        <div className="w-full mt-2">
           <div className={cn(
             "w-full transition-all duration-300",
             isFullscreen ? "h-[62vh] min-h-[460px]" : "h-[380px] sm:h-[420px]"
@@ -809,25 +803,27 @@ export const AnalyticsHero: React.FC<AnalyticsHeroProps> = ({
               >
                 <defs>
                   <linearGradient id="heroNetArea" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#FFFFFF" stopOpacity={0.15} />
+                    <stop offset="0%" stopColor="#FFFFFF" stopOpacity={0.12} />
                     <stop offset="100%" stopColor="#FFFFFF" stopOpacity={0} />
                   </linearGradient>
                 </defs>
 
+                {/* Subtle horizontal grid lines only */}
                 <CartesianGrid
-                  strokeDasharray="3 3"
-                  stroke="currentColor"
-                  className="stroke-border/30 dark:stroke-zinc-800/60"
+                  strokeDasharray="4 4"
+                  stroke="rgba(255, 255, 255, 0.06)"
                   vertical={false}
                   horizontal={true}
                 />
+
+                {/* Dashed baseline for y=0 */}
+                <ReferenceLine y={0} stroke="rgba(255, 255, 255, 0.2)" strokeDasharray="3 3" />
                 
                 <XAxis
                   dataKey="period"
                   tickLine={false}
                   axisLine={false}
-                  tick={{ fontSize: 11, fill: 'currentColor' }}
-                  className="text-xs text-muted-foreground font-sans"
+                  tick={{ fontSize: 11, fill: '#71717a' }}
                   dy={10}
                 />
 
@@ -835,20 +831,19 @@ export const AnalyticsHero: React.FC<AnalyticsHeroProps> = ({
                   orientation="right"
                   tickLine={false}
                   axisLine={false}
-                  tick={{ fontSize: 11, fill: 'currentColor' }}
-                  className="text-xs text-muted-foreground font-sans"
+                  tick={{ fontSize: 11, fill: '#71717a' }}
                   tickFormatter={formatYAxis}
                   dx={10}
                 />
 
                 <Tooltip
-                  cursor={{ stroke: 'rgba(255,255,255,0.4)', strokeWidth: 1 }}
+                  cursor={{ stroke: 'rgba(255, 255, 255, 0.25)', strokeWidth: 1 }}
                   content={({ active, payload }: TooltipProps) => {
                     if (!active || !payload || !payload.length) return null;
                     const point: AggregatedPoint = payload[0].payload;
                     return (
-                      <div className="rounded-2xl border border-zinc-800 bg-[#121316]/95 dark:bg-[#121316]/95 p-4 shadow-2xl backdrop-blur-xl text-xs space-y-2.5 min-w-[210px] text-white">
-                        <div className="flex items-center justify-between border-b border-zinc-800 pb-2">
+                      <div className="rounded-2xl border border-white/10 bg-[#14151B]/95 p-4 shadow-2xl backdrop-blur-2xl text-xs space-y-2.5 min-w-[210px] text-white">
+                        <div className="flex items-center justify-between border-b border-white/10 pb-2">
                           <span className="font-bold text-white text-sm">{point.fullLabel}</span>
                           <span className="text-zinc-500 font-mono text-xs">—</span>
                         </div>
@@ -879,7 +874,7 @@ export const AnalyticsHero: React.FC<AnalyticsHeroProps> = ({
                           )}
 
                           {visibleSeries.net && (
-                            <div className="flex items-center justify-between pt-1.5 border-t border-zinc-800 font-medium">
+                            <div className="flex items-center justify-between pt-1.5 border-t border-white/10 font-medium">
                               <span className="text-zinc-400">Net:</span>
                               <span
                                 className={cn(
@@ -898,7 +893,7 @@ export const AnalyticsHero: React.FC<AnalyticsHeroProps> = ({
                   }}
                 />
 
-                {/* Net Area: Soft white gradient under curve */}
+                {/* Net Area: Soft subtle gradient glow under curve */}
                 {visibleSeries.net && (
                   <Area
                     type="monotone"
@@ -910,49 +905,42 @@ export const AnalyticsHero: React.FC<AnalyticsHeroProps> = ({
                   />
                 )}
 
-                {/* Income Bars: Solid Slate / Grey Bars (Matching Screenshot) */}
+                {/* Income Bars: Sleek Slate/Grey Bars with Rounded Top */}
                 {visibleSeries.income && (
                   <Bar
                     dataKey="income"
                     name="Income"
-                    radius={[4, 4, 0, 0]}
+                    radius={[6, 6, 0, 0]}
                     maxBarSize={28}
                   >
                     {chartData.map((entry, index) => (
                       <Cell
                         key={`bar-${index}`}
-                        className={cn(
-                          entry.isCurrent
-                            ? "fill-zinc-400 dark:fill-zinc-400"
-                            : entry.income > 0
-                            ? "fill-zinc-600 dark:fill-zinc-600"
-                            : "fill-zinc-800/40"
-                        )}
+                        fill={entry.isCurrent ? "#a1a1aa" : entry.income > 0 ? "#52525b" : "rgba(82, 82, 91, 0.2)"}
                       />
                     ))}
                   </Bar>
                 )}
 
-                {/* Expenses Bars: Pink / Coral Bars (Matching Screenshot) */}
+                {/* Expenses Bars: High-Contrast Vibrant Rose/Red Bars */}
                 {visibleSeries.expenses && (
                   <Bar
                     dataKey="expenses"
                     name="Expenses"
-                    fill="#FF2D55"
-                    radius={[4, 4, 0, 0]}
+                    radius={[6, 6, 0, 0]}
                     maxBarSize={20}
                   >
                     {chartData.map((entry, index) => (
                       <Cell
                         key={`exp-bar-${index}`}
                         fill="#FF2D55"
-                        opacity={entry.expenses > 0 ? 0.95 : 0.25}
+                        opacity={entry.expenses > 0 ? 0.95 : 0.2}
                       />
                     ))}
                   </Bar>
                 )}
 
-                {/* Net Trend Curve: Smooth Monotone Line (Matching Screenshot) */}
+                {/* Net Trend Curve: Pure Brilliant White Smooth Curve */}
                 {visibleSeries.net && (
                   <Line
                     dataKey="net"
@@ -962,9 +950,9 @@ export const AnalyticsHero: React.FC<AnalyticsHeroProps> = ({
                     strokeWidth={2.5}
                     dot={false}
                     activeDot={{
-                      r: 6,
+                      r: 5,
                       fill: '#FFFFFF',
-                      stroke: '#000000',
+                      stroke: '#08090C',
                       strokeWidth: 2,
                     }}
                   />
