@@ -4,7 +4,6 @@ import { useBankAccounts } from '@/hooks/useBankAccounts';
 import { useIncomeData } from '@/hooks/useIncomeData';
 import { useExpenseData } from '@/hooks/useExpenseData';
 import AnalyticsHero from '@/components/analytics/AnalyticsHero';
-import { MebiusSection } from '@/components/analytics/MebiusCards';
 
 const Analytics: React.FC = () => {
   const { bankAccounts, currentAccount, loading: bankLoading } = useBankAccounts();
@@ -42,13 +41,6 @@ const Analytics: React.FC = () => {
             currentAccount={currentAccount}
           />
         </section>
-
-        {/* Mebius-style cards (clean-room recreations from previews — real data only) */}
-        <MebiusSection
-          incomeData={incomeData}
-          expenseData={expenseData}
-          accounts={bankAccounts}
-        />
       </main>
     </div>
   );
