@@ -580,6 +580,12 @@ const Transactions = () => {
     iconColorClass: string;
   }
 
+  // UNIFORM PILL SYSTEM (round 3 — table-image analysis): EVERY pill on this
+  // page is ONE size — category, payment, status, type — desktop AND mobile.
+  // Height 32px desktop / 30px mobile, text 14px semibold, icon 16px,
+  // px-3, 6px icon–text gap. Only the WIDTH varies with the label.
+  // Category/payment pills keep the image-3 identity (2px coloured border
+  // + icon in a rounded-square chip) at this uniform size.
   const renderChipPill = (
     style: ChipPillStyle,
     label: string,
@@ -590,29 +596,31 @@ const Transactions = () => {
     return (
       <span className={cn(
         "inline-flex items-center rounded-full border-2 select-none whitespace-nowrap shrink-0",
-        md ? "gap-2 py-1 pl-1 pr-3.5 text-[15px] font-bold tracking-tight" : "gap-2 py-1 pl-1 pr-3 text-[14px] font-bold",
+        md ? "h-8 gap-1.5 px-3 text-sm font-semibold" : "h-[30px] gap-1.5 px-3 text-sm font-semibold",
         style.borderClass,
         style.bgClass,
         style.textClass
       )}>
         <span className={cn(
-          md ? "w-7 h-7 rounded-lg" : "w-6 h-6 rounded-md",
+          "w-6 h-6 rounded-md",
           "flex items-center justify-center shrink-0",
           style.squircleBgClass,
           style.iconColorClass
         )}>
-          <PillIcon className={md ? "h-4 w-4" : "h-3.5 w-3.5"} />
+          <PillIcon className="h-4 w-4" />
         </span>
         <span className={md ? "truncate max-w-[104px]" : "truncate max-w-[150px]"}>{label}</span>
       </span>
     );
   };
 
-  // Auto-interest status pills: image-1 style — soft pastel fill + matching
-  // text + outline stroke icon directly left of the text. No border,
-  // no icon chip, no gloss. Round 2: bigger — ~33px tall, 14px text, 18px
-  // icon (was ~25px / 11px / 14px). Clickable: opens the daily interest breakdown.
-  const renderStatusPill = (t: Transaction) => {
+  // Auto-interest status pills: image-1/table style — soft pastel fill +
+  // matching text + outline stroke icon directly left of the text. No border,
+  // no icon chip, no gloss. Round 3: SAME uniform size as every other pill —
+  // 32px desktop / 30px mobile, 14px semibold, 16px icon (was 32px / 14px /
+  // 18px with a different height from the 40px chip pills). Clickable: opens
+  // the daily interest breakdown.
+  const renderStatusPill = (t: Transaction, size: 'md' | 'sm' = 'md') => {
     if (!t.is_auto_interest) return null;
     const edited = t.is_manually_edited;
     const locked = t.auto_interest_status === 'locked';
@@ -621,7 +629,8 @@ const Transactions = () => {
     return (
       <span
         className={cn(
-          "inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-[14px] font-semibold cursor-pointer select-none whitespace-nowrap shrink-0",
+          "inline-flex items-center gap-1.5 px-3 rounded-full text-sm font-semibold cursor-pointer select-none whitespace-nowrap shrink-0",
+          size === 'md' ? "h-8" : "h-[30px]",
           edited
             ? "bg-amber-100 text-amber-800 dark:bg-amber-950/50 dark:text-amber-200"
             : locked
@@ -635,7 +644,7 @@ const Transactions = () => {
         }}
         title="Click to view daily interest breakdown"
       >
-        <StatusIcon className="h-[18px] w-[18px] shrink-0" />
+        <StatusIcon className="h-4 w-4 shrink-0" />
         <span>{label}</span>
       </span>
     );
@@ -843,7 +852,7 @@ const Transactions = () => {
                          <TableCell className="px-4 py-3 font-medium text-foreground text-sm">
                            <div className="flex items-center gap-2 min-w-0">
                              <span className="truncate" title={transaction.source}>{transaction.source}</span>
-                             {renderStatusPill(transaction)}
+                             {renderStatusPill(transaction, 'md')}
                            </div>
                          </TableCell>
                          <TableCell className="px-4 py-3 text-muted-foreground text-sm">
@@ -935,7 +944,7 @@ const Transactions = () => {
                     </div>
                     <div className="flex items-center gap-2 mb-1 flex-wrap">
                       <h3 className="font-semibold text-foreground text-lg">{transaction.source}</h3>
-                      {renderStatusPill(transaction)}
+                      {renderStatusPill(transaction, 'sm')}
                     </div>
                     {transaction.description && (
                       <p className="text-muted-foreground mb-2 text-sm">{transaction.description}</p>
