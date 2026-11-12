@@ -417,99 +417,79 @@ const Transactions = () => {
     if (c.includes('interest')) {
       return {
         icon: IconPercent,
-        borderClass: 'border-emerald-500 dark:border-emerald-500',
         bgClass: 'bg-emerald-50/90 dark:bg-emerald-950/40',
         textClass: 'text-emerald-800 dark:text-emerald-200',
-        squircleBgClass: 'bg-emerald-200 dark:bg-emerald-800/70',
         iconColorClass: 'text-emerald-700 dark:text-emerald-200'
       };
     }
     if (c.includes('salary') || c.includes('freelance') || c.includes('job') || c.includes('work') || c.includes('business')) {
       return {
         icon: IconFinance,
-        borderClass: 'border-teal-500 dark:border-teal-500',
         bgClass: 'bg-teal-50/90 dark:bg-teal-950/40',
         textClass: 'text-teal-800 dark:text-teal-200',
-        squircleBgClass: 'bg-teal-200 dark:bg-teal-800/70',
         iconColorClass: 'text-teal-700 dark:text-teal-200'
       };
     }
     if (c.includes('food') || c.includes('grocer') || c.includes('rest') || c.includes('dining')) {
       return {
         icon: IconFood,
-        borderClass: 'border-orange-500 dark:border-orange-500',
         bgClass: 'bg-orange-50/90 dark:bg-orange-950/40',
         textClass: 'text-orange-900 dark:text-orange-200',
-        squircleBgClass: 'bg-orange-200 dark:bg-orange-800/70',
         iconColorClass: 'text-orange-700 dark:text-orange-200'
       };
     }
     if (c.includes('shop') || c.includes('cloth') || c.includes('mall') || c.includes('store')) {
       return {
         icon: IconShopping,
-        borderClass: 'border-violet-500 dark:border-violet-500',
         bgClass: 'bg-violet-50/90 dark:bg-violet-950/40',
         textClass: 'text-violet-800 dark:text-violet-200',
-        squircleBgClass: 'bg-violet-200 dark:bg-violet-800/70',
         iconColorClass: 'text-violet-700 dark:text-violet-200'
       };
     }
     if (c.includes('travel') || c.includes('fuel') || c.includes('cab') || c.includes('uber') || c.includes('car') || c.includes('transport')) {
       return {
         icon: IconTransport,
-        borderClass: 'border-amber-500 dark:border-amber-500',
         bgClass: 'bg-amber-50/90 dark:bg-amber-950/40',
         textClass: 'text-amber-900 dark:text-amber-200',
-        squircleBgClass: 'bg-amber-200 dark:bg-amber-800/70',
         iconColorClass: 'text-amber-700 dark:text-amber-200'
       };
     }
     if (c.includes('rent') || c.includes('bill') || c.includes('home') || c.includes('util') || c.includes('house')) {
       return {
         icon: IconHome,
-        borderClass: 'border-sky-500 dark:border-sky-500',
         bgClass: 'bg-sky-50/90 dark:bg-sky-950/40',
         textClass: 'text-sky-800 dark:text-sky-200',
-        squircleBgClass: 'bg-sky-200 dark:bg-sky-800/70',
         iconColorClass: 'text-sky-700 dark:text-sky-200'
       };
     }
     if (c.includes('health') || c.includes('med') || c.includes('doctor') || c.includes('gym')) {
       return {
         icon: HeartPulse,
-        borderClass: 'border-rose-500 dark:border-rose-500',
         bgClass: 'bg-rose-50/90 dark:bg-rose-950/40',
         textClass: 'text-rose-800 dark:text-rose-200',
-        squircleBgClass: 'bg-rose-200 dark:bg-rose-800/70',
         iconColorClass: 'text-rose-700 dark:text-rose-200'
       };
     }
     if (c.includes('entertain') || c.includes('movie') || c.includes('subscript') || c.includes('game')) {
       return {
         icon: Film,
-        borderClass: 'border-pink-500 dark:border-pink-500',
         bgClass: 'bg-pink-50/90 dark:bg-pink-950/40',
         textClass: 'text-pink-800 dark:text-pink-200',
-        squircleBgClass: 'bg-pink-200 dark:bg-pink-800/70',
         iconColorClass: 'text-pink-700 dark:text-pink-200'
       };
     }
     if (c.includes('education') || c.includes('book') || c.includes('course') || c.includes('study')) {
       return {
         icon: BookOpen,
-        borderClass: 'border-indigo-600 dark:border-indigo-500',
         bgClass: 'bg-indigo-50/90 dark:bg-indigo-950/40',
         textClass: 'text-indigo-900 dark:text-indigo-200',
-        squircleBgClass: 'bg-indigo-200 dark:bg-indigo-800/70',
         iconColorClass: 'text-indigo-800 dark:text-indigo-200'
       };
     }
     return {
       icon: IconSimple,
-      borderClass: 'border-blue-500 dark:border-blue-500',
       bgClass: 'bg-blue-50/90 dark:bg-blue-950/40',
       textClass: 'text-blue-800 dark:text-blue-200',
-      squircleBgClass: 'bg-blue-200 dark:bg-blue-800/70',
       iconColorClass: 'text-blue-700 dark:text-blue-200'
     };
   };
@@ -519,64 +499,52 @@ const Transactions = () => {
     if (m.includes('upi') || m.includes('gpay') || m.includes('phonepe') || m.includes('paytm')) {
       return {
         icon: IconFluid,
-        borderClass: 'border-cyan-500 dark:border-cyan-500',
         bgClass: 'bg-cyan-50/90 dark:bg-cyan-950/40',
         textClass: 'text-cyan-800 dark:text-cyan-200',
-        squircleBgClass: 'bg-cyan-200 dark:bg-cyan-800/70',
         iconColorClass: 'text-cyan-700 dark:text-cyan-200'
       };
     }
     if (m.includes('card') || m.includes('credit') || m.includes('debit')) {
       return {
         icon: IconSecure,
-        borderClass: 'border-indigo-700 dark:border-indigo-500',
         bgClass: 'bg-indigo-50/90 dark:bg-indigo-950/40',
         textClass: 'text-indigo-900 dark:text-indigo-200',
-        squircleBgClass: 'bg-indigo-200 dark:bg-indigo-800/70',
         iconColorClass: 'text-indigo-800 dark:text-indigo-200'
       };
     }
     if (m.includes('bank') || m.includes('net') || m.includes('transfer') || m.includes('slice')) {
       return {
         icon: IconDigital,
-        borderClass: 'border-blue-500 dark:border-blue-500',
         bgClass: 'bg-blue-50/90 dark:bg-blue-950/40',
         textClass: 'text-blue-800 dark:text-blue-200',
-        squircleBgClass: 'bg-blue-200 dark:bg-blue-800/70',
         iconColorClass: 'text-blue-700 dark:text-blue-200'
       };
     }
     if (m.includes('cash')) {
       return {
         icon: IconCoins,
-        borderClass: 'border-emerald-600 dark:border-emerald-500',
         bgClass: 'bg-emerald-50/90 dark:bg-emerald-950/40',
         textClass: 'text-emerald-800 dark:text-emerald-200',
-        squircleBgClass: 'bg-emerald-200 dark:bg-emerald-800/70',
         iconColorClass: 'text-emerald-700 dark:text-emerald-200'
       };
     }
     return {
       icon: IconWallet,
-      borderClass: 'border-violet-500 dark:border-violet-500',
       bgClass: 'bg-violet-50/90 dark:bg-violet-950/40',
       textClass: 'text-violet-800 dark:text-violet-200',
-      squircleBgClass: 'bg-violet-200 dark:bg-violet-800/70',
       iconColorClass: 'text-violet-700 dark:text-violet-200'
     };
   };
 
   // Shared pill renderers (desktop table + mobile cards use the same ones,
   // so the two views cannot drift apart again).
-  // Category / payment pills: image-3 style — THICK (2px) coloured border +
-  // light pastel fill, icon in a rounded-square chip, BOLD larger text.
-  // Round 2 (user: Task 3's 22px chips were too small): desktop pill 40px
-  // tall, 15px bold text, 28px icon chip; mobile 36px / 14px / 24px chip.
+  // Category / payment pills: table-image style — soft pastel fill +
+  // matching text, NO border, icon directly on the pill background next to
+  // the text (no separate chip/box behind the icon). Round 4 (user: "no
+  // border arround and icons bi aaye"): border 2px -> 0, icon chip removed.
   interface ChipPillStyle {
-    borderClass: string;
     bgClass: string;
     textClass: string;
-    squircleBgClass: string;
     iconColorClass: string;
   }
 
@@ -584,8 +552,8 @@ const Transactions = () => {
   // page is ONE size — category, payment, status, type — desktop AND mobile.
   // Height 32px desktop / 30px mobile, text 14px semibold, icon 16px,
   // px-3, 6px icon–text gap. Only the WIDTH varies with the label.
-  // Category/payment pills keep the image-3 identity (2px coloured border
-  // + icon in a rounded-square chip) at this uniform size.
+  // Round 4: category/payment pills are borderless like the status pills —
+  // icon sits directly on the pastel fill, exactly like the table image.
   const renderChipPill = (
     style: ChipPillStyle,
     label: string,
@@ -595,20 +563,12 @@ const Transactions = () => {
     const md = size === 'md';
     return (
       <span className={cn(
-        "inline-flex items-center rounded-full border-2 select-none whitespace-nowrap shrink-0",
+        "inline-flex items-center rounded-full select-none whitespace-nowrap shrink-0",
         md ? "h-8 gap-1.5 px-3 text-sm font-semibold" : "h-[30px] gap-1.5 px-3 text-sm font-semibold",
-        style.borderClass,
         style.bgClass,
         style.textClass
       )}>
-        <span className={cn(
-          "w-6 h-6 rounded-md",
-          "flex items-center justify-center shrink-0",
-          style.squircleBgClass,
-          style.iconColorClass
-        )}>
-          <PillIcon className="h-4 w-4" />
-        </span>
+        <PillIcon className={cn("h-4 w-4 shrink-0", style.iconColorClass)} />
         <span className={md ? "truncate max-w-[104px]" : "truncate max-w-[150px]"}>{label}</span>
       </span>
     );
@@ -978,8 +938,8 @@ const Transactions = () => {
                     <div className="flex items-center gap-2 mb-2 flex-wrap">
                       {renderChipPill(
                         transaction.type === 'income'
-                          ? { borderClass: 'border-emerald-600 dark:border-emerald-500', bgClass: 'bg-emerald-50 dark:bg-emerald-950/40', textClass: 'text-emerald-800 dark:text-emerald-200', squircleBgClass: 'bg-emerald-200 dark:bg-emerald-800/60', iconColorClass: 'text-emerald-700 dark:text-emerald-200' }
-                          : { borderClass: 'border-rose-500 dark:border-rose-500', bgClass: 'bg-rose-50 dark:bg-rose-950/40', textClass: 'text-rose-800 dark:text-rose-200', squircleBgClass: 'bg-rose-200 dark:bg-rose-800/60', iconColorClass: 'text-rose-700 dark:text-rose-200' },
+                          ? { bgClass: 'bg-emerald-50 dark:bg-emerald-950/40', textClass: 'text-emerald-800 dark:text-emerald-200', iconColorClass: 'text-emerald-700 dark:text-emerald-200' }
+                          : { bgClass: 'bg-rose-50 dark:bg-rose-950/40', textClass: 'text-rose-800 dark:text-rose-200', iconColorClass: 'text-rose-700 dark:text-rose-200' },
                         transaction.type === 'income' ? 'Income' : 'Expense',
                         transaction.type === 'income' ? ArrowDownLeft : ArrowUpRight,
                         'sm'
