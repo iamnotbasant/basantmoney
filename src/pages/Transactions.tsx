@@ -560,8 +560,13 @@ const Transactions = () => {
   // border arround and icons bi aaye"): border 2px -> 0, icon chip removed.
   // UNIFORM PILL SYSTEM (round 3 — table-image analysis): EVERY pill on this
   // page is ONE size — category, payment, type — desktop AND mobile.
-  // Height 32px desktop / 30px mobile, text 14px semibold, icon 16px,
-  // px-3, 6px icon–text gap. Only the WIDTH varies with the label.
+  // LONG-SLIM RESCALE (tags-sizing-slim — table image, ChatGPT measurements):
+  // the image's pills are ~36–40% of row height, ours were 56% (32px of
+  // 57px rows) — too chunky. Now: height 24px desktop / 22px mobile,
+  // text 13px desktop / 12px mobile semibold, icon 12px / 11px (~50% of
+  // pill height), px-3 kept (the user wants the pills LONGER, so side
+  // padding stays generous instead of ChatGPT's 7px), 4px icon–text gap.
+  // Only the WIDTH varies with the label.
   // Round 4: category/payment pills are borderless like the status pills —
   // icon sits directly on the pastel fill, exactly like the table image.
   // Styles come from PillStyle (categoryDefaults): curated Tailwind triples
@@ -578,13 +583,13 @@ const Transactions = () => {
       <span
         className={cn(
           "inline-flex items-center rounded-full select-none whitespace-nowrap shrink-0",
-          md ? "h-8 gap-1.5 px-3 text-sm font-semibold" : "h-[30px] gap-1.5 px-3 text-sm font-semibold",
+          md ? "h-6 gap-1 px-3 text-[13px] font-semibold" : "h-[22px] gap-1 px-3 text-xs font-semibold",
           style.bgClass,
           style.textClass
         )}
         style={style.dynamicColor ? ({ '--pill-color': style.dynamicColor } as React.CSSProperties) : undefined}
       >
-        <PillIcon className={cn("h-4 w-4 shrink-0", style.iconColorClass)} />
+        <PillIcon className={cn(md ? "h-3 w-3 shrink-0" : "h-[11px] w-[11px] shrink-0", style.iconColorClass)} />
         <span className={md ? "truncate max-w-[104px]" : "truncate max-w-[150px]"}>{label}</span>
       </span>
     );
@@ -820,16 +825,16 @@ const Transactions = () => {
                         onDoubleClick={() => handleDoubleClick(transaction)}
                         title="Double click to edit"
                       >
-                         <TableCell className="px-4 py-3 text-muted-foreground text-sm whitespace-nowrap">
+                         <TableCell className="px-4 py-4 text-muted-foreground text-sm whitespace-nowrap">
                            {formatDate(transaction.date)}
                          </TableCell>
-                         <TableCell className="px-4 py-3 font-medium text-foreground text-sm">
+                         <TableCell className="px-4 py-4 font-medium text-foreground text-sm">
                            <span className="truncate block" title={transaction.source}>{transaction.source}</span>
                          </TableCell>
-                         <TableCell className="px-4 py-3 text-muted-foreground text-sm">
+                         <TableCell className="px-4 py-4 text-muted-foreground text-sm">
                            <span className="truncate block" title={transaction.description || ''}>{transaction.description || '-'}</span>
                          </TableCell>
-                        <TableCell className="px-4 py-3">
+                        <TableCell className="px-4 py-4">
                           {(() => {
                             const cat = getCategoryTagStyle(transaction.category);
                             const pill = renderChipPill(cat, transaction.category.charAt(0).toUpperCase() + transaction.category.slice(1), cat.icon, 'md');
@@ -845,13 +850,13 @@ const Transactions = () => {
                             ) : pill;
                           })()}
                         </TableCell>
-                        <TableCell className="px-4 py-3">
+                        <TableCell className="px-4 py-4">
                           {(() => {
                             const pm = getPaymentMethodTagStyle(transaction.paymentMethod || '');
                             return renderChipPill(pm, transaction.paymentMethod || 'Not specified', pm.icon, 'md');
                           })()}
                         </TableCell>
-                        <TableCell className="px-4 py-3 text-right whitespace-nowrap">
+                        <TableCell className="px-4 py-4 text-right whitespace-nowrap">
                           <span className={`font-bold text-[15px] transition-all duration-200 ${
                             transaction.type === 'income' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
                           }`}>
