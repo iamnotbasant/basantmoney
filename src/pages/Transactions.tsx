@@ -29,19 +29,23 @@ import {
   ArrowUpRight
 } from 'lucide-react';
 import {
-  IconDigital,
-  IconFinance,
-  IconSimple,
-  IconFast,
-  IconSecure,
-  IconFluid,
-  IconPercent,
+  IconUpi,
+  IconBank,
+  IconCash,
+  IconCheque,
+  IconCard,
+  IconWallet,
+  IconSalary,
+  IconFreelance,
+  IconInvestment,
+  IconInterest,
+  IconCashback,
   IconFood,
   IconShopping,
   IconTransport,
+  IconBills,
+  IconGeneric,
   IconHome,
-  IconCoins,
-  IconWallet,
   IconLocked,
   IconEstimated,
   IconManuallyEdited
@@ -416,15 +420,39 @@ const Transactions = () => {
     const c = (categoryName || '').toLowerCase();
     if (c.includes('interest')) {
       return {
-        icon: IconPercent,
+        icon: IconInterest,
         bgClass: 'bg-emerald-50/90 dark:bg-emerald-950/40',
         textClass: 'text-emerald-800 dark:text-emerald-200',
         iconColorClass: 'text-emerald-700 dark:text-emerald-200'
       };
     }
-    if (c.includes('salary') || c.includes('freelance') || c.includes('job') || c.includes('work') || c.includes('business')) {
+    if (c.includes('invest')) {
       return {
-        icon: IconFinance,
+        icon: IconInvestment,
+        bgClass: 'bg-green-50/90 dark:bg-green-950/40',
+        textClass: 'text-green-800 dark:text-green-200',
+        iconColorClass: 'text-green-700 dark:text-green-200'
+      };
+    }
+    if (c.includes('cashback') || c.includes('cash back')) {
+      return {
+        icon: IconCashback,
+        bgClass: 'bg-lime-50/90 dark:bg-lime-950/40',
+        textClass: 'text-lime-800 dark:text-lime-200',
+        iconColorClass: 'text-lime-700 dark:text-lime-200'
+      };
+    }
+    if (c.includes('freelance') || c.includes('freelancing')) {
+      return {
+        icon: IconFreelance,
+        bgClass: 'bg-teal-50/90 dark:bg-teal-950/40',
+        textClass: 'text-teal-800 dark:text-teal-200',
+        iconColorClass: 'text-teal-700 dark:text-teal-200'
+      };
+    }
+    if (c.includes('salary') || c.includes('job') || c.includes('work') || c.includes('business')) {
+      return {
+        icon: IconSalary,
         bgClass: 'bg-teal-50/90 dark:bg-teal-950/40',
         textClass: 'text-teal-800 dark:text-teal-200',
         iconColorClass: 'text-teal-700 dark:text-teal-200'
@@ -454,7 +482,15 @@ const Transactions = () => {
         iconColorClass: 'text-amber-700 dark:text-amber-200'
       };
     }
-    if (c.includes('rent') || c.includes('bill') || c.includes('home') || c.includes('util') || c.includes('house')) {
+    if (c.includes('bill') || c.includes('util')) {
+      return {
+        icon: IconBills,
+        bgClass: 'bg-sky-50/90 dark:bg-sky-950/40',
+        textClass: 'text-sky-800 dark:text-sky-200',
+        iconColorClass: 'text-sky-700 dark:text-sky-200'
+      };
+    }
+    if (c.includes('rent') || c.includes('home') || c.includes('house')) {
       return {
         icon: IconHome,
         bgClass: 'bg-sky-50/90 dark:bg-sky-950/40',
@@ -487,7 +523,7 @@ const Transactions = () => {
       };
     }
     return {
-      icon: IconSimple,
+      icon: IconGeneric,
       bgClass: 'bg-blue-50/90 dark:bg-blue-950/40',
       textClass: 'text-blue-800 dark:text-blue-200',
       iconColorClass: 'text-blue-700 dark:text-blue-200'
@@ -498,7 +534,7 @@ const Transactions = () => {
     const m = (methodName || '').toLowerCase();
     if (m.includes('upi') || m.includes('gpay') || m.includes('phonepe') || m.includes('paytm')) {
       return {
-        icon: IconFluid,
+        icon: IconUpi,
         bgClass: 'bg-cyan-50/90 dark:bg-cyan-950/40',
         textClass: 'text-cyan-800 dark:text-cyan-200',
         iconColorClass: 'text-cyan-700 dark:text-cyan-200'
@@ -506,7 +542,7 @@ const Transactions = () => {
     }
     if (m.includes('card') || m.includes('credit') || m.includes('debit')) {
       return {
-        icon: IconSecure,
+        icon: IconCard,
         bgClass: 'bg-indigo-50/90 dark:bg-indigo-950/40',
         textClass: 'text-indigo-900 dark:text-indigo-200',
         iconColorClass: 'text-indigo-800 dark:text-indigo-200'
@@ -514,7 +550,7 @@ const Transactions = () => {
     }
     if (m.includes('bank') || m.includes('net') || m.includes('transfer') || m.includes('slice')) {
       return {
-        icon: IconDigital,
+        icon: IconBank,
         bgClass: 'bg-blue-50/90 dark:bg-blue-950/40',
         textClass: 'text-blue-800 dark:text-blue-200',
         iconColorClass: 'text-blue-700 dark:text-blue-200'
@@ -522,14 +558,30 @@ const Transactions = () => {
     }
     if (m.includes('cash')) {
       return {
-        icon: IconCoins,
+        icon: IconCash,
         bgClass: 'bg-emerald-50/90 dark:bg-emerald-950/40',
         textClass: 'text-emerald-800 dark:text-emerald-200',
         iconColorClass: 'text-emerald-700 dark:text-emerald-200'
       };
     }
+    if (m.includes('cheque') || m.includes('check')) {
+      return {
+        icon: IconCheque,
+        bgClass: 'bg-violet-50/90 dark:bg-violet-950/40',
+        textClass: 'text-violet-800 dark:text-violet-200',
+        iconColorClass: 'text-violet-700 dark:text-violet-200'
+      };
+    }
+    if (m.includes('wallet')) {
+      return {
+        icon: IconWallet,
+        bgClass: 'bg-violet-50/90 dark:bg-violet-950/40',
+        textClass: 'text-violet-800 dark:text-violet-200',
+        iconColorClass: 'text-violet-700 dark:text-violet-200'
+      };
+    }
     return {
-      icon: IconWallet,
+      icon: IconGeneric,
       bgClass: 'bg-violet-50/90 dark:bg-violet-950/40',
       textClass: 'text-violet-800 dark:text-violet-200',
       iconColorClass: 'text-violet-700 dark:text-violet-200'
