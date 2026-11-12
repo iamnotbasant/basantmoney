@@ -107,7 +107,7 @@ function ChartSegmentedControl({
           aria-hidden
           data-slot="chart-segmented-control-thumb"
           className={cn(
-            "pointer-events-none absolute inset-y-px bg-surface-white shadow-[0_1px_2px_rgb(40_40_40/0.08),0_0_0_1px_#ececec]",
+            "pointer-events-none absolute inset-y-px bg-surface-white shadow-[0_1px_2px_rgb(0_0_0/0.08),0_0_0_1px_var(--border-sub)]",
             rounded ? "rounded-full" : "rounded-xl",
           )}
           style={{ left: `calc(1px + ${index} * (100% - 2px) / ${count})`, width: `calc((100% - 2px) / ${count})` }}

@@ -479,6 +479,34 @@ svg.animate-spin {
     --accent-light-blue-700: #3c95b1;
 }
 
+.dark [data-charts],
+[data-theme="dark"] [data-charts] {
+    --font-charts-rounded: "SF Pro Rounded", ui-rounded, system-ui, sans-serif;
+    --surface-white: #0E1015;
+    --surface-base: #14161D;
+    --surface-disable: #181A22;
+    --surface-soft: #1E212B;
+    --surface-subdued: #282C3A;
+    --surface-loud: #ffffff;
+    --surface-muted: #8E93A6;
+    --surface-popup: #13151C;
+    --fg-loud: #FFFFFF;
+    --fg-normal: #A1A1AA;
+    --fg-soft: #71717A;
+    --fg-disable: #52525B;
+    --fg-white: #FFFFFF;
+    --border-soft: rgba(255, 255, 255, 0.08);
+    --border-sub: rgba(255, 255, 255, 0.12);
+    --border-white: rgba(255, 255, 255, 0.15);
+    --border-loud: rgba(255, 255, 255, 0.25);
+    --border-normal: rgba(255, 255, 255, 0.1);
+    --icon-loud: #FFFFFF;
+    --icon-normal: #A1A1AA;
+    --icon-soft: #71717A;
+    --icon-disable: #52525B;
+}
+
+
 @utility typo-label-01-regular {
     font-family: var(--font-charts-rounded);
     font-size: 12px;

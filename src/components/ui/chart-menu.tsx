@@ -50,7 +50,7 @@ function ChartMenuContent({
         align={align}
         className={cn(
           "z-50 min-w-[140px] origin-(--radix-dropdown-menu-content-transform-origin) rounded-xl bg-surface-white p-1 font-rounded text-fg-loud outline-none",
-          "shadow-[0_12px_32px_rgb(23_23_23/0.12),0_1px_2px_rgb(40_40_40/0.08),0_0_0_1px_#ececec]",
+          "shadow-[0_12px_32px_rgb(0_0_0/0.25),0_1px_2px_rgb(0_0_0/0.08),0_0_0_1px_var(--border-sub)]",
           className,
         )}
         {...props}

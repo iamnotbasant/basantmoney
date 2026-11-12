@@ -11,7 +11,7 @@ function ChartCard({ className, ...props }: React.ComponentProps<"div">) {
     <div
       data-slot="chart-card"
       data-charts=""
-      className={cn("relative flex flex-col gap-6 overflow-hidden rounded-3xl bg-surface-white p-5 font-rounded text-fg-loud antialiased", className)}
+      className={cn("relative flex flex-col gap-6 overflow-hidden rounded-3xl bg-surface-white border border-black/[0.08] dark:border-white/[0.08] p-5 sm:p-6 font-rounded text-fg-loud antialiased shadow-xl transition-colors duration-300", className)}
       {...props}
     />
   )

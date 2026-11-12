@@ -42,9 +42,8 @@ function ChartButton({ variant = "secondary", corner = "default", size = "defaul
             ]
           : [
               "bg-surface-white p-2.5 text-fg-loud [&_svg]:text-icon-soft",
-              // Figma paints later effects on top; CSS paints the first shadow on top
-              "shadow-[0_1px_2px_rgb(40_40_40/0.08),0_0_0_1px_#ececec]",
-              "hover:bg-[color-mix(in_srgb,var(--surface-white),#000_12%)] data-[state=open]:bg-[color-mix(in_srgb,var(--surface-white),#000_12%)]",
+              "shadow-[0_1px_2px_rgb(0_0_0/0.08),0_0_0_1px_var(--border-sub)]",
+              "hover:bg-[color-mix(in_srgb,var(--surface-white),var(--fg-loud)_8%)] data-[state=open]:bg-[color-mix(in_srgb,var(--surface-white),var(--fg-loud)_8%)]",
             ],
         corner === "rounded" ? "rounded-full" : "rounded-xl",
         size === "icon" && "size-9 p-0",
