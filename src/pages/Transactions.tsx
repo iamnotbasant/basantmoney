@@ -12,8 +12,17 @@ import {
   Loader2,
   Download,
   ArrowDownLeft,
-  ArrowUpRight
+  ArrowUpRight,
+  ChevronDown,
+  FileSpreadsheet,
+  FileJson
 } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { getCategoryIcon } from '@/lib/categoryIcons';
 import {
   pillStyleForColor,
@@ -89,6 +98,7 @@ const Transactions = () => {
   const { toast } = useToast();
   const { user } = useAuth();
   const [filteredTransactions, setFilteredTransactions] = useState<Transaction[]>([]);
+  const [searchQuery, setSearchQuery] = useState<string>('');
   const [filterType, setFilterType] = useState<string>('all');
   const [filterCategory, setFilterCategory] = useState<string>('all');
   const [filterPaymentMethod, setFilterPaymentMethod] = useState<string>('all');
@@ -164,7 +174,7 @@ const Transactions = () => {
 
   useEffect(() => {
     filterTransactions();
-  }, [transactions, filterType, filterCategory, filterPaymentMethod, filterMonth]);
+  }, [transactions, searchQuery, filterType, filterCategory, filterPaymentMethod, filterMonth]);
 
   const loadCategories = () => {
     const storedCategories = localStorage.getItem('categories');
@@ -348,6 +358,16 @@ const Transactions = () => {
   const filterTransactions = () => {
     let filtered = transactions;
 
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      filtered = filtered.filter(t => 
+        (t.source && t.source.toLowerCase().includes(q)) ||
+        (t.description && t.description.toLowerCase().includes(q)) ||
+        (t.category && t.category.toLowerCase().includes(q)) ||
+        (t.paymentMethod && t.paymentMethod.toLowerCase().includes(q))
+      );
+    }
+
     if (filterType !== 'all') {
       filtered = filtered.filter(t => t.type === filterType);
     }
@@ -370,6 +390,36 @@ const Transactions = () => {
 
     setFilteredTransactions(filtered);
   };
+
+  const handleResetFilters = () => {
+    setSearchQuery('');
+    setFilterType('all');
+    setFilterCategory('all');
+    setFilterPaymentMethod('all');
+    setFilterMonth('all');
+  };
+
+  const hasActiveFilters = Boolean(
+    searchQuery.trim() ||
+    filterType !== 'all' ||
+    filterCategory !== 'all' ||
+    filterPaymentMethod !== 'all' ||
+    filterMonth !== 'all'
+  );
+
+  const filteredIncomeTotal = useMemo(() => {
+    return filteredTransactions
+      .filter(t => t.type === 'income')
+      .reduce((sum, t) => sum + t.amount, 0);
+  }, [filteredTransactions]);
+
+  const filteredExpenseTotal = useMemo(() => {
+    return filteredTransactions
+      .filter(t => t.type === 'expense')
+      .reduce((sum, t) => sum + t.amount, 0);
+  }, [filteredTransactions]);
+
+  const filteredNetTotal = filteredIncomeTotal - filteredExpenseTotal;
 
   const getUniqueCategories = () => {
     const categories = transactions.map(t => t.category);
@@ -652,58 +702,87 @@ const Transactions = () => {
       <Header />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-        {/* Page Title */}
-        <div className="mb-8 animate-fade-in">
-          <h1 className="text-3xl sm:text-4xl font-bold text-foreground mb-2">
-            Transactions
-          </h1>
-          <p className="text-muted-foreground text-lg">Track and manage all your financial activities - Double click to edit</p>
+        {/* Page Title & Actions */}
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6 animate-fade-in">
+          <div>
+            <div className="flex items-center gap-3 mb-1">
+              <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground">
+                Transactions
+              </h1>
+              <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-muted/80 text-muted-foreground border border-border/60">
+                {transactions.length} total
+              </span>
+            </div>
+            <p className="text-muted-foreground text-sm sm:text-base">
+              Track and manage all your financial activities • Double click any row to edit
+            </p>
+          </div>
+
+          {/* Quick Actions */}
+          <div className="flex items-center gap-2.5 flex-wrap sm:flex-nowrap">
+            <Button 
+              onClick={() => navigate('/income')}
+              className="h-10 gap-2 px-4 font-semibold bg-emerald-600 hover:bg-emerald-500 text-white shadow-sm shadow-emerald-950/20 transition-all active:scale-95"
+            >
+              <Plus className="h-4 w-4 stroke-[2.5]" />
+              Add Income
+            </Button>
+            <Button 
+              onClick={() => navigate('/expense')}
+              className="h-10 gap-2 px-4 font-semibold bg-rose-600 hover:bg-rose-500 text-white shadow-sm shadow-rose-950/20 transition-all active:scale-95"
+            >
+              <Plus className="h-4 w-4 stroke-[2.5]" />
+              Add Expense
+            </Button>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="h-10 gap-2 px-3.5 font-medium border-border/80 bg-background/50 hover:bg-muted transition-colors">
+                  <Download className="h-4 w-4" />
+                  <span>Export</span>
+                  <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-44">
+                <DropdownMenuItem onClick={() => exportData('csv')} className="cursor-pointer gap-2 py-2">
+                  <FileSpreadsheet className="h-4 w-4 text-emerald-500" />
+                  <span>Export as CSV</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => exportData('json')} className="cursor-pointer gap-2 py-2">
+                  <FileJson className="h-4 w-4 text-blue-500" />
+                  <span>Export as JSON</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
 
         {/* Actions and Filters */}
-        <Card className="mb-8 animate-fade-in">
+        <Card className="mb-6 border-border/60 bg-card/60 backdrop-blur-sm shadow-sm overflow-hidden animate-fade-in">
           <CardContent className="p-4 sm:p-5">
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
-                <Button 
-                  onClick={() => navigate('/income')}
-                  className="h-11 gap-2 px-4 font-semibold transition-colors"
-                >
-                  <Plus className="h-4 w-4" />
-                  Add Income
-                </Button>
-                <Button 
-                  onClick={() => navigate('/expense')}
-                  variant="outline"
-                  className="h-11 gap-2 px-4 font-semibold transition-colors"
-                >
-                  <Plus className="h-4 w-4" />
-                  Add Expense
-                </Button>
-                <Button variant="outline" onClick={() => exportData('csv')} className="h-11 gap-2 px-4 font-semibold transition-colors">
-                  <Download className="h-4 w-4" />
-                  Export CSV
-                </Button>
-                <Button variant="outline" onClick={() => exportData('json')} className="h-11 gap-2 px-4 font-semibold transition-colors">
-                  <Download className="h-4 w-4" />
-                  Export JSON
-                </Button>
-              </div>
-
-              <div className="border-t pt-4">
-                <TransactionsFilterBar
-                  filterType={filterType}
-                  setFilterType={setFilterType}
-                  filterMonth={filterMonth}
-                  setFilterMonth={setFilterMonth}
-                  filterCategory={filterCategory}
-                  setFilterCategory={setFilterCategory}
-                  getUniqueMonths={getUniqueMonths}
-                  formatMonthForDisplay={formatMonthForDisplay}
-                  getUniqueCategories={getUniqueCategories}
-                />
-              </div>
-            </div>
+            <TransactionsFilterBar
+              searchQuery={searchQuery}
+              setSearchQuery={setSearchQuery}
+              filterType={filterType}
+              setFilterType={setFilterType}
+              filterMonth={filterMonth}
+              setFilterMonth={setFilterMonth}
+              filterCategory={filterCategory}
+              setFilterCategory={setFilterCategory}
+              filterPaymentMethod={filterPaymentMethod}
+              setFilterPaymentMethod={setFilterPaymentMethod}
+              getUniqueMonths={getUniqueMonths}
+              formatMonthForDisplay={formatMonthForDisplay}
+              getUniqueCategories={getUniqueCategories}
+              getUniquePaymentMethods={getUniquePaymentMethods}
+              onResetFilters={handleResetFilters}
+              hasActiveFilters={hasActiveFilters}
+              filteredCount={filteredTransactions.length}
+              totalCount={transactions.length}
+              filteredIncomeTotal={filteredIncomeTotal}
+              filteredExpenseTotal={filteredExpenseTotal}
+              filteredNetTotal={filteredNetTotal}
+            />
           </CardContent>
         </Card>
 
