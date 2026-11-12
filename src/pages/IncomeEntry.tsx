@@ -23,6 +23,7 @@ import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { Category } from '@/types/finance';
+import { DEFAULT_CATEGORIES, DEFAULT_PAYMENT_METHODS, migrateCategories, migratePaymentMethods } from '@/lib/categoryDefaults';
 import CollapsibleSection from '@/components/CollapsibleSection';
 import { useIncomeData } from '@/hooks/useIncomeData';
 import { useBankAccounts } from '@/hooks/useBankAccounts';
@@ -51,60 +52,27 @@ const IncomeEntry = () => {
   const { incomeData, addIncome } = useIncomeData(currentAccount?.id);
 
   useEffect(() => {
-    const requiredIncomeCategories: Category[] = [
-      { id: 'cat-interest', name: 'Interest', type: 'income', color: '#10B981' },
-      { id: 'cat-cashback', name: 'Cashback', type: 'income', color: '#06B6D4' },
-      { id: 'cat-freelancing', name: 'Freelancing', type: 'income', color: '#3B82F6' },
-    ];
-
-    // Load categories from localStorage
+    // Shared defaults (src/lib/categoryDefaults) — one list everywhere, so
+    // the palette can't drift between pages again.
     const storedCategories = localStorage.getItem('categories');
     if (storedCategories) {
-      let allCategories: Category[] = JSON.parse(storedCategories);
-      let updated = false;
-
-      for (const req of requiredIncomeCategories) {
-        if (!allCategories.some(c => c.name.toLowerCase() === req.name.toLowerCase() && c.type === 'income')) {
-          allCategories.push(req);
-          updated = true;
-        }
-      }
-
-      if (updated) {
-        localStorage.setItem('categories', JSON.stringify(allCategories));
-      }
-
-      const incomeCategories = allCategories.filter((cat: Category) => cat.type === 'income');
-      setCategories(incomeCategories);
+      const { list, changed } = migrateCategories(JSON.parse(storedCategories));
+      if (changed) localStorage.setItem('categories', JSON.stringify(list));
+      setCategories(list.filter((cat: Category) => cat.type === 'income'));
     } else {
-      // Initialize default categories if none exist
-      const defaultCategories: Category[] = [
-        { id: '1', name: 'Salary', type: 'income', color: '#10B981' },
-        { id: '2', name: 'Freelance', type: 'income', color: '#3B82F6' },
-        { id: '3', name: 'Investment', type: 'income', color: '#8B5CF6' },
-        { id: '4', name: 'Interest', type: 'income', color: '#10B981' },
-        { id: '5', name: 'Cashback', type: 'income', color: '#06B6D4' },
-        { id: '6', name: 'Freelancing', type: 'income', color: '#6366F1' },
-      ];
-      localStorage.setItem('categories', JSON.stringify(defaultCategories));
-      const incomeCategories = defaultCategories.filter(cat => cat.type === 'income');
-      setCategories(incomeCategories);
+      localStorage.setItem('categories', JSON.stringify(DEFAULT_CATEGORIES));
+      setCategories(DEFAULT_CATEGORIES.filter(cat => cat.type === 'income'));
     }
 
     // Load payment methods from localStorage
     const storedMethods = localStorage.getItem('paymentMethods');
     if (storedMethods) {
-      setPaymentMethods(JSON.parse(storedMethods));
+      const { list, changed } = migratePaymentMethods(JSON.parse(storedMethods));
+      if (changed) localStorage.setItem('paymentMethods', JSON.stringify(list));
+      setPaymentMethods(list);
     } else {
-      const defaultMethods = [
-        { id: '1', name: 'Cash', color: '#10B981' },
-        { id: '2', name: 'UPI', color: '#3B82F6' },
-        { id: '3', name: 'Bank Transfer', color: '#8B5CF6' },
-        { id: '4', name: 'Credit Card', color: '#EF4444' },
-        { id: '5', name: 'Cheque', color: '#EC4899' },
-      ];
-      localStorage.setItem('paymentMethods', JSON.stringify(defaultMethods));
-      setPaymentMethods(defaultMethods);
+      localStorage.setItem('paymentMethods', JSON.stringify(DEFAULT_PAYMENT_METHODS));
+      setPaymentMethods(DEFAULT_PAYMENT_METHODS);
     }
   }, []);
 

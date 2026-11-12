@@ -100,6 +100,10 @@ export interface Category {
   name: string;
   type: 'income' | 'expense';
   color: string;
+  /** Icon key from the category icon registry (src/lib/categoryIcons.ts).
+   *  Missing on records created before the manager existed — filled in by
+   *  migrateCategories() on load. */
+  icon?: string;
 }
 
 // Predefined wallet structure

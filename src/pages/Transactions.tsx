@@ -5,51 +5,25 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { 
-  Plus, 
-  Filter, 
-  Trash2, 
-  Loader2, 
+import {
+  Plus,
+  Filter,
+  Trash2,
+  Loader2,
   Download,
-  Briefcase,
-  Coins,
-  Utensils,
-  ShoppingBag,
-  Car,
-  Home,
-  HeartPulse,
-  Film,
-  BookOpen,
-  Tag,
-  CreditCard,
-  Wallet,
-  Building2,
-  Sparkles,
   ArrowDownLeft,
   ArrowUpRight
 } from 'lucide-react';
+import { getCategoryIcon } from '@/lib/categoryIcons';
 import {
-  IconUpi,
-  IconBank,
-  IconCash,
-  IconCheque,
-  IconCard,
-  IconWallet,
-  IconSalary,
-  IconFreelance,
-  IconInvestment,
-  IconInterest,
-  IconCashback,
-  IconFood,
-  IconShopping,
-  IconTransport,
-  IconBills,
-  IconGeneric,
-  IconHome,
-  IconLocked,
-  IconEstimated,
-  IconManuallyEdited
-} from '@/components/SolidPillIcons';
+  pillStyleForColor,
+  resolveCategoryIconKey,
+  resolveCategoryColor,
+  resolvePaymentIconKey,
+  migrateCategories,
+  migratePaymentMethods,
+  type PillStyle,
+} from '@/lib/categoryDefaults';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -93,6 +67,7 @@ interface PaymentMethod {
   id: string;
   name: string;
   color: string;
+  icon?: string;
 }
 
 interface Transaction {
@@ -133,6 +108,10 @@ const Transactions = () => {
   const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
   const [selectedBreakdownMonth, setSelectedBreakdownMonth] = useState<string | null>(null);
   const [selectedBreakdownTotal, setSelectedBreakdownTotal] = useState<number | undefined>(undefined);
+  // The interest transaction behind the open detail modal (status, source,
+  // manually-edited state). Rows no longer show the status pill or the
+  // "Daily breakdown" button — the modal is the only place they appear.
+  const [selectedInterestTx, setSelectedInterestTx] = useState<Transaction | null>(null);
 
   // Supabase hooks for real-time data
   const { currentAccount } = useBankAccounts();
@@ -190,15 +169,31 @@ const Transactions = () => {
   const loadCategories = () => {
     const storedCategories = localStorage.getItem('categories');
     if (storedCategories) {
-      setCategories(JSON.parse(storedCategories));
+      const { list, changed } = migrateCategories(JSON.parse(storedCategories));
+      setCategories(list);
+      if (changed) localStorage.setItem('categories', JSON.stringify(list));
     }
   };
 
   const loadPaymentMethods = () => {
     const storedMethods = localStorage.getItem('paymentMethods');
     if (storedMethods) {
-      setPaymentMethods(JSON.parse(storedMethods));
+      const { list, changed } = migratePaymentMethods(JSON.parse(storedMethods));
+      setPaymentMethods(list);
+      if (changed) localStorage.setItem('paymentMethods', JSON.stringify(list));
     }
+  };
+
+  const openInterestDetail = (transaction: Transaction) => {
+    setSelectedInterestTx(transaction);
+    setSelectedBreakdownMonth(transaction.date.slice(0, 7));
+    setSelectedBreakdownTotal(transaction.amount);
+  };
+
+  const closeInterestDetail = () => {
+    setSelectedInterestTx(null);
+    setSelectedBreakdownMonth(null);
+    setSelectedBreakdownTotal(undefined);
   };
 
   const handleDoubleClick = (transaction: Transaction) => {
@@ -279,8 +274,8 @@ const Transactions = () => {
     }
   };
 
-  const handleResumeAutoUpdate = async (t: Transaction, e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handleResumeAutoUpdate = async (t: Transaction, e?: React.MouseEvent) => {
+    e?.stopPropagation();
     try {
       const isLocked = isMonthLocked(t.date.slice(0, 7));
       await updateIncome(t.id, {
@@ -293,6 +288,7 @@ const Transactions = () => {
       });
       refetchIncome();
       InterestService.recalculateInterest('manual', user?.id);
+      closeInterestDetail();
     } catch (err) {
       console.error('Error resuming auto update:', err);
     }
@@ -416,125 +412,43 @@ const Transactions = () => {
     });
   };
 
-  const getCategoryTagStyle = (categoryName: string) => {
-    const c = (categoryName || '').toLowerCase();
-    if (c.includes('interest')) {
+  // Tag styles are driven by the STORED record first (Settings manager):
+  // the category/payment method's own icon + colour from localStorage, so
+  // what the user picks in Settings is what the pill shows. The keyword
+  // buckets below are only the fallback for names not in the store.
+  // Colours follow the user's palette (12 Nov 12:23): Freelance green,
+  // Interest blue, Food red, Transport amber, Bills purple, Shopping pink.
+  const getCategoryTagStyle = (categoryName: string): PillStyle & { icon: React.ElementType } => {
+    const stored = categories.find(
+      (c) => c.name.toLowerCase() === (categoryName || '').toLowerCase()
+    );
+    if (stored) {
       return {
-        icon: IconInterest,
-        bgClass: 'bg-emerald-50/90 dark:bg-emerald-950/40',
-        textClass: 'text-emerald-800 dark:text-emerald-200',
-        iconColorClass: 'text-emerald-700 dark:text-emerald-200'
-      };
-    }
-    if (c.includes('invest')) {
-      return {
-        icon: IconInvestment,
-        bgClass: 'bg-green-50/90 dark:bg-green-950/40',
-        textClass: 'text-green-800 dark:text-green-200',
-        iconColorClass: 'text-green-700 dark:text-green-200'
-      };
-    }
-    if (c.includes('cashback') || c.includes('cash back')) {
-      return {
-        icon: IconCashback,
-        bgClass: 'bg-lime-50/90 dark:bg-lime-950/40',
-        textClass: 'text-lime-800 dark:text-lime-200',
-        iconColorClass: 'text-lime-700 dark:text-lime-200'
-      };
-    }
-    if (c.includes('freelance') || c.includes('freelancing')) {
-      return {
-        icon: IconFreelance,
-        bgClass: 'bg-teal-50/90 dark:bg-teal-950/40',
-        textClass: 'text-teal-800 dark:text-teal-200',
-        iconColorClass: 'text-teal-700 dark:text-teal-200'
-      };
-    }
-    if (c.includes('salary') || c.includes('job') || c.includes('work') || c.includes('business')) {
-      return {
-        icon: IconSalary,
-        bgClass: 'bg-teal-50/90 dark:bg-teal-950/40',
-        textClass: 'text-teal-800 dark:text-teal-200',
-        iconColorClass: 'text-teal-700 dark:text-teal-200'
-      };
-    }
-    if (c.includes('food') || c.includes('grocer') || c.includes('rest') || c.includes('dining')) {
-      return {
-        icon: IconFood,
-        bgClass: 'bg-orange-50/90 dark:bg-orange-950/40',
-        textClass: 'text-orange-900 dark:text-orange-200',
-        iconColorClass: 'text-orange-700 dark:text-orange-200'
-      };
-    }
-    if (c.includes('shop') || c.includes('cloth') || c.includes('mall') || c.includes('store')) {
-      return {
-        icon: IconShopping,
-        bgClass: 'bg-violet-50/90 dark:bg-violet-950/40',
-        textClass: 'text-violet-800 dark:text-violet-200',
-        iconColorClass: 'text-violet-700 dark:text-violet-200'
-      };
-    }
-    if (c.includes('travel') || c.includes('fuel') || c.includes('cab') || c.includes('uber') || c.includes('car') || c.includes('transport')) {
-      return {
-        icon: IconTransport,
-        bgClass: 'bg-amber-50/90 dark:bg-amber-950/40',
-        textClass: 'text-amber-900 dark:text-amber-200',
-        iconColorClass: 'text-amber-700 dark:text-amber-200'
-      };
-    }
-    if (c.includes('bill') || c.includes('util')) {
-      return {
-        icon: IconBills,
-        bgClass: 'bg-sky-50/90 dark:bg-sky-950/40',
-        textClass: 'text-sky-800 dark:text-sky-200',
-        iconColorClass: 'text-sky-700 dark:text-sky-200'
-      };
-    }
-    if (c.includes('rent') || c.includes('home') || c.includes('house')) {
-      return {
-        icon: IconHome,
-        bgClass: 'bg-sky-50/90 dark:bg-sky-950/40',
-        textClass: 'text-sky-800 dark:text-sky-200',
-        iconColorClass: 'text-sky-700 dark:text-sky-200'
-      };
-    }
-    if (c.includes('health') || c.includes('med') || c.includes('doctor') || c.includes('gym')) {
-      return {
-        icon: HeartPulse,
-        bgClass: 'bg-rose-50/90 dark:bg-rose-950/40',
-        textClass: 'text-rose-800 dark:text-rose-200',
-        iconColorClass: 'text-rose-700 dark:text-rose-200'
-      };
-    }
-    if (c.includes('entertain') || c.includes('movie') || c.includes('subscript') || c.includes('game')) {
-      return {
-        icon: Film,
-        bgClass: 'bg-pink-50/90 dark:bg-pink-950/40',
-        textClass: 'text-pink-800 dark:text-pink-200',
-        iconColorClass: 'text-pink-700 dark:text-pink-200'
-      };
-    }
-    if (c.includes('education') || c.includes('book') || c.includes('course') || c.includes('study')) {
-      return {
-        icon: BookOpen,
-        bgClass: 'bg-indigo-50/90 dark:bg-indigo-950/40',
-        textClass: 'text-indigo-900 dark:text-indigo-200',
-        iconColorClass: 'text-indigo-800 dark:text-indigo-200'
+        ...pillStyleForColor(stored.color),
+        icon: getCategoryIcon(stored.icon ?? resolveCategoryIconKey(categoryName)),
       };
     }
     return {
-      icon: IconGeneric,
-      bgClass: 'bg-blue-50/90 dark:bg-blue-950/40',
-      textClass: 'text-blue-800 dark:text-blue-200',
-      iconColorClass: 'text-blue-700 dark:text-blue-200'
+      ...pillStyleForColor(resolveCategoryColor(categoryName)),
+      icon: getCategoryIcon(resolveCategoryIconKey(categoryName)),
     };
   };
 
-  const getPaymentMethodTagStyle = (methodName: string) => {
+  const getPaymentMethodTagStyle = (methodName: string): PillStyle & { icon: React.ElementType } => {
+    const stored = paymentMethods.find(
+      (m) => m.name.toLowerCase() === (methodName || '').toLowerCase()
+    );
+    if (stored) {
+      return {
+        ...pillStyleForColor(stored.color),
+        icon: getCategoryIcon(stored.icon ?? resolvePaymentIconKey(methodName)),
+      };
+    }
+    // Fallback for methods not in the store (kept from before).
     const m = (methodName || '').toLowerCase();
     if (m.includes('upi') || m.includes('gpay') || m.includes('phonepe') || m.includes('paytm')) {
       return {
-        icon: IconUpi,
+        icon: getCategoryIcon('upi'),
         bgClass: 'bg-cyan-50/90 dark:bg-cyan-950/40',
         textClass: 'text-cyan-800 dark:text-cyan-200',
         iconColorClass: 'text-cyan-700 dark:text-cyan-200'
@@ -542,7 +456,7 @@ const Transactions = () => {
     }
     if (m.includes('card') || m.includes('credit') || m.includes('debit')) {
       return {
-        icon: IconCard,
+        icon: getCategoryIcon('card'),
         bgClass: 'bg-indigo-50/90 dark:bg-indigo-950/40',
         textClass: 'text-indigo-900 dark:text-indigo-200',
         iconColorClass: 'text-indigo-800 dark:text-indigo-200'
@@ -550,7 +464,7 @@ const Transactions = () => {
     }
     if (m.includes('bank') || m.includes('net') || m.includes('transfer') || m.includes('slice')) {
       return {
-        icon: IconBank,
+        icon: getCategoryIcon('bank'),
         bgClass: 'bg-blue-50/90 dark:bg-blue-950/40',
         textClass: 'text-blue-800 dark:text-blue-200',
         iconColorClass: 'text-blue-700 dark:text-blue-200'
@@ -558,7 +472,7 @@ const Transactions = () => {
     }
     if (m.includes('cash')) {
       return {
-        icon: IconCash,
+        icon: getCategoryIcon('cash'),
         bgClass: 'bg-emerald-50/90 dark:bg-emerald-950/40',
         textClass: 'text-emerald-800 dark:text-emerald-200',
         iconColorClass: 'text-emerald-700 dark:text-emerald-200'
@@ -566,7 +480,7 @@ const Transactions = () => {
     }
     if (m.includes('cheque') || m.includes('check')) {
       return {
-        icon: IconCheque,
+        icon: getCategoryIcon('cheque'),
         bgClass: 'bg-violet-50/90 dark:bg-violet-950/40',
         textClass: 'text-violet-800 dark:text-violet-200',
         iconColorClass: 'text-violet-700 dark:text-violet-200'
@@ -574,14 +488,14 @@ const Transactions = () => {
     }
     if (m.includes('wallet')) {
       return {
-        icon: IconWallet,
+        icon: getCategoryIcon('wallet'),
         bgClass: 'bg-violet-50/90 dark:bg-violet-950/40',
         textClass: 'text-violet-800 dark:text-violet-200',
         iconColorClass: 'text-violet-700 dark:text-violet-200'
       };
     }
     return {
-      icon: IconGeneric,
+      icon: getCategoryIcon('generic'),
       bgClass: 'bg-violet-50/90 dark:bg-violet-950/40',
       textClass: 'text-violet-800 dark:text-violet-200',
       iconColorClass: 'text-violet-700 dark:text-violet-200'
@@ -594,73 +508,42 @@ const Transactions = () => {
   // matching text, NO border, icon directly on the pill background next to
   // the text (no separate chip/box behind the icon). Round 4 (user: "no
   // border arround and icons bi aaye"): border 2px -> 0, icon chip removed.
-  interface ChipPillStyle {
-    bgClass: string;
-    textClass: string;
-    iconColorClass: string;
-  }
-
   // UNIFORM PILL SYSTEM (round 3 — table-image analysis): EVERY pill on this
-  // page is ONE size — category, payment, status, type — desktop AND mobile.
+  // page is ONE size — category, payment, type — desktop AND mobile.
   // Height 32px desktop / 30px mobile, text 14px semibold, icon 16px,
   // px-3, 6px icon–text gap. Only the WIDTH varies with the label.
   // Round 4: category/payment pills are borderless like the status pills —
   // icon sits directly on the pastel fill, exactly like the table image.
+  // Styles come from PillStyle (categoryDefaults): curated Tailwind triples
+  // for palette colours, or the .pill-dynamic color-mix fallback (via the
+  // --pill-color CSS var) for any other stored hex.
   const renderChipPill = (
-    style: ChipPillStyle,
+    style: PillStyle,
     label: string,
     PillIcon: React.ElementType,
     size: 'md' | 'sm'
   ) => {
     const md = size === 'md';
     return (
-      <span className={cn(
-        "inline-flex items-center rounded-full select-none whitespace-nowrap shrink-0",
-        md ? "h-8 gap-1.5 px-3 text-sm font-semibold" : "h-[30px] gap-1.5 px-3 text-sm font-semibold",
-        style.bgClass,
-        style.textClass
-      )}>
+      <span
+        className={cn(
+          "inline-flex items-center rounded-full select-none whitespace-nowrap shrink-0",
+          md ? "h-8 gap-1.5 px-3 text-sm font-semibold" : "h-[30px] gap-1.5 px-3 text-sm font-semibold",
+          style.bgClass,
+          style.textClass
+        )}
+        style={style.dynamicColor ? ({ '--pill-color': style.dynamicColor } as React.CSSProperties) : undefined}
+      >
         <PillIcon className={cn("h-4 w-4 shrink-0", style.iconColorClass)} />
         <span className={md ? "truncate max-w-[104px]" : "truncate max-w-[150px]"}>{label}</span>
       </span>
     );
   };
 
-  // Auto-interest status pills: image-1/table style — soft pastel fill +
-  // matching text + outline stroke icon directly left of the text. No border,
-  // no icon chip, no gloss. Round 3: SAME uniform size as every other pill —
-  // 32px desktop / 30px mobile, 14px semibold, 16px icon (was 32px / 14px /
-  // 18px with a different height from the 40px chip pills). Clickable: opens
-  // the daily interest breakdown.
-  const renderStatusPill = (t: Transaction, size: 'md' | 'sm' = 'md') => {
-    if (!t.is_auto_interest) return null;
-    const edited = t.is_manually_edited;
-    const locked = t.auto_interest_status === 'locked';
-    const StatusIcon = edited ? IconManuallyEdited : locked ? IconLocked : IconEstimated;
-    const label = edited ? 'Manually edited' : locked ? 'Auto • Locked' : 'Auto • Estimated';
-    return (
-      <span
-        className={cn(
-          "inline-flex items-center gap-1.5 px-3 rounded-full text-sm font-semibold cursor-pointer select-none whitespace-nowrap shrink-0",
-          size === 'md' ? "h-8" : "h-[30px]",
-          edited
-            ? "bg-amber-100 text-amber-800 dark:bg-amber-950/50 dark:text-amber-200"
-            : locked
-            ? "bg-slate-200/70 text-slate-700 dark:bg-slate-800/70 dark:text-slate-200"
-            : "bg-blue-100 text-blue-800 dark:bg-blue-950/50 dark:text-blue-200"
-        )}
-        onClick={(e) => {
-          e.stopPropagation();
-          setSelectedBreakdownMonth(t.date.slice(0, 7));
-          setSelectedBreakdownTotal(t.amount);
-        }}
-        title="Click to view daily interest breakdown"
-      >
-        <StatusIcon className="h-4 w-4 shrink-0" />
-        <span>{label}</span>
-      </span>
-    );
-  };
+  // Interest rows no longer show the "Auto • Estimated / Locked" status pill
+  // or the "Daily breakdown" button inline (Part B). The Interest pill
+  // itself opens the detail modal (see openInterestDetail); the status,
+  // breakdown, month, amount and source live only in that modal.
 
   const getFilteredCategories = () => {
     if (!editingTransaction) return [];
@@ -784,7 +667,7 @@ const Transactions = () => {
               <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
                 <Button 
                   onClick={() => navigate('/income')}
-                  className="h-10 gap-2 px-4 font-semibold transition-colors"
+                  className="h-11 gap-2 px-4 font-semibold transition-colors"
                 >
                   <Plus className="h-4 w-4" />
                   Add Income
@@ -792,16 +675,16 @@ const Transactions = () => {
                 <Button 
                   onClick={() => navigate('/expense')}
                   variant="outline"
-                  className="h-10 gap-2 px-4 font-semibold transition-colors"
+                  className="h-11 gap-2 px-4 font-semibold transition-colors"
                 >
                   <Plus className="h-4 w-4" />
                   Add Expense
                 </Button>
-                <Button variant="outline" onClick={() => exportData('csv')} className="h-10 gap-2 px-4 font-semibold transition-colors">
+                <Button variant="outline" onClick={() => exportData('csv')} className="h-11 gap-2 px-4 font-semibold transition-colors">
                   <Download className="h-4 w-4" />
                   Export CSV
                 </Button>
-                <Button variant="outline" onClick={() => exportData('json')} className="h-10 gap-2 px-4 font-semibold transition-colors">
+                <Button variant="outline" onClick={() => exportData('json')} className="h-11 gap-2 px-4 font-semibold transition-colors">
                   <Download className="h-4 w-4" />
                   Export JSON
                 </Button>
@@ -827,9 +710,9 @@ const Transactions = () => {
         {/* Transactions Table */}
         <Card className="animate-fade-in">
           <CardHeader className="pb-4">
-            <CardTitle className="text-xl sm:text-2xl text-foreground flex items-center gap-3">
+            <CardTitle className="text-xl sm:text-2xl text-foreground flex flex-wrap items-center gap-3">
               Transaction History
-              <span className="ml-2 text-sm font-normal text-muted-foreground bg-muted px-3 py-1 rounded-full">
+              <span className="ml-2 text-sm font-normal text-muted-foreground bg-muted px-3 py-1 rounded-full whitespace-nowrap shrink-0">
                 {filteredTransactions.length} transactions
               </span>
             </CardTitle>
@@ -862,46 +745,25 @@ const Transactions = () => {
                            {formatDate(transaction.date)}
                          </TableCell>
                          <TableCell className="px-4 py-3 font-medium text-foreground text-sm">
-                           <div className="flex items-center gap-2 min-w-0">
-                             <span className="truncate" title={transaction.source}>{transaction.source}</span>
-                             {renderStatusPill(transaction, 'md')}
-                           </div>
+                           <span className="truncate block" title={transaction.source}>{transaction.source}</span>
                          </TableCell>
                          <TableCell className="px-4 py-3 text-muted-foreground text-sm">
-                           <div className="flex items-center justify-between gap-2 min-w-0">
-                             <span className="truncate" title={transaction.description || ''}>{transaction.description || '-'}</span>
-                             {transaction.is_auto_interest && (
-                               <div className="flex items-center gap-1.5">
-                                 <Button
-                                   variant="ghost"
-                                   size="sm"
-                                   className="h-6 px-1.5 text-xs text-primary hover:underline"
-                                   onClick={(e) => {
-                                     e.stopPropagation();
-                                     setSelectedBreakdownMonth(transaction.date.slice(0, 7));
-                                     setSelectedBreakdownTotal(transaction.amount);
-                                   }}
-                                 >
-                                   Daily breakdown
-                                 </Button>
-                                 {transaction.is_manually_edited && (
-                                   <Button
-                                     variant="outline"
-                                     size="sm"
-                                     className="h-6 px-2 text-[11px] text-amber-600 border-amber-300 dark:text-amber-400 dark:border-amber-500/40 hover:bg-amber-50 dark:text-amber-400 dark:border-amber-500/40 dark:hover:bg-amber-500/10"
-                                     onClick={(e) => handleResumeAutoUpdate(transaction, e)}
-                                   >
-                                     Resume auto-update
-                                   </Button>
-                                 )}
-                                </div>
-                             )}
-                           </div>
+                           <span className="truncate block" title={transaction.description || ''}>{transaction.description || '-'}</span>
                          </TableCell>
                         <TableCell className="px-4 py-3">
                           {(() => {
                             const cat = getCategoryTagStyle(transaction.category);
-                            return renderChipPill(cat, transaction.category.charAt(0).toUpperCase() + transaction.category.slice(1), cat.icon, 'md');
+                            const pill = renderChipPill(cat, transaction.category.charAt(0).toUpperCase() + transaction.category.slice(1), cat.icon, 'md');
+                            return transaction.is_auto_interest ? (
+                              <button
+                                type="button"
+                                onClick={() => openInterestDetail(transaction)}
+                                className="cursor-pointer rounded-full text-left transition-opacity hover:opacity-80"
+                                title="Click for interest details"
+                              >
+                                {pill}
+                              </button>
+                            ) : pill;
                           })()}
                         </TableCell>
                         <TableCell className="px-4 py-3">
@@ -956,36 +818,9 @@ const Transactions = () => {
                     </div>
                     <div className="flex items-center gap-2 mb-1 flex-wrap">
                       <h3 className="font-semibold text-foreground text-lg">{transaction.source}</h3>
-                      {renderStatusPill(transaction, 'sm')}
                     </div>
                     {transaction.description && (
                       <p className="text-muted-foreground mb-2 text-sm">{transaction.description}</p>
-                    )}
-                    {transaction.is_auto_interest && (
-                      <div className="flex items-center gap-2 mb-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-6 px-2 text-xs text-primary"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedBreakdownMonth(transaction.date.slice(0, 7));
-                            setSelectedBreakdownTotal(transaction.amount);
-                          }}
-                        >
-                          Daily breakdown
-                        </Button>
-                        {transaction.is_manually_edited && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="h-6 px-2 text-[11px] text-amber-600 border-amber-300 dark:text-amber-400 dark:border-amber-500/40"
-                            onClick={(e) => handleResumeAutoUpdate(transaction, e)}
-                          >
-                            Resume auto-update
-                          </Button>
-                        )}
-                      </div>
                     )}
                     <div className="flex items-center gap-2 mb-2 flex-wrap">
                       {renderChipPill(
@@ -999,7 +834,17 @@ const Transactions = () => {
 
                       {(() => {
                         const cat = getCategoryTagStyle(transaction.category);
-                        return renderChipPill(cat, transaction.category.charAt(0).toUpperCase() + transaction.category.slice(1), cat.icon, 'sm');
+                        const pill = renderChipPill(cat, transaction.category.charAt(0).toUpperCase() + transaction.category.slice(1), cat.icon, 'sm');
+                        return transaction.is_auto_interest ? (
+                          <button
+                            type="button"
+                            onClick={() => openInterestDetail(transaction)}
+                            className="cursor-pointer rounded-full text-left transition-opacity hover:opacity-80"
+                            title="Click for interest details"
+                          >
+                            {pill}
+                          </button>
+                        ) : pill;
                       })()}
 
                       {(() => {
@@ -1168,13 +1013,19 @@ const Transactions = () => {
           </AlertDialogContent>
         </AlertDialog>
 
-        {/* Daily Interest Breakdown Modal (Spec §2b) */}
+        {/* Daily Interest Breakdown Modal (Spec §2b) — the ONLY place the
+            auto-interest status, daily breakdown, month, amount and source
+            show now; rows stay clean. */}
         <InterestBreakdownModal
           isOpen={Boolean(selectedBreakdownMonth)}
-          onClose={() => setSelectedBreakdownMonth(null)}
+          onClose={closeInterestDetail}
           yearMonth={selectedBreakdownMonth}
           userId={user?.id}
           entryTotal={selectedBreakdownTotal}
+          source={selectedInterestTx?.source}
+          status={selectedInterestTx?.auto_interest_status}
+          isManuallyEdited={selectedInterestTx?.is_manually_edited}
+          onResumeAutoUpdate={selectedInterestTx ? () => handleResumeAutoUpdate(selectedInterestTx) : undefined}
         />
       </main>
     </div>

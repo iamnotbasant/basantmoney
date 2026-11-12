@@ -1,76 +1,54 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
 } from '@/components/ui/select';
 import { Plus, Trash2, Tag } from 'lucide-react';
 import { Category } from '@/types/finance';
 import { useToast } from '@/hooks/use-toast';
+import {
+  DEFAULT_CATEGORIES,
+  migrateCategories,
+} from '@/lib/categoryDefaults';
+import { IconPickerButton, ColorPickerButton } from '@/components/CategoryPickers';
 
 const CategoryManager = () => {
   const { toast } = useToast();
   const [categories, setCategories] = useState<Category[]>([]);
   const [newCategoryName, setNewCategoryName] = useState('');
   const [newCategoryType, setNewCategoryType] = useState<'income' | 'expense'>('income');
-  const [newCategoryColor, setNewCategoryColor] = useState('#3B82F6');
+  const [newCategoryColor, setNewCategoryColor] = useState('#10B981');
+  const [newCategoryIcon, setNewCategoryIcon] = useState('generic');
+  // Which row's picker is open: `icon:<id>` / `color:<id>` / 'icon:new' / 'color:new'
+  const [openPicker, setOpenPicker] = useState<string | null>(null);
 
-  const colorOptions = [
-    '#3B82F6', '#EF4444', '#10B981', '#F59E0B', '#8B5CF6', '#EC4899', '#06B6D4', '#84CC16',
-    '#F97316', '#EAB308', '#22C55E', '#14B8A6', '#0EA5E9', '#6366F1', '#A855F7', '#D946EF',
-    '#F43F5E', '#64748B', '#78716C', '#6B7280', '#374151', '#1F2937', '#DC2626', '#B91C1C',
-    '#059669', '#047857', '#0D9488', '#0F766E', '#0284C7', '#0369A1', '#7C3AED', '#6D28D9'
-  ];
+  const persist = (list: Category[]) => {
+    setCategories(list);
+    localStorage.setItem('categories', JSON.stringify(list));
+    window.dispatchEvent(new Event('categoriesChanged'));
+  };
 
   useEffect(() => {
-    const requiredIncomeCategories: Category[] = [
-      { id: 'cat-interest', name: 'Interest', type: 'income', color: '#10B981' },
-      { id: 'cat-cashback', name: 'Cashback', type: 'income', color: '#06B6D4' },
-      { id: 'cat-freelancing', name: 'Freelancing', type: 'income', color: '#3B82F6' },
-    ];
-
     const storedCategories = localStorage.getItem('categories');
     if (storedCategories) {
-      let currentList: Category[] = JSON.parse(storedCategories);
-      let updated = false;
-
-      // Ensure Interest, Cashback, and Freelancing are present without altering existing ones
-      for (const req of requiredIncomeCategories) {
-        if (!currentList.some(c => c.name.toLowerCase() === req.name.toLowerCase() && c.type === 'income')) {
-          currentList.push(req);
-          updated = true;
-        }
-      }
-
-      setCategories(currentList);
-      if (updated) {
-        localStorage.setItem('categories', JSON.stringify(currentList));
-      }
+      const { list, changed } = migrateCategories(JSON.parse(storedCategories));
+      setCategories(list);
+      if (changed) localStorage.setItem('categories', JSON.stringify(list));
     } else {
-      // Default categories
-      const defaultCategories: Category[] = [
-        { id: '1', name: 'Salary', type: 'income', color: '#10B981' },
-        { id: '2', name: 'Freelance', type: 'income', color: '#3B82F6' },
-        { id: '3', name: 'Investment', type: 'income', color: '#8B5CF6' },
-        { id: '4', name: 'Interest', type: 'income', color: '#10B981' },
-        { id: '5', name: 'Cashback', type: 'income', color: '#06B6D4' },
-        { id: '6', name: 'Freelancing', type: 'income', color: '#6366F1' },
-        { id: '7', name: 'Food', type: 'expense', color: '#EF4444' },
-        { id: '8', name: 'Transport', type: 'expense', color: '#F59E0B' },
-        { id: '9', name: 'Entertainment', type: 'expense', color: '#EC4899' },
-        { id: '10', name: 'Bills', type: 'expense', color: '#06B6D4' },
-      ];
-      setCategories(defaultCategories);
-      localStorage.setItem('categories', JSON.stringify(defaultCategories));
+      setCategories(DEFAULT_CATEGORIES);
+      localStorage.setItem('categories', JSON.stringify(DEFAULT_CATEGORIES));
     }
   }, []);
+
+  const updateCategory = (categoryId: string, patch: Partial<Category>) => {
+    persist(categories.map((cat) => (cat.id === categoryId ? { ...cat, ...patch } : cat)));
+  };
 
   const addCategory = () => {
     if (!newCategoryName.trim()) {
@@ -86,16 +64,11 @@ const CategoryManager = () => {
       id: Date.now().toString(),
       name: newCategoryName.trim(),
       type: newCategoryType,
-      color: newCategoryColor
+      color: newCategoryColor,
+      icon: newCategoryIcon,
     };
 
-    const updatedCategories = [...categories, newCategory];
-    setCategories(updatedCategories);
-    localStorage.setItem('categories', JSON.stringify(updatedCategories));
-
-    // Dispatch event to notify other components
-    window.dispatchEvent(new Event('categoriesChanged'));
-
+    persist([...categories, newCategory]);
     setNewCategoryName('');
     toast({
       title: "Success",
@@ -104,13 +77,7 @@ const CategoryManager = () => {
   };
 
   const deleteCategory = (categoryId: string) => {
-    const updatedCategories = categories.filter(cat => cat.id !== categoryId);
-    setCategories(updatedCategories);
-    localStorage.setItem('categories', JSON.stringify(updatedCategories));
-    
-    // Dispatch event to notify other components
-    window.dispatchEvent(new Event('categoriesChanged'));
-    
+    persist(categories.filter(cat => cat.id !== categoryId));
     toast({
       title: "Success",
       description: "Category deleted successfully",
@@ -119,6 +86,33 @@ const CategoryManager = () => {
 
   const incomeCategories = categories.filter(cat => cat.type === 'income');
   const expenseCategories = categories.filter(cat => cat.type === 'expense');
+
+  const renderCategoryRow = (category: Category) => (
+    <div key={category.id} className="flex items-center gap-2 rounded-lg border bg-card px-2 py-2">
+      <IconPickerButton
+        value={category.icon}
+        onChange={(key) => updateCategory(category.id, { icon: key })}
+        open={openPicker === `icon:${category.id}`}
+        onOpenChange={(open) => setOpenPicker(open ? `icon:${category.id}` : null)}
+        title={`Change icon for ${category.name}`}
+      />
+      <ColorPickerButton
+        value={category.color}
+        onChange={(hex) => updateCategory(category.id, { color: hex })}
+        open={openPicker === `color:${category.id}`}
+        onOpenChange={(open) => setOpenPicker(open ? `color:${category.id}` : null)}
+        title={`Change colour for ${category.name}`}
+      />
+      <span className="flex-1 min-w-0 text-sm font-medium truncate">{category.name}</span>
+      <button
+        onClick={() => deleteCategory(category.id)}
+        className="ml-1 hover:text-destructive shrink-0"
+        aria-label={`Delete ${category.name}`}
+      >
+        <Trash2 className="h-3.5 w-3.5" />
+      </button>
+    </div>
+  );
 
   return (
     <div className="space-y-6">
@@ -132,7 +126,7 @@ const CategoryManager = () => {
       {/* Add New Category */}
       <div className="bg-card rounded-lg border p-4 space-y-4">
         <h3 className="font-medium">Add New Category</h3>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <Label htmlFor="categoryName">Category Name</Label>
             <Input
@@ -154,37 +148,31 @@ const CategoryManager = () => {
               </SelectContent>
             </Select>
           </div>
-          <div>
-            <Label>Color</Label>
-            <div className="space-y-3 mt-2">
-              {/* Predefined Colors */}
-              <div className="flex flex-wrap gap-2">
-                {colorOptions.map((color) => (
-                  <button
-                    key={color}
-                    className={`w-8 h-8 rounded-full border-2 ${newCategoryColor === color ? 'border-foreground' : 'border-border'} hover:scale-110 transition-transform`}
-                    style={{ backgroundColor: color }}
-                    onClick={() => setNewCategoryColor(color)}
-                  />
-                ))}
-              </div>
-              
-              {/* Custom Color Input */}
-              <div className="flex items-center gap-2">
-                <Label htmlFor="customColor" className="text-sm text-muted-foreground">Custom:</Label>
-                <Input
-                  id="customColor"
-                  type="color"
-                  value={newCategoryColor}
-                  onChange={(e) => setNewCategoryColor(e.target.value)}
-                  className="w-16 h-8 p-1 rounded border cursor-pointer"
-                />
-                <span className="text-xs text-muted-foreground">{newCategoryColor}</span>
-              </div>
-            </div>
+        </div>
+        <div className="flex flex-wrap items-center gap-4">
+          <div className="flex items-center gap-2">
+            <Label className="text-sm text-muted-foreground">Icon</Label>
+            <IconPickerButton
+              value={newCategoryIcon}
+              onChange={setNewCategoryIcon}
+              open={openPicker === 'icon:new'}
+              onOpenChange={(open) => setOpenPicker(open ? 'icon:new' : null)}
+              title="Choose an icon for the new category"
+            />
           </div>
-          <div className="flex items-end">
-            <Button onClick={addCategory} className="w-full">
+          <div className="flex items-center gap-2">
+            <Label className="text-sm text-muted-foreground">Colour</Label>
+            <ColorPickerButton
+              value={newCategoryColor}
+              onChange={setNewCategoryColor}
+              open={openPicker === 'color:new'}
+              onOpenChange={(open) => setOpenPicker(open ? 'color:new' : null)}
+              title="Choose a colour for the new category"
+            />
+            <span className="text-xs text-muted-foreground">{newCategoryColor}</span>
+          </div>
+          <div className="flex items-center gap-2 ml-auto">
+            <Button onClick={addCategory}>
               <Plus className="h-4 w-4 mr-2" />
               Add Category
             </Button>
@@ -195,48 +183,16 @@ const CategoryManager = () => {
       {/* Income Categories */}
       <div className="bg-card rounded-lg border p-4">
         <h3 className="font-medium mb-4">Income Categories</h3>
-        <div className="flex flex-wrap gap-2">
-          {incomeCategories.map((category) => (
-            <div key={category.id} className="flex items-center gap-2">
-              <Badge variant="outline" className="flex items-center gap-2">
-                <div 
-                  className="w-3 h-3 rounded-full" 
-                  style={{ backgroundColor: category.color }}
-                />
-                {category.name}
-                <button
-                  onClick={() => deleteCategory(category.id)}
-                  className="ml-1 hover:text-destructive"
-                >
-                  <Trash2 className="h-3 w-3" />
-                </button>
-              </Badge>
-            </div>
-          ))}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          {incomeCategories.map(renderCategoryRow)}
         </div>
       </div>
 
       {/* Expense Categories */}
       <div className="bg-card rounded-lg border p-4">
         <h3 className="font-medium mb-4">Expense Categories</h3>
-        <div className="flex flex-wrap gap-2">
-          {expenseCategories.map((category) => (
-            <div key={category.id} className="flex items-center gap-2">
-              <Badge variant="outline" className="flex items-center gap-2">
-                <div 
-                  className="w-3 h-3 rounded-full" 
-                  style={{ backgroundColor: category.color }}
-                />
-                {category.name}
-                <button
-                  onClick={() => deleteCategory(category.id)}
-                  className="ml-1 hover:text-destructive"
-                >
-                  <Trash2 className="h-3 w-3" />
-                </button>
-              </Badge>
-            </div>
-          ))}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          {expenseCategories.map(renderCategoryRow)}
         </div>
       </div>
     </div>

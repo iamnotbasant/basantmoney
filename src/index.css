@@ -100,6 +100,19 @@ html.dark {
   background-image: none;
 }
 
+/* Dynamic pill colours (category manager): a pill whose stored hex has no
+   curated Tailwind triple renders through color-mix off --pill-color, so ANY
+   colour the user picks stays a readable pastel pill in both themes. The
+   icon inherits currentColor, so it follows the text colour. */
+.pill-dynamic {
+  background-color: color-mix(in srgb, var(--pill-color) 13%, #ffffff);
+  color: color-mix(in srgb, var(--pill-color) 68%, #000000);
+}
+.dark .pill-dynamic {
+  background-color: color-mix(in srgb, var(--pill-color) 22%, #000000);
+  color: color-mix(in srgb, var(--pill-color) 62%, #ffffff);
+}
+
 /* Specular top rim shine for dark glass cards */
 .dark-glass-card {
   position: relative;

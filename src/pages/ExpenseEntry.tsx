@@ -56,12 +56,14 @@ const ExpenseEntry = () => {
       const expenseCategories = allCategories.filter((cat: any) => cat.type === 'expense');
       setCategories(expenseCategories);
     } else {
+      // New palette (12 Nov 12:23): Food red, Transport amber,
+      // Entertainment pink, Bills purple, Shopping pink.
       const defaultCategories = [
         { id: '1', name: 'Food', color: '#EF4444' },
         { id: '2', name: 'Transport', color: '#F59E0B' },
         { id: '3', name: 'Entertainment', color: '#EC4899' },
-        { id: '4', name: 'Bills', color: '#06B6D4' },
-        { id: '5', name: 'Shopping', color: '#8B5CF6' },
+        { id: '4', name: 'Bills', color: '#8B5CF6' },
+        { id: '5', name: 'Shopping', color: '#EC4899' },
       ];
       setCategories(defaultCategories);
     }

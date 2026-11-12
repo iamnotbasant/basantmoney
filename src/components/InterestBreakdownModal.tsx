@@ -26,6 +26,12 @@ interface InterestBreakdownModalProps {
   yearMonth: string | null; // e.g. "2026-11"
   userId?: string;
   entryTotal?: number;
+  /** Interest entry context — shown in the summary; the Transactions rows no
+   *  longer show these inline, so the modal is the only place they appear. */
+  source?: string;
+  status?: string; // 'locked' | 'estimated' | 'manually_edited'
+  isManuallyEdited?: boolean;
+  onResumeAutoUpdate?: () => void;
 }
 
 export const InterestBreakdownModal: React.FC<InterestBreakdownModalProps> = ({
@@ -34,6 +40,10 @@ export const InterestBreakdownModal: React.FC<InterestBreakdownModalProps> = ({
   yearMonth,
   userId,
   entryTotal,
+  source,
+  status,
+  isManuallyEdited,
+  onResumeAutoUpdate,
 }) => {
   const [records, setRecords] = useState<InterestDayRecord[]>([]);
   const [loading, setLoading] = useState(false);
@@ -55,6 +65,14 @@ export const InterestBreakdownModal: React.FC<InterestBreakdownModalProps> = ({
 
   const monthDescription = getInterestDescription(yearMonth);
   const totalSum = records.reduce((sum, r) => sum + Number(r.interest_amount), 0);
+  const statusLabel =
+    status === 'manually_edited' ? 'Manually edited' : status === 'locked' ? 'Auto • Locked' : 'Auto • Estimated';
+  const statusClasses =
+    status === 'manually_edited'
+      ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/50 dark:text-amber-200'
+      : status === 'locked'
+      ? 'bg-slate-200/70 text-slate-700 dark:bg-slate-800/70 dark:text-slate-200'
+      : 'bg-blue-100 text-blue-800 dark:bg-blue-950/50 dark:text-blue-200';
 
   return (
     <Dialog open={isOpen} onOpenChange={open => !open && onClose()}>
@@ -71,7 +89,17 @@ export const InterestBreakdownModal: React.FC<InterestBreakdownModalProps> = ({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex items-center justify-between py-2 px-3 bg-muted/40 rounded-lg text-sm">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 py-2 px-3 bg-muted/40 rounded-lg text-sm">
+          <div>
+            <span className="text-muted-foreground">Source: </span>
+            <span className="font-semibold">{source ?? 'Slice'}</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="text-muted-foreground">Status: </span>
+            <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold ${statusClasses}`}>
+              {statusLabel}
+            </span>
+          </div>
           <div>
             <span className="text-muted-foreground">Month: </span>
             <span className="font-semibold">{yearMonth}</span>
@@ -135,9 +163,21 @@ export const InterestBreakdownModal: React.FC<InterestBreakdownModalProps> = ({
           <p className="text-xs text-muted-foreground">
             Formula: ROUND(Closing Balance × Rate ÷ 100 ÷ 365, 2)
           </p>
-          <Button variant="outline" size="sm" onClick={onClose}>
-            Close
-          </Button>
+          <div className="flex gap-2">
+            {isManuallyEdited && onResumeAutoUpdate && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onResumeAutoUpdate}
+                className="text-amber-600 border-amber-300 dark:text-amber-400 dark:border-amber-500/40 hover:bg-amber-50 dark:hover:bg-amber-500/10"
+              >
+                Resume auto-update
+              </Button>
+            )}
+            <Button variant="outline" size="sm" onClick={onClose}>
+              Close
+            </Button>
+          </div>
         </div>
       </DialogContent>
     </Dialog>
