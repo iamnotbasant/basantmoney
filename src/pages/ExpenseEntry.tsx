@@ -64,6 +64,7 @@ const ExpenseEntry = () => {
         { id: '3', name: 'Entertainment', color: '#EC4899' },
         { id: '4', name: 'Bills', color: '#8B5CF6' },
         { id: '5', name: 'Shopping', color: '#EC4899' },
+        { id: '6', name: 'Recharge', color: '#8B5CF6' },
       ];
       setCategories(defaultCategories);
     }

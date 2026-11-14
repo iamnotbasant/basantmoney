@@ -74,6 +74,7 @@ export const DEFAULT_CATEGORIES: Category[] = [
   { id: '9', name: 'Entertainment', type: 'expense', color: '#EC4899', icon: 'film' },
   { id: '10', name: 'Bills', type: 'expense', color: '#8B5CF6', icon: 'bills' },
   { id: '11', name: 'Shopping', type: 'expense', color: '#EC4899', icon: 'shopping' },
+  { id: '12', name: 'Recharge', type: 'expense', color: '#8B5CF6', icon: 'smartphone' },
 ];
 
 // Categories that must always exist (the app's interest system + ones he
@@ -83,6 +84,7 @@ export const REQUIRED_CATEGORIES: Category[] = [
   { id: 'cat-cashback', name: 'Cashback', type: 'income', color: '#10B981', icon: 'cashback' },
   { id: 'cat-freelancing', name: 'Freelancing', type: 'income', color: '#10B981', icon: 'freelance' },
   { id: 'cat-shopping', name: 'Shopping', type: 'expense', color: '#EC4899', icon: 'shopping' },
+  { id: 'cat-recharge', name: 'Recharge', type: 'expense', color: '#8B5CF6', icon: 'smartphone' },
 ];
 
 export interface PaymentMethodRecord {
@@ -160,6 +162,7 @@ const BUILTIN_COLORS: Record<string, string> = {
   entertainment: '#EC4899',
   bills: '#8B5CF6',
   shopping: '#EC4899',
+  recharge: '#8B5CF6',
 };
 
 export function migrateCategories(list: Category[]): { list: Category[]; changed: boolean } {
