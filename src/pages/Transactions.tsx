@@ -29,10 +29,10 @@ import {
   resolveCategoryIconKey,
   resolveCategoryColor,
   resolvePaymentIconKey,
-  migrateCategories,
   migratePaymentMethods,
   type PillStyle,
 } from '@/lib/categoryDefaults';
+import { loadCategories as loadCategoriesOnline } from '@/services/categoryService';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -176,13 +176,10 @@ const Transactions = () => {
     filterTransactions();
   }, [transactions, searchQuery, filterType, filterCategory, filterPaymentMethod, filterMonth]);
 
+  // Categories are synced online (Supabase); localStorage is only the
+  // offline cache.
   const loadCategories = () => {
-    const storedCategories = localStorage.getItem('categories');
-    if (storedCategories) {
-      const { list, changed } = migrateCategories(JSON.parse(storedCategories));
-      setCategories(list);
-      if (changed) localStorage.setItem('categories', JSON.stringify(list));
-    }
+    loadCategoriesOnline().then((list) => setCategories(list));
   };
 
   const loadPaymentMethods = () => {

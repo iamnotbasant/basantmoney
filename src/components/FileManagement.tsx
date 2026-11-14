@@ -40,6 +40,7 @@ import {
 import { toast } from 'sonner';
 import { useAuth } from '@/components/AuthProvider';
 import { supabase } from '@/integrations/supabase/client';
+import { saveCategories } from '@/services/categoryService';
 import { useBankAccounts } from '@/hooks/useBankAccounts';
 import { IncomeData, ExpenseData } from '@/types/finance';
 
@@ -734,6 +735,8 @@ export const FileManagement: React.FC<FileManagementProps> = ({
         if (Array.isArray(categories) && categories.length > 0) {
           localStorage.setItem('categories', JSON.stringify(categories));
           window.dispatchEvent(new Event('categoriesChanged'));
+          // Restored categories must also reach the cloud store.
+          void saveCategories(categories);
         }
         if (Array.isArray(paymentMethods) && paymentMethods.length > 0) {
           localStorage.setItem('paymentMethods', JSON.stringify(paymentMethods));
@@ -748,6 +751,8 @@ export const FileManagement: React.FC<FileManagementProps> = ({
         if (Array.isArray(data.categories) && data.categories.length > 0) {
           localStorage.setItem('categories', JSON.stringify(data.categories));
           window.dispatchEvent(new Event('categoriesChanged'));
+          // Restored categories must also reach the cloud store.
+          void saveCategories(data.categories);
         }
         if (Array.isArray(data.paymentMethods) && data.paymentMethods.length > 0) {
           localStorage.setItem('paymentMethods', JSON.stringify(data.paymentMethods));

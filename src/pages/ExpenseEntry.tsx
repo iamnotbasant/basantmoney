@@ -14,6 +14,7 @@ import { toast } from '@/hooks/use-toast';
 import CollapsibleSection from '@/components/CollapsibleSection';
 import { useExpenseData } from '@/hooks/useExpenseData';
 import { useBankAccounts } from '@/hooks/useBankAccounts';
+import { loadCategories } from '@/services/categoryService';
 
 const ExpenseEntry = () => {
   const navigate = useNavigate();
@@ -36,38 +37,26 @@ const ExpenseEntry = () => {
     loadData();
     setDate(new Date());
 
+    // Categories are synced online; reload them when another part of the
+    // app changes them.
     const handleCategoryUpdate = () => {
-      const storedCategories = localStorage.getItem('categories');
-      if (storedCategories) {
-        const allCategories = JSON.parse(storedCategories);
-        const expenseCategories = allCategories.filter((cat: any) => cat.type === 'expense');
-        setCategories(expenseCategories);
-      }
+      loadExpenseCategories();
     };
 
     window.addEventListener('categoriesChanged', handleCategoryUpdate);
     return () => window.removeEventListener('categoriesChanged', handleCategoryUpdate);
   }, []);
 
+  // Categories come from the online store (Supabase); localStorage is only
+  // the offline cache.
+  const loadExpenseCategories = () => {
+    loadCategories().then((all) => {
+      setCategories(all.filter((cat: any) => cat.type === 'expense'));
+    });
+  };
+
   const loadData = () => {
-    const storedCategories = localStorage.getItem('categories');
-    if (storedCategories) {
-      const allCategories = JSON.parse(storedCategories);
-      const expenseCategories = allCategories.filter((cat: any) => cat.type === 'expense');
-      setCategories(expenseCategories);
-    } else {
-      // New palette (12 Nov 12:23): Food red, Transport amber,
-      // Entertainment pink, Bills purple, Shopping pink.
-      const defaultCategories = [
-        { id: '1', name: 'Food', color: '#EF4444' },
-        { id: '2', name: 'Transport', color: '#F59E0B' },
-        { id: '3', name: 'Entertainment', color: '#EC4899' },
-        { id: '4', name: 'Bills', color: '#8B5CF6' },
-        { id: '5', name: 'Shopping', color: '#EC4899' },
-        { id: '6', name: 'Recharge', color: '#8B5CF6' },
-      ];
-      setCategories(defaultCategories);
-    }
+    loadExpenseCategories();
 
     const storedPaymentMethods = localStorage.getItem('paymentMethods');
     if (storedPaymentMethods) {

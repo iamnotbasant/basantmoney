@@ -12,10 +12,7 @@ import {
 import { Plus, Trash2, Tag } from 'lucide-react';
 import { Category } from '@/types/finance';
 import { useToast } from '@/hooks/use-toast';
-import {
-  DEFAULT_CATEGORIES,
-  migrateCategories,
-} from '@/lib/categoryDefaults';
+import { loadCategories, saveCategories } from '@/services/categoryService';
 import { IconPickerButton, ColorPickerButton } from '@/components/CategoryPickers';
 
 const CategoryManager = () => {
@@ -28,22 +25,20 @@ const CategoryManager = () => {
   // Which row's picker is open: `icon:<id>` / `color:<id>` / 'icon:new' / 'color:new'
   const [openPicker, setOpenPicker] = useState<string | null>(null);
 
+  // Categories are synced online (Supabase); localStorage is only the cache.
   const persist = (list: Category[]) => {
     setCategories(list);
-    localStorage.setItem('categories', JSON.stringify(list));
-    window.dispatchEvent(new Event('categoriesChanged'));
+    void saveCategories(list);
   };
 
   useEffect(() => {
-    const storedCategories = localStorage.getItem('categories');
-    if (storedCategories) {
-      const { list, changed } = migrateCategories(JSON.parse(storedCategories));
-      setCategories(list);
-      if (changed) localStorage.setItem('categories', JSON.stringify(list));
-    } else {
-      setCategories(DEFAULT_CATEGORIES);
-      localStorage.setItem('categories', JSON.stringify(DEFAULT_CATEGORIES));
-    }
+    let alive = true;
+    loadCategories().then((list) => {
+      if (alive) setCategories(list);
+    });
+    return () => {
+      alive = false;
+    };
   }, []);
 
   const updateCategory = (categoryId: string, patch: Partial<Category>) => {

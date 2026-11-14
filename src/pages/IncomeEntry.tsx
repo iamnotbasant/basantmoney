@@ -23,7 +23,8 @@ import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { Category } from '@/types/finance';
-import { DEFAULT_CATEGORIES, DEFAULT_PAYMENT_METHODS, migrateCategories, migratePaymentMethods } from '@/lib/categoryDefaults';
+import { DEFAULT_PAYMENT_METHODS, migratePaymentMethods } from '@/lib/categoryDefaults';
+import { loadCategories } from '@/services/categoryService';
 import CollapsibleSection from '@/components/CollapsibleSection';
 import { useIncomeData } from '@/hooks/useIncomeData';
 import { useBankAccounts } from '@/hooks/useBankAccounts';
@@ -52,17 +53,11 @@ const IncomeEntry = () => {
   const { incomeData, addIncome } = useIncomeData(currentAccount?.id);
 
   useEffect(() => {
-    // Shared defaults (src/lib/categoryDefaults) — one list everywhere, so
-    // the palette can't drift between pages again.
-    const storedCategories = localStorage.getItem('categories');
-    if (storedCategories) {
-      const { list, changed } = migrateCategories(JSON.parse(storedCategories));
-      if (changed) localStorage.setItem('categories', JSON.stringify(list));
-      setCategories(list.filter((cat: Category) => cat.type === 'income'));
-    } else {
-      localStorage.setItem('categories', JSON.stringify(DEFAULT_CATEGORIES));
-      setCategories(DEFAULT_CATEGORIES.filter(cat => cat.type === 'income'));
-    }
+    // Categories are synced online (Supabase); localStorage is only the
+    // offline cache.
+    loadCategories().then((list) =>
+      setCategories(list.filter((cat: Category) => cat.type === 'income')),
+    );
 
     // Load payment methods from localStorage
     const storedMethods = localStorage.getItem('paymentMethods');
